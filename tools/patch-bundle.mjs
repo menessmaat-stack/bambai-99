@@ -90,35 +90,95 @@ const EDITS = [
   // buried. Raise the bus, drop the music, and give the throttle real travel.
   ['master gain', ',se=0.17,L=null,ve=null,', ',se=0.62,L=null,ve=null,'],
   ['music volume', '$.volume=0.42,$.preload="auto"', '$.volume=0.28,$.preload="auto"'],
+  // The engine is meant to bark for the first couple of seconds on the throttle
+  // and then settle into something you can listen to for an hour. `$.hdP` is the
+  // game-clock stamp of the last time the throttle went down; `hdE` fades from
+  // 1 to 0 over two seconds and scales the loud part of the note.
   [
     'engine bus level',
     'let $e=0.16+(P?0.07:0)+He*0.07;ae.gain.setTargetAtTime($e,Ke,0.08)',
-    'let $e=0.032+(P?0.076:0)+He*0.088;ae.gain.setTargetAtTime($e,Ke,0.05)'
+    'let $e=0.022+(P?0.038+0.13*($.hdP?ze(1-(s.t-$.hdP)/2,0,1):0):0)+He*0.045;' +
+    'ae.gain.setTargetAtTime($e,Ke,0.05)'
   ],
+  // This is the earliest line in the engine block, so the throttle stamp is set
+  // here and the other two gains read it.
   [
     'engine top end',
     'if(Fe)Fe.gain.setTargetAtTime(P?0.075+He*0.06:0.018,Ke,0.09)',
-    'if(Fe)Fe.gain.setTargetAtTime(P?0.052+He*0.048:0.01,Ke,0.06)'
+    'if(P){if(!$.hdP)$.hdP=s.t}else $.hdP=0;' +
+    'if(Fe)Fe.gain.setTargetAtTime(P?0.03+0.07*($.hdP?ze(1-(s.t-$.hdP)/2,0,1):0)+He*0.03:0.008,Ke,0.06)'
   ],
   [
     'engine intake hiss',
     'Ge.gain.setTargetAtTime(P?0.014+He*0.03:0.004,Ke,0.1)',
-    'Ge.gain.setTargetAtTime(P?0.0056+He*0.012:0.0016,Ke,0.1)'
+    'Ge.gain.setTargetAtTime(P?0.004+0.012*($.hdP?ze(1-(s.t-$.hdP)/2,0,1):0)+He*0.008:0.0014,Ke,0.1)'
   ],
   [
     'tyre screech',
     'let w=ze((K-30)/110+(g?0.3:0),0,0.42);Me.gain.setTargetAtTime(w,L.currentTime,0.04)',
     'let w=ze((K-16)/64+(g?0.6:0),0,0.95);Me.gain.setTargetAtTime(w,L.currentTime,0.03)'
   ],
+  // Same two-second shape on the brakes: a hard squeal as you stand on them,
+  // then a quiet drone while you keep the pedal down.
   [
     'brake squeal',
     'if((re.s||re.arrowdown)&&N>55){let Z=ze((N-45)/220,0,0.28);zn.gain.setTargetAtTime(Z,L.currentTime,0.04)}',
-    'if((re.s||re.arrowdown)&&N>24){let Z=ze((N-18)/120,0,0.66);zn.gain.setTargetAtTime(Z,L.currentTime,0.03)}'
+    'if((re.s||re.arrowdown)&&N>24){if(!$.hdB)$.hdB=s.t;' +
+    'let hdS=ze(1-(s.t-$.hdB)/2,0,1),Z=ze((N-18)/120,0,0.2+0.5*hdS);' +
+    'zn.gain.setTargetAtTime(Z,L.currentTime,0.03)}else if(($.hdB=0),0){}'
   ],
   ['explosion boom body', 'z.gain.setValueAtTime(0.6,t)', 'z.gain.setValueAtTime(0.95,t)'],
   ['explosion boom noise', 'X.gain.setValueAtTime(0.5,t)', 'X.gain.setValueAtTime(0.85,t)'],
   ['gunshot crack', 'K.gain.setValueAtTime(0.4,t)', 'K.gain.setValueAtTime(0.6,t)'],
   ['gunshot thump', 'X.gain.setValueAtTime(0.35,t)', 'X.gain.setValueAtTime(0.52,t)'],
+
+  // Impacts only fired `En.thud`, a 120 Hz blip, and only above 130 closing
+  // speed, so metal on metal was effectively silent. `crunch` is a new one-shot:
+  // a swept bandpass noise burst (sheet metal) over a short square thump.
+  [
+    'crunch sfx',
+    'let En={shot:()=>{if(!L||B.current||L.state!=="running")return;',
+    'let En={crunch:(hdV)=>{if(!L||B.current||L.state!=="running")return;try{' +
+    'let hdT=L.currentTime,hdG=ze(typeof hdV==="number"?hdV:0.5,0.08,1),' +
+    'hdN=Math.floor(L.sampleRate*0.3),hdBuf=L.createBuffer(1,hdN,L.sampleRate),' +
+    'hdCh=hdBuf.getChannelData(0);' +
+    'for(let hdI=0;hdI<hdN;hdI++)hdCh[hdI]=(Math.random()*2-1)*Math.pow(1-hdI/hdN,2.3);' +
+    'let hdSrc=L.createBufferSource();hdSrc.buffer=hdBuf;' +
+    'let hdBp=L.createBiquadFilter();hdBp.type="bandpass",hdBp.Q.value=0.8,' +
+    'hdBp.frequency.setValueAtTime(2100,hdT),' +
+    'hdBp.frequency.exponentialRampToValueAtTime(430,hdT+0.26);' +
+    'let hdNg=L.createGain();hdNg.gain.setValueAtTime(hdG*0.8,hdT),' +
+    'hdNg.gain.exponentialRampToValueAtTime(0.001,hdT+0.3),' +
+    'hdSrc.connect(hdBp),hdBp.connect(hdNg),hdNg.connect(ve),hdSrc.start(hdT);' +
+    'let hdOsc=L.createOscillator(),hdOg=L.createGain();hdOsc.type="square",' +
+    'hdOsc.frequency.setValueAtTime(95,hdT),' +
+    'hdOsc.frequency.exponentialRampToValueAtTime(40,hdT+0.1),' +
+    'hdOg.gain.setValueAtTime(hdG*0.55,hdT),' +
+    'hdOg.gain.exponentialRampToValueAtTime(0.001,hdT+0.14),' +
+    'hdOsc.connect(hdOg),hdOg.connect(ve),hdOsc.start(hdT),hdOsc.stop(hdT+0.15)}catch{}},' +
+    'shot:()=>{if(!L||B.current||L.state!=="running")return;'
+  ],
+  // Contact is resolved every frame, so each sound is rate limited off the game
+  // clock: scrapes at ~3/s, hits at ~2/s. Without this a single shunt fires the
+  // crunch four or five times and sounds like a machine gun.
+  [
+    'scrape on light contact',
+    'if(te>40){if(N)z.vx-=ee*te*0.5,z.vy-=M*te*0.5;if(K)Z.vx+=ee*te*0.5,Z.vy+=M*te*0.5}',
+    'if(te>40){if(N)z.vx-=ee*te*0.5,z.vy-=M*te*0.5;if(K)Z.vx+=ee*te*0.5,Z.vy+=M*te*0.5;' +
+    'if((z.player||Z.player)&&te<=130&&s.t-(s.hdScr??-9)>0.35)s.hdScr=s.t,En.crunch(0.1+te/420)}'
+  ],
+  [
+    'crunch on car impact',
+    'En.thud(te/600),te>330)',
+    'En.thud(Math.min(0.7,te/420)),s.t-(s.hdHit??-9)>0.45&&(s.hdHit=s.t,' +
+    'En.crunch(Math.min(1,0.3+te/380))),te>330)'
+  ],
+  [
+    'crunch on wall impact',
+    'iu(t.x,t.y,Math.min(10,Ee*0.04)),En.thud(Ee/500)',
+    'iu(t.x,t.y,Math.min(10,Ee*0.04)),En.thud(Math.min(0.7,Ee/380)),' +
+    's.t-(s.hdHit??-9)>0.45&&(s.hdHit=s.t,En.crunch(Math.min(1,0.3+Ee/420)))'
+  ],
   // With everything louder the bus can clip on a pile-up, so the master now
   // runs through a limiter instead of straight into the speakers.
   [

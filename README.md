@@ -45,9 +45,12 @@ and `--check` to confirm a bundle is patched. It covers:
 - **Look** — less washed-out palette, visible sea swell, lighter airport apron
   and runways, brighter rain, vignette cut from 0.38 to 0.20.
 - **Audio** — the SFX bus ran at 0.17 while the music element played at 0.42, so
-  everything was buried. Master is 0.62 behind a limiter, music 0.28, and the
-  engine bus swings 0.03 → 0.21 with the throttle (engine deliberately sits
-  under the music; skids, guns and blasts stay loud). Tyre screech and brake
+  everything was buried. Master is 0.62 behind a limiter, music 0.28. The engine
+  barks for two seconds when the throttle goes down (0.21) and then settles to
+  about 0.08, so it sits under the music; the brakes follow the same shape.
+  Collisions had no sound of their own at all — `En.crunch` is a new swept-noise
+  impact one-shot, rate limited off the game clock, fired on scrapes, car hits
+  and wall hits. Tyre screech and brake
   squeal existed but were capped at 0.42/0.28; they are 0.95/0.66 and trigger at
   lower slip.
 - **Collisions** — a flat 55/45 velocity blend became a mass-weighted normal
@@ -195,14 +198,15 @@ events the bundle already listens for, so touch and desktop run identical code.
 
 | On screen | Does |
 | --- | --- |
-| Left cross ▲ ◀ ▼ ▶ | throttle, steer, brake/reverse (walk on foot) |
+| Left pedals ▲ ▼ | throttle, brake/reverse (walk on foot) |
+| Right strip | drag to steer, PUBG style — the key is pulsed in proportion to how far the thumb travels, so small drags feather the wheel |
 | FIRE | holds fire; works on foot and in a vehicle |
 | Touch the street | aims — the shot goes towards your finger |
 | NOS | nitro in a car, sprint on foot, climb in a heli |
 | E | steal a car, board a train, leave a vehicle |
 | HAND | handbrake; descend in a heli |
-| ⛶ | fullscreen, and locks landscape on Android |
-| ⋯ | map, weapon, marker, music, skip, view, zoom, race, time, weather, punch |
+| ⛶ | fullscreen, and locks landscape on Android (also offered once when play starts) |
+| ⋯ | map, transit, weapon, marker, music, skip, view, zoom, race, time, punch |
 | II | pause |
 
 Landscape plays best. The pad hides itself whenever a menu is open so the menu
