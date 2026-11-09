@@ -1,7 +1,11 @@
 # BAMBAI '99 — static web build
 
+Live: <https://bambai-99-ma-at1.vercel.app> (`/` landing, `/play` game)
+Repo: <https://github.com/menessmaat-stack/bambai-99>
+
 Everything in this folder is a plain static site. No server, no build step: Vercel
-just serves the files.
+just serves the files. Sections 1 and 2 below are the one-time setup that has
+already been done; keep them for the next project.
 
 ```
 index.html                     landing page: alias + spawn card, hands off to /play
