@@ -71,10 +71,19 @@ and `--check` to confirm a bundle is patched. It covers:
   cleanly outside car dealerships/showrooms (NAVNIT MOTORS, GROK AUTOS, etc.) rather
   than spawning on top of each other. Chain reaction ignition removed so cars do not
   spontaneously explode on minor bumps.
-- **Overhauled In-Game HUD** — wider player card (240 px) with zero text overlap:
-  Row 1: Health bar with percentage; Row 2: Indian Rupee cash (comma-formatted: ₹ 2,50,000)
-  and score; Row 3: Weapon badge with ammo count and vehicle name. Clean top-center
-  time/weather pill and alert badge.
+- **Custom Supercar & Sports Car Sprites (Matching Reference Sheets)** — redesigned
+  from generic models to custom top-down pixel-perfect graphics:
+  - **Porsche 911 GT3** (type 56): vibrant orange body (#ea580c) with dual bold black
+    racing stripes, oval teardrop headlights, and black carbon GT rear wing.
+  - **Lamborghini Huracan** (type 57): lime green faceted wedge body (#84cc16) with
+    hexagonal mid-engine carbon louvers on the rear deck, side hip intakes, and angular nose.
+- **Realistic Mumbai Trees (Coconut Palms & Layered Canopies)** — parks and gardens
+  now feature authentic Coconut Palms with radiating fronds and multi-lobed deciduous
+  canopy trees with highlights and soft ground shadows (matching reference Image 6).
+- **Overhauled In-Game HUD** — fixed the cramped text collisions from Image 1:
+  - Player Card: clean 3-row layout (Health + %, Rupee cash + score, weapon + vehicle name).
+  - NOS & Fear indicators: cleanly nested below the card with zero vertical clipping.
+  - Police Alert Badge: cleanly positioned without overlapping the health bar.
 - **Iconic Mumbai Local Trains** — upgraded from muddy green to the world-famous
   Central & Western Railway maroon and yellow livery with silver corrugated roofs.
 - **Pedestrian Street Diversity** — 12 vibrant outfit colors (saffron, royal blue,

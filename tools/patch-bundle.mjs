@@ -410,8 +410,14 @@ const EDITS = [
   ],
 
   // ===== supercars people have heard of ====================================
-  ['porsche 911', '{name:"Comet GTR",', '{name:"Porsche 911 GT3",'],
-  ['lamborghini huracan', '{name:"Vacca",', '{name:"Lamborghini Huracan",'],
+  ['porsche 911 gt3 sprite',
+    '{name:"Comet GTR",l:44,w:20,power:1010,top:665,gripF:11.7,gripR:9.6,steer:0.75,wheelbase:27,mass:0.8,sprite:Yu,nos:!0}',
+    '{name:"Porsche 911 GT3",l:44,w:20,power:1010,top:665,gripF:11.7,gripR:9.6,steer:0.75,wheelbase:27,mass:0.8,nos:!0,sprite:(e,n,u,r)=>{let l=n,o=u;We(e,l,o);e.fillStyle="#ea580c",a(e,0,0,l,o,6),e.fill();e.strokeStyle="#1e293b",e.lineWidth=1,a(e,0,0,l,o,6),e.stroke();e.fillStyle="#0f172a",e.fillRect(0,o/2-2,l,1.4),e.fillRect(0,o/2+0.6,l,1.4);e.fillStyle="#1e293b",e.fillRect(l*0.35,2.5,l*0.32,o-5);e.fillStyle="#38bdf8",e.fillRect(l*0.48,3,5,o-6);e.fillStyle="#fef08a",e.beginPath(),e.arc(l-3,3.5,2.2,0,Math.PI*2),e.fill(),e.beginPath(),e.arc(l-3,o-3.5,2.2,0,Math.PI*2),e.fill();e.fillStyle="#0f172a",e.fillRect(-3,2,3,o-4);}}'
+  ],
+  ['lamborghini huracan sprite',
+    '{name:"Vacca",l:45,w:21,power:1080,top:700,gripF:12,gripR:10,steer:0.77,wheelbase:28,mass:0.79,sprite:Yu,nos:!0}',
+    '{name:"Lamborghini Huracan",l:45,w:21,power:1080,top:700,gripF:12,gripR:10,steer:0.77,wheelbase:28,mass:0.79,nos:!0,sprite:(e,n,u,r)=>{let l=n,o=u;We(e,l,o);e.fillStyle="#84cc16",e.beginPath(),e.moveTo(l,o/2),e.lineTo(l*0.65,0.5),e.lineTo(0,1.5),e.lineTo(0,o-1.5),e.lineTo(l*0.65,o-0.5),e.closePath(),e.fill();e.strokeStyle="#1e293b",e.lineWidth=1,e.stroke();e.fillStyle="#0f172a",e.fillRect(l*0.08,4,l*0.25,o-8);e.fillStyle="#1e293b",e.fillRect(l*0.36,3,l*0.26,o-6);e.fillStyle="#38bdf8",e.fillRect(l*0.48,3.5,4,o-7);e.fillStyle="#1e293b",e.fillRect(l*0.14,0.5,l*0.16,2.5),e.fillRect(l*0.14,o-3,l*0.16,2.5);e.fillStyle="#ef4444",e.fillRect(-2,3,2.5,3),e.fillRect(-2,o-6,2.5,3);}}'
+  ],
   ['lamborghini aventador', '{name:"Zentorno",', '{name:"Lamborghini Aventador",'],
   ['porsche taycan', '{name:"Osiris",', '{name:"Porsche Taycan",'],
 
@@ -751,6 +757,12 @@ const EDITS = [
     'bridges immune to water damage',
     '!nl(t.x,t.y)&&!Ji(D,t.x,t.y)){if(t.hp-=170*v,t.vx*=1-2.2*v,t.vy*=1-2.2*v',
     '!nl(t.x,t.y)&&!Ji(D,t.x,t.y)&&!cu(D,t.x,t.y)&&!(Du(D,t.x,t.y,T(35))?.dist<=T(35))){if(t.hp-=170*v,t.vx*=1-2.2*v,t.vy*=1-2.2*v'
+  ],
+  // ===== Realistic Mumbai trees (Coconut Palms + layered canopy) matching user image 6 =====
+  [
+    'mumbai realistic trees',
+    'function aE(e,n){let u=Bl(n.pts);if(!u)return;let r=u.x1-u.x0,l=u.y1-u.y0;if(!y(r)||!y(l)||r<15*G||l<15*G)return;let o=ru(Math.floor(r*l/(450*G*G)),1,60);e.fillStyle="rgba(28,56,26,0.45)";for(let i=0;i<o;i++){let E=u.x0+Un(i*13.7+u.x0,u.y0)*r,Q=u.y0+Un(i*7.3+u.y0,u.x1)*l;if(!y(E)||!y(Q))continue;if(!j6(n.pts,E,Q))continue;let V=(2.5+Un(E,Q)*2.5)*G;e.beginPath(),e.arc(E,Q,V,0,Math.PI*2),e.fill()}}',
+    'function aE(e,n){let u=Bl(n.pts);if(!u)return;let r=u.x1-u.x0,l=u.y1-u.y0;if(!y(r)||!y(l)||r<15*G||l<15*G)return;let o=ru(Math.floor(r*l/(450*G*G)),1,50);for(let i=0;i<o;i++){let E=u.x0+Un(i*13.7+u.x0,u.y0)*r,Q=u.y0+Un(i*7.3+u.y0,u.x1)*l;if(!y(E)||!y(Q)||!j6(n.pts,E,Q))continue;let V=(2.8+Un(E,Q)*2.8)*G,isPalm=Un(E*3.1,Q*7.7)>0.42;e.fillStyle="rgba(10,14,10,0.28)",e.beginPath(),e.arc(E+1*G,Q+1.5*G,V*0.88,0,Math.PI*2),e.fill();if(isPalm){e.save(),e.translate(E,Q);for(let fi=0;fi<8;fi++){let ang=(fi/8)*Math.PI*2+Un(fi,i)*0.2;e.fillStyle=fi%2===0?"#38772d":"#4c943c",e.beginPath(),e.moveTo(0,0),e.quadraticCurveTo(Math.cos(ang)*V*0.6,Math.sin(ang)*V*0.6,Math.cos(ang)*V*1.15,Math.sin(ang)*V*1.15),e.quadraticCurveTo(Math.cos(ang+0.3)*V*0.7,Math.sin(ang+0.3)*V*0.7,0,0),e.fill()}e.fillStyle="#664d2b",e.beginPath(),e.arc(0,0,V*0.2,0,Math.PI*2),e.fill(),e.restore()}else{e.fillStyle="#2b5f23",e.beginPath(),e.arc(E,Q,V,0,Math.PI*2),e.fill(),e.fillStyle="#3f8134";for(let li=0;li<5;li++){let la=(li/5)*Math.PI*2;e.beginPath(),e.arc(E+Math.cos(la)*V*0.45,Q+Math.sin(la)*V*0.45,V*0.52,0,Math.PI*2),e.fill()}e.fillStyle="#5ca34a",e.beginPath(),e.arc(E-V*0.2,Q-V*0.25,V*0.38,0,Math.PI*2),e.fill()}}}'
   ],
 
   ['news crew threshold', 'if(z<=5)continue;', 'if(z<=1)continue;'],
