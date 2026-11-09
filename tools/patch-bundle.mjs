@@ -79,7 +79,7 @@ const EDITS = [
   [
     'traffic weights',
     'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,12,12,12,14,',
-    'var Yi=[89,89,89,89,56,56,56,57,57,57,58,58,59,59,84,84,82,83,0,1,2,5,7,8,9,40,41,42,12,12,12,12,12,12,12,12,54,54,14,'
+    'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,12,12,12,12,12,12,12,12,54,54,54,14,'
   ],
 
   // ===== audio: the SFX bus was 8-15x quieter than the music ===============
@@ -153,30 +153,10 @@ const EDITS = [
     'hdC.connect(L.destination);return hdC})())'
   ],
 
-  // ===== collisions: real impulse instead of a velocity mush ===============
-  // Cars used to swap 55/45 of each other's velocity regardless of mass, so a
-  // truck bounced off a hatchback. This is a proper normal impulse with
-  // restitution plus a tangential kick that spins the lighter car.
-  [
-    'collision impulse',
-    'if(!N&&!K){let{vx:Ve,vy:kn}=z;z.vx=Ve*0.55+Z.vx*0.45,z.vy=kn*0.55+Z.vy*0.45,' +
-    'Z.vx=Z.vx*0.55+Ve*0.45,Z.vy=Z.vy*0.55+kn*0.45}',
-    'if(!N&&!K){let hdN=(z.vx-Z.vx)*ee+(z.vy-Z.vy)*M;if(hdN>0){' +
-    'let hdJ=1.34*hdN/(1/Je+1/Ke);' +
-    'z.vx-=hdJ/Je*ee,z.vy-=hdJ/Je*M,Z.vx+=hdJ/Ke*ee,Z.vy+=hdJ/Ke*M;' +
-    'let hdT=(z.vx-Z.vx)*-M+(z.vy-Z.vy)*ee;' +
-    'z.vx+=hdT*0.12*M,z.vy-=hdT*0.12*ee,Z.vx-=hdT*0.12*M,Z.vy+=hdT*0.12*ee,' +
-    'z.w=(z.w??0)-hdT*0.0016*(Ke/(Je+Ke)),Z.w=(Z.w??0)+hdT*0.0016*(Je/(Je+Ke))}}'
-  ],
-  [
-    'collision damage',
-    'if(te>200){let Le=(te-180)*0.028;',
-    'if(te>130){let Le=(te-110)*0.05;'
-  ],
   [
     'wall impact damage',
     'if(t.x=Ze.x,t.y=Ze.y,Ee>220){let $n=(Ee-190)*0.028;',
-    'if(t.x=Ze.x,t.y=Ze.y,Ee>150){let $n=(Ee-130)*0.05;'
+    'if(t.x=Ze.x,t.y=Ze.y,Ee>150){let $n=t.deck?0:(Ee-130)*0.05;'
   ],
 
   // ===== fire: bigger blasts, hotter flames, faster chains =================
@@ -195,21 +175,6 @@ const EDITS = [
     'col:hdH<0.3?"#fff1b0":hdH<0.72?"#ff7a1a":"#4a4a4a",glow:hdH<0.72})}'
   ],
   [
-    'small blast flash and ignition',
-    's.parts.push({x:t,y:v,vx:0,vy:0,life:0.35,max:0.35,r:34,col:"#ffe9b0",glow:!0}),' +
-    's.decals.push({x:t,y:v,a:0.55,r:40+Math.random()*20,kind:"scorch"});' +
-    'for(let $ of s.cars){if($.dead)continue;let N=Math.hypot($.x-t,$.y-v);' +
-    'if(N<130){if($.hp-=90*(1-N/130),$.ai==="cop")Zn(1.2,!0)}}',
-    's.parts.push({x:t,y:v,vx:0,vy:0,life:0.42,max:0.42,r:56,col:"#fff6d2",glow:!0}),' +
-    's.parts.push({x:t,y:v,vx:0,vy:0,life:0.7,max:0.7,r:30,col:"#ff9326",glow:!0}),' +
-    's.decals.push({x:t,y:v,a:0.6,r:46+Math.random()*22,kind:"scorch"});' +
-    'for(let $ of s.cars){if($.dead)continue;let N=Math.hypot($.x-t,$.y-v);' +
-    'if(N<150){$.hp-=120*(1-N/150);let hdK=170*(1-N/150),hdD=Math.hypot($.x-t,$.y-v)||1;' +
-    '$.vx+=($.x-t)/hdD*hdK,$.vy+=($.y-v)/hdD*hdK;' +
-    'if($.hp<85&&$.burn<=0)$.burn=0.45+Math.random()*0.5;' +
-    'if($.ai==="cop")Zn(1.2,!0)}}'
-  ],
-  [
     'big blast particles',
     'function R5(t,v,z){Ri(t,v),s.cam.shake=26;let $=210;for(let J=0;J<18;J++){' +
     'let Z=Math.random()*Math.PI*2,K=120+Math.random()*420;' +
@@ -221,17 +186,6 @@ const EDITS = [
     's.parts.push({x:t,y:v,vx:Math.cos(Z)*K,vy:Math.sin(Z)*K,' +
     'life:0.6+Math.random()*0.8,max:1.4,r:5+Math.random()*12,' +
     'col:hdH<0.28?"#fff3c0":hdH<0.68?"#ff9a2e":"#2e2e2e",glow:hdH<0.68})}'
-  ],
-  [
-    'big blast ignition',
-    'J.hp-=420*(1-Z/$);let K=260*(1-Z/$),g=Math.hypot(J.x-t,J.y-v)||1;',
-    'J.hp-=420*(1-Z/$);if(J.burn<=0)J.burn=0.35+Math.random()*0.5;' +
-    'let K=340*(1-Z/$),g=Math.hypot(J.x-t,J.y-v)||1;'
-  ],
-  [
-    'burn fuse',
-    'if(z.hp<=0&&z.burn<=0){if(z.burn=2.4+Math.random()*1.1,z.player)le("ENGINE FIRE — BAIL OUT!")}',
-    'if(z.hp<=0&&z.burn<=0){if(z.burn=1+Math.random()*0.7,z.player)le("ENGINE FIRE — BAIL OUT!")}'
   ],
   [
     'burning car flames',
@@ -437,6 +391,13 @@ const EDITS = [
     'if(f.save(),f.translate(t.x,t.y),t.chute)'
   ],
 
+  // Add Ambassador (89) to car dealership showrooms so rare cars are parked outside showrooms
+  [
+    'showroom rare cars',
+    'A$=[9,10,11,36,37,4,5,42,56,57,58,59,67,69,82,83,84,85,86,87,88],',
+    'A$=[89,56,57,58,59,84,82,83,9,10,11,36,37,4,5,42,67,69,85,86,87,88],'
+  ],
+
   // ===== supercars people have heard of ====================================
   ['porsche 911', '{name:"Comet GTR",', '{name:"Porsche 911 GT3",'],
   ['lamborghini huracan', '{name:"Vacca",', '{name:"Lamborghini Huracan",'],
@@ -455,30 +416,21 @@ const EDITS = [
   ['gang car cap', 'if(t>=4)return;let v=s.player,z=oo();', 'if(t>=7)return;let v=s.player,z=oo();'],
   ['gang spawn attempts', 'for(let $=0;$<6&&t<4;$++)', 'for(let $=0;$<8&&t<7;$++)'],
 
-  // ===== surf: golden beaches and crashing surf along every coastline ======
+  // ===== natural coastline: golden beach sand band into clean blue sea =====
   [
     'shore surf',
     'case"land":{if(!Pn(r,V.pts))break;if(r.fillStyle=l.land,r.fill("evenodd"),i)' +
     'r.strokeStyle=l.shore,r.lineWidth=Math.max(0.9*G,1.4*E),r.stroke();break}',
     'case"land":{if(!Pn(r,V.pts))break;' +
-    // Golden sand beach band extending 16 metres into the water from the land edge!
-    'r.strokeStyle=n.night?"#544a36":"#e5d59c",' +
-    'r.lineWidth=Math.max(16*G,20*E),r.stroke();' +
-    // Wet sand band right at the tide line (6 metres wide)!
-    'r.strokeStyle=n.night?"#3c3426":"#baa572",' +
-    'r.lineWidth=Math.max(6*G,8*E),r.stroke();' +
-    // Land fill covers the inside half of the strokes
+    // Golden beach sand band along the shore into the water
+    'r.strokeStyle=n.night?"#524834":"#e2d296",' +
+    'r.lineWidth=Math.max(14*G,18*E),r.stroke();' +
+    // Wet sand margin at the waterline
+    'r.strokeStyle=n.night?"#3a3224":"#b5a06c",' +
+    'r.lineWidth=Math.max(5*G,7*E),r.stroke();' +
+    // Land fill
     'r.fillStyle=l.land,r.fill("evenodd");' +
-    // Crashing surf foam that rolls and breaks right onto the sand!
-    'let hdT=y(n.t)?n.t:0,hdW=0.5+0.5*Math.sin(hdT*1.6+(V.pts[0]||0)*0.0004);' +
-    'r.save(),r.lineCap="round";' +
-    'r.strokeStyle=n.night?`rgba(180,210,235,${0.2+hdW*0.25})`:`rgba(255,255,255,${0.4+hdW*0.5})`,' +
-    'r.lineWidth=Math.max(2.4*G,3.2*E);' +
-    'r.setLineDash([(8+hdW*10)*G,(10-hdW*4)*G]),r.lineDashOffset=-hdT*22*G,r.stroke();' +
-    'r.strokeStyle=n.night?`rgba(140,175,210,${0.1+(1-hdW)*0.18})`:`rgba(235,246,255,${0.18+(1-hdW)*0.3})`,' +
-    'r.lineWidth=Math.max(1.1*G,1.6*E);' +
-    'r.setLineDash([5*G,(14+hdW*8)*G]),r.lineDashOffset=hdT*14*G,r.stroke();' +
-    'r.setLineDash([]),r.restore();break}'
+    'break}'
   ],
   // ===== bazooka ===========================================================
   // The missile system already existed for the tank; this exposes it as a
@@ -583,8 +535,8 @@ const EDITS = [
     '{n:"GIRGAUM CHOWPATTY",who:"Marine Drive Bay",x:-64600,y:92000},' +
     '{n:"JUHU BEACH",who:"Juhu Coastline",x:-51000,y:-16000}],' +
     'hdArmyBases=[' +
-    '{name:"INS SHIKRA NAVAL BASE",who:"Colaba Military Point",x:-51500,y:120500,r:3400},' +
-    '{name:"SANTACRUZ AIR FORCE STATION",who:"Military Hangar",x:-26000,y:-3000,r:3000}],' +
+    '{name:"INS SHIKRA NAVAL BASE",who:"Helipad & Dock",x:-51500,y:120500,r:340},' +
+    '{name:"SANTACRUZ AIR FORCE STATION",who:"Military Hangar",x:-26000,y:-3000,r:340}],' +
     'hdConvoyTypes=[' +
     '{name:"Chief Minister",vip:hdAMB,escLead:30,escRear:45,title:"Chief Minister State Convoy"},' +
     '{name:"Shah Rukh Khan",vip:58,escLead:82,escRear:83,title:"Superstar Convoy"},' +
@@ -608,7 +560,7 @@ const EDITS = [
     's.cars.push({x:-26000,y:-3000,h:0,vx:0,vy:0,w:0,steer:0,type:43,pal:0,seed:0.3,hp:1600,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
     's.planes.push({x:-26200,y:-2900,h:0,speed:0,alt:0,mode:"stand",livery:0,turn:0,hx:-26200,hy:-2900,rwy:-1,kind:"jet",spin:0});}' +
     'for(let b of hdArmyBases){let d=Math.hypot(b.x-p.x,b.y-p.y);' +
-    'if(d<b.r){if(s.t-(s.hdArmyAlertT??-99)>20){s.hdArmyAlertT=s.t;s.stars=5;s.chasePeak=5;Zn(10,!0);' +
+    'if(d<b.r&&s.t>15){if(s.t-(s.hdArmyAlertT??-99)>20){s.hdArmyAlertT=s.t;s.stars=5;s.chasePeak=5;Zn(10,!0);' +
     'le(b.name+" — TRESPASSING! LETHAL FORCE AUTHORIZED.");' +
     'for(let k=0;k<4;k++){let an=W()*Math.PI*2,gx=p.x+Math.cos(an)*T(24),gy=p.y+Math.sin(an)*T(24);' +
     's.peds.push({x:gx,y:gy,h:an,speed:28,kind:"cop",seed:W(),leg:0,wpX:p.x,wpY:p.y,phase:W()*6,dead:!1,deadT:0,copShootCd:0,scripted:!0});}}}}' +
@@ -631,7 +583,7 @@ const EDITS = [
     's.stars=5,s.chasePeak=5,s.seenAgo=0,Zn(6,!0),' +
     'le(z.vipName+" DOWN — ₹2,50,000 wired. Every unit responding!");' +
     'z.wreckT+=t;continue}' +
-    'if(!nl(z.x,z.y)){z.hdW=(z.hdW??0)+t,z.speed=0,' +
+    'if(!nl(z.x,z.y)&&!z.deck&&!cu(D,z.x,z.y)){z.hdW=(z.hdW??0)+t,z.speed=0,' +
     'z.vx*=Math.max(0,1-3*t),z.vy*=Math.max(0,1-3*t);' +
     'if(Math.random()<t*16)s.parts.push({x:z.x+(Math.random()-0.5)*18,' +
     'y:z.y+(Math.random()-0.5)*14,vx:(Math.random()-0.5)*40,vy:-25-Math.random()*35,' +
@@ -645,6 +597,57 @@ const EDITS = [
     'vip residence markers',
     'f.fillText(h.label,h.x,h.y+S+14)}}if(s.waypoint){let C=s.waypoint;',
     'f.fillText(h.label,h.x,h.y+S+14)}}' +
+    // --- Custom Architectural Renderers for Famous Landmarks ---
+    // 1. GATEWAY OF INDIA (Apollo Bunder, Colaba): Grand yellow-basalt triumphal arch with 4 turrets & dome
+    '{let gx=-45800,gy=116800,gDist=Math.hypot(gx-s.cam.x,gy-s.cam.y);' +
+    'if(gDist<$/2+300){f.save(),f.translate(gx,gy);' +
+    // Paved stone plaza facing the sea
+    'f.fillStyle="#6e685e",f.fillRect(-45,-30,90,60);' +
+    // Main archway body (yellow-brown basalt)
+    'f.fillStyle="#c4a56a",f.fillRect(-32,-18,64,36);' +
+    // 4 octagonal corner turrets with domes
+    'f.fillStyle="#a8884d";' +
+    'f.fillRect(-35,-21,12,12),f.fillRect(23,-21,12,12),f.fillRect(-35,9,12,12),f.fillRect(23,9,12,12);' +
+    // Central dome
+    'f.fillStyle="#d4b778",f.beginPath(),f.arc(0,0,10,0,Math.PI*2),f.fill();' +
+    // Central arch opening (dark passage)
+    'f.fillStyle="#1c1914",f.fillRect(-10,-8,20,16);' +
+    'f.font="bold 12px system-ui",f.textAlign="center",f.fillStyle="#fcd34d",' +
+    'f.fillText("GATEWAY OF INDIA",0,32),f.restore();}}' +
+    // 2. ANTILIA (Altamount Road): 27-storey asymmetric skyscraper with cantilevers & green hanging gardens
+    '{let ax=-64800,ay=86000,aDist=Math.hypot(ax-s.cam.x,ay-s.cam.y);' +
+    'if(aDist<$/2+300){f.save(),f.translate(ax,ay);' +
+    // Tower shadow
+    'f.fillStyle="rgba(0,0,0,0.35)",f.fillRect(-22,-22,54,54);' +
+    // Lower tier
+    'f.fillStyle="#2d3748",f.fillRect(-24,-24,48,48);' +
+    // Cantilevered hanging garden levels (lush green foliage terraces)
+    'f.fillStyle="#2f855a",f.fillRect(-32,-14,20,28),f.fillRect(12,2,22,22);' +
+    // Reflective tinted blue glass facades
+    'f.fillStyle="#3182ce",f.fillRect(-18,-18,36,36);' +
+    'f.fillStyle="#63b3ed",f.fillRect(-14,-14,28,14);' +
+    // 3 rooftop helipads with glowing lights & "H" marking
+    'f.fillStyle="#1a202c",f.fillRect(-16,-8,32,16);' +
+    'f.strokeStyle="#e53e3e",f.lineWidth=1.5,f.strokeRect(-16,-8,32,16);' +
+    'f.fillStyle="#fff",f.font="bold 8px system-ui",f.textAlign="center",f.fillText("H",0,2);' +
+    'f.font="bold 12px system-ui",f.fillStyle="#fcd34d",f.fillText("ANTILIA — MUKESH AMBANI",0,34);' +
+    'f.restore();}}' +
+    // 3. MANNAT (Bandstand Promenade): Neo-classical white heritage mansion with classical portico
+    '{let mx=-55790,my=23185,mDist=Math.hypot(mx-s.cam.x,my-s.cam.y);' +
+    'if(mDist<$/2+300){f.save(),f.translate(mx,my);' +
+    // Lawn & garden
+    'f.fillStyle="#38a169",f.fillRect(-30,-22,60,44);' +
+    // White Italian marble mansion facade
+    'f.fillStyle="#f7fafc",f.fillRect(-22,-16,44,32);' +
+    'f.strokeStyle="#cbd5e0",f.lineWidth=1.5,f.strokeRect(-22,-16,44,32);' +
+    // Neoclassical entrance pillars & pediment
+    'f.fillStyle="#e2e8f0";' +
+    'for(let pi=0;pi<4;pi++) f.fillRect(-15+pi*10,-18,3,8);' +
+    // Rooftop terrace
+    'f.fillStyle="#e7f0f8",f.fillRect(-18,-12,36,10);' +
+    'f.font="bold 12px system-ui",f.textAlign="center",f.fillStyle="#fcd34d",' +
+    'f.fillText("MANNAT — SHAH RUKH KHAN",0,28),f.restore();}}' +
+    // Landmarks gold rings & labels:
     'for(let hdI=0;hdI<hdVIPH.length;hdI++){let hdH=hdVipXY(hdVIPH[hdI]);' +
     'if(Math.abs(hdH.x-s.cam.x)>$/2+200||Math.abs(hdH.y-s.cam.y)>N/2+200)continue;' +
     'let hdR=24+Math.sin(s.t*2.2+hdI)*3;' +
@@ -713,7 +716,7 @@ const EDITS = [
   [
     'big map zoom renderer',
     'function h9(t,v){let z=Au.width/2*Nr;wu.setTransform(1,0,0,1,0,0),wu.fillStyle="#16191c",wu.fillRect(0,0,Au.width,Au.height),wu.save(),wu.translate(Au.width/2,Au.height/2),wu.scale(1/Nr,1/Nr),wu.translate(-t,-v),Ml.x0=t-z,Ml.y0=v-z,Ml.x1=t+z,Ml.y1=v+z,qi(D,Ml),Ii(D,Ml),gi(D,Ml),wu.restore()}',
-    'function h9(t,v){let hdZ=s.mapScale??1,currNr=Nr*hdZ,z=Au.width/2*currNr;wu.setTransform(1,0,0,1,0,0),wu.fillStyle="#16191c",wu.fillRect(0,0,Au.width,Au.height),wu.save(),wu.translate(Au.width/2,Au.height/2),wu.scale(1/currNr,1/currNr),wu.translate(-t,-v),Ml.x0=t-z,Ml.y0=v-z,Ml.x1=t+z,Ml.y1=v+z,Ml.zoom=1/currNr,qi(D,Ml),Ii(D,Ml),gi(D,Ml),wu.restore()}'
+    'function h9(t,v){let hdZ=s.mapScale??1,currNr=Nr*hdZ,z=Au.width/2*currNr;wu.setTransform(1,0,0,1,0,0),wu.fillStyle="#16191c",wu.fillRect(0,0,Au.width,Au.height),wu.save(),wu.translate(Au.width/2,Au.height/2),wu.scale(1/currNr,1/currNr),wu.translate(-t,-v),Ml.x0=t-z,Ml.y0=v-z,Ml.x1=t+z,Ml.y1=v+z,Ml.zoom=1/currNr,qi(D,Ml),Ii(D,Ml),w6(D,Ml),gi(D,Ml),wu.restore()}'
   ],
   [
     'big map S scale',
@@ -729,6 +732,13 @@ const EDITS = [
     'big map key zoom',
     'if((v==="["||v==="]")&&Q.current==="play")s.zoomBias=ze(s.zoomBias*(v==="]"?1.12:0.89),0.45,2.6),s.zoomMsgT=s.t;',
     'if((v==="["||v==="]")&&Q.current==="play"){if(s.mapOpen){s.mapScale=ze((s.mapScale??1)*(v==="]"?0.72:1.38),0.45,9.8);return}s.zoomBias=ze(s.zoomBias*(v==="]"?1.12:0.89),0.45,2.6),s.zoomMsgT=s.t;}'
+  ],
+
+  // ===== Sea Link & bridges visible on Minimap and Big Map =================
+  [
+    'draw bridges on minimap',
+    'qi(D,wl),Ii(D,wl),gi(D,wl),ku.restore()',
+    'qi(D,wl),Ii(D,wl),w6(D,wl),gi(D,wl),ku.restore()'
   ],
 
   ['news crew threshold', 'if(z<=5)continue;', 'if(z<=1)continue;'],

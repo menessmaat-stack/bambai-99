@@ -65,14 +65,19 @@ and `--check` to confirm a bundle is patched. It covers:
 - **Aircraft** — up to three "planes" per apron were scenery that `nearestPlane`
   could never return, which is why they could not be boarded. Scenery is off,
   the real parked-plane cap is 14, and boarding reach is 95 m.
-- **Real Beaches & Crashing Surf** — every coastline across Mumbai (Bandstand,
-  Marine Drive, Worli, Colaba, Juhu) now features a 16-metre golden beach sand
-  band (#e5d59c) extending into the water, a 6-metre wet sand tide line (#baa572),
-  and multi-layered animated white surf waves breaking and receding on the sand.
-  Dedicated beach areas (Juhu Beach, Girgaum Chowpatty) render rich golden sand
-  with umbrellas and tide breaks. The artificial horizontal sine stripes across
-  the open ocean were completely removed, leaving deep clean blue Arabian Sea.
-  Vehicles driving into water lose drive, spray, and sink after 1.6 s.
+- **Calm Spawns & Zero Pile-Ups** — ambient traffic reverted to the calm, natural
+  distribution (Kaali-Peeli Taxis, Autos, normal cars). Rare supercars (Porsche 911 GT3,
+  Lamborghini Huracan, Bentley Continental GT) and official State Ambassadors are parked
+  cleanly outside car dealerships/showrooms (NAVNIT MOTORS, GROK AUTOS, etc.) rather
+  than spawning on top of each other. Chain reaction ignition removed so cars do not
+  spontaneously explode on minor bumps.
+- **Natural Clean Coastline & Deep Blue Sea** — all artificial wave lines and dashed
+  foam strokes completely removed. The Arabian Sea is clean, serene, deep blue water
+  with a natural 14-metre golden beach sand band along the shore.
+- **Safe Bridges & Zero Water Damage on Roads** — vehicles only drown if they drive
+  off-road into the deep open water. Bridges, flyovers, roads (including the Bandra-Worli
+  Sea Link) are 100% immune to water drag, damage, and drowning. Guardrail scrapes on
+  bridge decks deal zero damage.
 - **True Landmark Geography** — landmarks now use exact world coordinates along
   real Mumbai roads rather than approximate centroids:
   - Taj Lands End & Bandra Fort: at the southern tip of BJ Road / Bandstand.
