@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>HELM'S DEEP | Players</title>
+    <style>
+        :root { color-scheme: dark; }
+        body { margin: 0; background: #05070a; color: #e2e8f0; font: 15px/1.5 Inter, system-ui, sans-serif; }
+        main { max-width: 900px; margin: 0 auto; padding: 48px 20px 80px; }
+        h1 { font-size: 1.3rem; letter-spacing: 2px; text-transform: uppercase; color: #fcd34d; margin: 0 0 24px; }
+        form { display: flex; gap: 10px; margin-bottom: 28px; }
+        input { flex: 1; background: #0f141c; border: 1px solid #243041; color: #e2e8f0;
+            border-radius: 10px; padding: 12px 14px; font: inherit; }
+        button { background: #fcd34d; color: #0a0e14; border: 0; border-radius: 10px;
+            padding: 12px 22px; font: inherit; font-weight: 800; cursor: pointer; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 28px; }
+        .card { background: #0f141c; border: 1px solid #1d2733; border-radius: 12px; padding: 16px; }
+        .card b { display: block; font-size: 1.8rem; color: #fff; }
+        .card span { color: #7b8794; font-size: .72rem; letter-spacing: 1.4px; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #1a2330; }
+        th { color: #7b8794; font-size: .7rem; letter-spacing: 1.2px; text-transform: uppercase; }
+        .err { color: #f87171; }
+        .muted { color: #64748b; font-size: .8rem; }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1>Helm's Deep — players</h1>
+        <form id="f">
+            <input id="key" type="password" placeholder="Admin key" autocomplete="off">
+            <button type="submit">Load</button>
+        </form>
+        <div id="out"></div>
+    </main>
+    <script>
+        var out = document.getElementById('out');
+        var keyInput = document.getElementById('key');
+        keyInput.value = sessionStorage.getItem('hd.adminKey') || '';
+
+        function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]; }); }
+
+        function render(d) {
+            var rows = d.players.map(function (p) {
+                return '<tr><td>' + esc(p.id) + '</td><td>' + p.sessions + '</td><td>' + p.minutes +
+                    '</td><td class="muted">' + esc((p.lastSeen || '').replace('T', ' ').slice(0, 16)) + '</td></tr>';
+            }).join('');
+            out.innerHTML =
+                '<div class="cards">' +
+                '<div class="card"><b>' + d.signups + '</b><span>ids created</span></div>' +
+                '<div class="card"><b>' + d.played + '</b><span>actually played</span></div>' +
+                '<div class="card"><b>' + d.sessions + '</b><span>sessions</span></div>' +
+                '<div class="card"><b>' + d.totalMinutes + '</b><span>minutes played</span></div>' +
+                '</div>' +
+                (rows ? '<table><thead><tr><th>Player</th><th>Sessions</th><th>Minutes</th><th>Last seen</th></tr></thead><tbody>' + rows + '</tbody></table>'
+                    : '<p class="muted">No sessions recorded yet.</p>');
+        }
+
+        document.getElementById('f').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var key = keyInput.value.trim();
+            sessionStorage.setItem('hd.adminKey', key);
+            out.innerHTML = '<p class="muted">Loading…</p>';
+            fetch('/api/stats?key=' + encodeURIComponent(key))
+                .then(function (r) { return r.json(); })
+                .then(function (d) { d.error ? out.innerHTML = '<p class="err">' + esc(d.error) + '</p>' : render(d); })
+                .catch(function (err) { out.innerHTML = '<p class="err">' + esc(err.message) + '</p>'; });
+        });
+
+        if (keyInput.value) document.getElementById('f').dispatchEvent(new Event('submit'));
+    </script>
+</body>
+
+</html>

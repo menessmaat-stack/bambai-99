@@ -164,18 +164,29 @@
         </div>
 
         <form id="loginForm" class="space-y-4">
-          <!-- Callsign / Alias -->
+          <!-- Player id + PIN. Login is mandatory: it is how play time is counted. -->
           <div>
             <label for="playerAlias" class="block text-xs font-chakra font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Operator Callsign
+              Player ID
             </label>
             <div class="relative">
-              <input type="text" id="playerAlias" value="Rider_01" required maxlength="16"
+              <input type="text" id="playerAlias" required maxlength="16" autocomplete="username"
+                     placeholder="rider_01" pattern="[A-Za-z0-9_]{3,16}"
                      class="w-full bg-slate-900/90 border border-slate-700 focus:border-mumbai-taxi focus:ring-1 focus:ring-mumbai-taxi rounded-xl px-4 py-3 text-sm font-chakra font-bold text-white placeholder-slate-500 transition-colors outline-none">
               <div class="absolute right-3.5 top-3.5 text-xs font-arcade text-mumbai-taxi">
                 HD
               </div>
             </div>
+            <p class="text-[11px] text-slate-500 font-chakra mt-1">3-16 characters: letters, numbers, underscore.</p>
+          </div>
+
+          <div>
+            <label for="playerPin" class="block text-xs font-chakra font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              PIN
+            </label>
+            <input type="password" id="playerPin" required minlength="4" maxlength="32" autocomplete="current-password"
+                   placeholder="••••"
+                   class="w-full bg-slate-900/90 border border-slate-700 focus:border-mumbai-taxi focus:ring-1 focus:ring-mumbai-taxi rounded-xl px-4 py-3 text-sm font-chakra font-bold text-white placeholder-slate-500 transition-colors outline-none">
           </div>
 
           <!-- District Spawn Selector (Moves real map camera!) -->
@@ -200,11 +211,13 @@
             <span class="text-xs">▶</span>
           </button>
 
-          <!-- Quick Guest Start -->
+          <!-- Second action: make the id instead of signing into it -->
           <button type="button" id="quickPlayBtn"
                   class="w-full py-2.5 px-4 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs font-chakra font-bold text-slate-300 hover:text-white transition-all flex items-center justify-center gap-1.5">
-            <span>⚡ Quick Guest Launch</span>
+            <span>＋ Create this ID</span>
           </button>
+
+          <p id="authMsg" class="text-[11px] font-chakra text-slate-400 min-h-[1rem] text-center"></p>
         </form>
 
         <div class="mt-5 pt-3 border-t border-slate-900 flex items-center justify-between text-[11px] font-chakra text-slate-500">
@@ -370,14 +383,56 @@
       }
     });
 
-    // --- 3. TRANSITION EFFECT & GAME START ---
+    // --- 3. LOGIN, THEN LAUNCH ---
+    // Playing requires an id. It is the only way to know how many people played
+    // and for how long; /play bounces anyone without a token straight back here.
+    const AUTH_KEY = 'helmsdeep.auth';
     const landingView = document.getElementById('landingView');
     const flashOverlay = document.getElementById('flashOverlay');
     const loginForm = document.getElementById('loginForm');
     const quickPlayBtn = document.getElementById('quickPlayBtn');
     const playerAliasInput = document.getElementById('playerAlias');
+    const playerPinInput = document.getElementById('playerPin');
+    const authMsg = document.getElementById('authMsg');
+    const startBtn = document.getElementById('startBtn');
 
-    function launchHelmsDeep(alias) {
+    function savedAuth() {
+      try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (err) { return null; }
+    }
+
+    // A returning player keeps their id in the field and skips the PIN.
+    const known = savedAuth();
+    if (known && known.id) {
+      playerAliasInput.value = known.id;
+      playerPinInput.required = false;
+      authMsg.textContent = 'Signed in as ' + known.id + '. Press start.';
+    }
+
+    function say(text, bad) {
+      authMsg.textContent = text;
+      authMsg.className = 'text-[11px] font-chakra min-h-[1rem] text-center ' +
+        (bad ? 'text-red-400' : 'text-slate-400');
+    }
+
+    async function authenticate(mode) {
+      var id = playerAliasInput.value.trim().toLowerCase();
+      var pin = playerPinInput.value;
+      var current = savedAuth();
+      if (current && current.id === id && mode === 'login' && !pin) return current;
+
+      var res = await fetch('/api/account', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ mode: mode, id: id, pin: pin })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sign in failed');
+      var auth = { id: data.id, token: data.token };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+      return auth;
+    }
+
+    function launchHelmsDeep() {
       getAudioContext();
       playStartTransitionSound();
 
@@ -396,25 +451,33 @@
       loginCard.style.transform = 'scale(0.85)';
       loginCard.style.opacity = '0';
 
-      // Hand off to the real game: /play is the OpenStreetMap-baked Mumbai
-      // build. The district rides along in the URL so the game menu opens on
-      // the same spawn point that was picked here.
-      try {
-        localStorage.setItem('helmsdeep.alias', alias || 'Rider_01');
-      } catch (err) { /* private mode: not worth failing a launch over */ }
-
       setTimeout(function () {
         window.location.href = '/play?spawn=' + encodeURIComponent(selected);
       }, 450);
     }
 
+    async function run(mode, label) {
+      startBtn.disabled = true;
+      quickPlayBtn.disabled = true;
+      say(label);
+      try {
+        await authenticate(mode);
+        launchHelmsDeep();
+      } catch (err) {
+        say(err.message, true);
+        startBtn.disabled = false;
+        quickPlayBtn.disabled = false;
+      }
+    }
+
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      launchHelmsDeep(playerAliasInput.value.trim());
+      run('login', 'Checking id…');
     });
 
     quickPlayBtn.addEventListener('click', () => {
-      launchHelmsDeep('Guest_Rider');
+      if (!loginForm.reportValidity()) return;
+      run('signup', 'Creating id…');
     });
 
   </script>
