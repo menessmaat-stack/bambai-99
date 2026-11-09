@@ -637,6 +637,27 @@ const EDITS = [
     'f.font="bold 12px system-ui",f.textAlign="center",f.fillStyle="#fcd34d",' +
     'f.fillText("GATEWAY OF INDIA",0,32),f.restore();}}' +
     // 2. ANTILIA (Altamount Road): 27-storey architectural skyscraper (88x80px) with cantilevers, hanging gardens & 3 helipads
+    // --- CRESCENT SOLITAIRE (Sakinaka Tele Exchange Lane - User Office Building) ---
+    '{let csx=-13150,csy=-15300,csDist=Math.hypot(csx-s.cam.x,csy-s.cam.y);' +
+    'if(csDist<$/2+300){f.save(),f.translate(csx,csy);' +
+    // 3D Drop Shadow
+    'f.fillStyle="rgba(0,0,0,0.45)",f.fillRect(-44,-30,94,70);' +
+    // Ground podium & parking plaza
+    'f.fillStyle="#1e293b",f.fillRect(-48,-34,96,68);' +
+    // Commercial glass facade with cyan windows
+    'f.fillStyle="#0284c7",f.fillRect(-44,-30,88,60);' +
+    'f.fillStyle="#38bdf8",f.fillRect(-40,-26,80,24);' +
+    // White architectural window mullion grid
+    'f.strokeStyle="rgba(255,255,255,0.7)",f.lineWidth=1;' +
+    'for(let wx=-36;wx<=36;wx+=12)f.strokeRect(wx,-26,8,24);' +
+    // Executive rooftop terrace & solar array
+    'f.fillStyle="#1e3a8a",f.fillRect(-36,4,32,18);' +
+    'f.fillStyle="#15803d",f.fillRect(6,4,30,18);' +
+    // Crescent Solitaire Signage
+    'f.fillStyle="rgba(10,15,26,0.92)",f.fillRect(-54,38,108,20);' +
+    'f.strokeStyle="#38bdf8",f.lineWidth=1,f.strokeRect(-54,38,108,20);' +
+    'f.font="bold 10px system-ui",f.fillStyle="#fde047",f.textAlign="center",f.textBaseline="middle",f.fillText("CRESCENT SOLITAIRE",0,48);' +
+    'f.restore();}}' +
     '{let ax=-64800,ay=86000,aDist=Math.hypot(ax-s.cam.x,ay-s.cam.y);' +
     'if(aDist<$/2+400){f.save(),f.translate(ax,ay);' +
     // Massive 25m drop shadow
@@ -997,18 +1018,19 @@ const EDITS = [
     // Outer parapet wall coping rim (framed recessed roof surface)
     '' +
     'let arch=Math.floor(D*100)%5;' +
-    'if(arch===0||q.kind==="office"){' +
-    // 1. Pyramidal Glass Atrium / Skylight (Commercial & Office Towers)
-    'let sW=Math.min(rRad*0.42,10*G);' +
-    'o.fillStyle="#38bdf8",o.beginPath(),o.moveTo(rcx-sW,rcy+sW),o.lineTo(rcx,rcy),o.lineTo(rcx-sW,rcy-sW),o.closePath(),o.fill();' +
-    'o.fillStyle="#0284c7",o.beginPath(),o.moveTo(rcx+sW,rcy-sW),o.lineTo(rcx,rcy),o.lineTo(rcx+sW,rcy+sW),o.closePath(),o.fill();' +
-    'o.strokeStyle="rgba(255,255,255,0.75)",o.lineWidth=Math.max(0.5*G,Q),o.beginPath(),o.moveTo(rcx-sW*0.7,rcy-sW*0.7),o.lineTo(rcx+sW*0.7,rcy+sW*0.7),o.stroke();}' +
-    'else if(arch===1||q.kind==="house"){' +
-    // 2. Hipped Gabled Terracotta Tile Roof (Residential Bungalows & Houses)
-    'let sW=rRad*0.65;' +
-    'o.fillStyle="#b45309",o.beginPath(),o.moveTo(rcx-sW,rcy-sW),o.lineTo(rcx+sW,rcy-sW),o.lineTo(rcx,rcy),o.closePath(),o.fill();' +
-    'o.fillStyle="#78350f",o.beginPath(),o.moveTo(rcx-sW,rcy+sW),o.lineTo(rcx+sW,rcy+sW),o.lineTo(rcx,rcy),o.closePath(),o.fill();' +
-    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.6*G,Q),o.beginPath(),o.moveTo(rcx-sW,rcy-sW),o.lineTo(rcx+sW,rcy+sW),o.moveTo(rcx+sW,rcy-sW),o.lineTo(rcx-sW,rcy+sW),o.stroke();}' +
+    'let seed=Math.floor(D*1000)%16;' +
+    'if(seed<10){' +
+    // 60% of buildings: Clean flush architectural roof deck with subtle recessed tone (ZERO BUTTERFLIES!)
+    'o.fillStyle="rgba(0,0,0,0.06)",o.fillRect(rcx-rRad*0.6,rcy-rRad*0.6,rRad*1.2,rRad*1.2);}' +
+    'else if(seed===10||seed===11){' +
+    // Dark navy solar panel array
+    'let pW=Math.min(rRad*0.6,8*G);o.fillStyle="#1e3a8a",o.fillRect(rcx-pW,rcy-pW*0.5,pW*2,pW);' +
+    'o.strokeStyle="#94a3b8",o.lineWidth=Math.max(0.3*G,0.5*Q),o.strokeRect(rcx-pW,rcy-pW*0.5,pW*2,pW);}' +
+    'else if(seed===12||seed===13){' +
+    // Clean terracotta roof with single horizontal ridge beam (NO ORANGE X!)
+    'o.fillStyle="#991b1b",o.beginPath(),o.moveTo(rcx-rRad*0.6,rcy-rRad*0.6),o.lineTo(rcx+rRad*0.6,rcy-rRad*0.6),o.lineTo(rcx,rcy),o.closePath(),o.fill();' +
+    'o.fillStyle="#78350f",o.beginPath(),o.moveTo(rcx-rRad*0.6,rcy+rRad*0.6),o.lineTo(rcx+rRad*0.6,rcy+rRad*0.6),o.lineTo(rcx,rcy),o.closePath(),o.fill();' +
+    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.4*G,Q),o.beginPath(),o.moveTo(rcx-rRad*0.6,rcy),o.lineTo(rcx+rRad*0.6,rcy),o.stroke();}' +
     'else if(arch===2){' +
     // 3. Photovoltaic Solar Panel Array Grid (Modern Green Offices)
     'let pW=Math.min(rRad*0.5,9*G);' +
@@ -1260,6 +1282,38 @@ const EDITS = [
     'e.fillStyle="#f8fafc",e.textAlign="center",e.textBaseline="middle",e.fillText(txt,0,sW/2+4*G+8);}' +
     'e.restore();return;}' +
     'let E=(l?14:32)*G,Q=(l?14:10)*G;'
+  ],
+  // ===== 25. Elevated Metro Station Blue Canopy in T6 (Saki Naka Image #2) =====
+  [
+    'metro station blue canopy in t6',
+    'if(q.kind==="transport"||!!(q.name&&/metro|monorail|skywalk|flyover/i.test(q.name))||y(q.r)&&q.r>18*G&&cu(e,q.cx,q.cy)){let Ge=14*G,_e=Ge*0.28,Xe=Ge*0.42;if(o.fillStyle="rgba(0,0,0,0.28)",Pn(o,q.pts,_e*0.15,Xe*0.15))o.fill();if(o.fillStyle=n.night?"#3a3f46":"#5a6168",Pn(o,q.pts,_e,Xe))o.fill();o.strokeStyle="rgba(20,22,26,0.55)",o.lineWidth=Math.max(0.2*G,Q),o.stroke();continue}',
+    'if(q.kind==="transport"||!!(q.name&&/metro|monorail|station|saki/i.test(q.name))||y(q.r)&&q.r>18*G&&cu(e,q.cx,q.cy)){let Ge=16*G,_e=Ge*0.28,Xe=Ge*0.42;' +
+    'if(o.fillStyle="rgba(0,0,0,0.5)",Pn(o,q.pts,_e*0.6,Xe*0.6))o.fill();' +
+    'if(o.fillStyle="#334155",Pn(o,q.pts,_e*0.85,Xe*0.85))o.fill();' +
+    // BLUE METALLIC VAULTED CANOPY (Reference Image #2)
+    'if(o.fillStyle="#0284c7",Pn(o,q.pts,_e,Xe))o.fill();' +
+    // Central translucent cyan glass skylight (Reference Image #2)
+    'if(o.fillStyle="#38bdf8",Pn(o,q.pts,_e+1.8*G,Xe+2.6*G))o.fill();' +
+    'o.strokeStyle="rgba(255,255,255,0.75)",o.lineWidth=Math.max(0.4*G,Q),o.stroke();' +
+    'let stN=(q.name||"METRO").toUpperCase();' +
+    'o.font=`bold ${Math.max(10*Q,9*G)}px system-ui`,o.fillStyle="#f8fafc",o.textAlign="center",o.textBaseline="middle",o.fillText(stN,q.cx+_e,q.cy+Xe);' +
+    'continue}'
+  ],
+
+  // ===== 26. Bazooka One-Hit Kill for VIP Assassination Targets =====
+  [
+    'bazooka vip lethal explosion',
+    'J.hp-=420*(1-Z/$);let K=260*(1-Z/$),g=Math.hypot(J.x-t,J.y-v)||1;',
+    'let dmgMult=J.hdVip?3400:1400;J.hp-=dmgMult*(1-Z/$);if(J.hdVip&&Z<60)J.hp=0;if(J.hp<=0&&!J.dead)J.dead=!0;let K=260*(1-Z/$),g=Math.hypot(J.x-t,J.y-v)||1;'
+  ],
+
+  // ===== 27. Docked Target HUD Capsule (Zero Overlap with Health Card!) =====
+  [
+    'docked target hud capsule',
+    'f.fillRect(14,182,230,24),f.fillStyle="#b99cff",f.font="bold 10px system-ui",f.fillText("PIN",24,194),f.fillStyle="#e8e4da",f.font="10px system-ui",f.fillText(`${C.name} — ${R.toFixed(1)} km`,48,194)',
+    '(()=>{let capY=v-54;f.fillStyle="rgba(11,16,27,0.92)",f.fillRect(16,capY,320,28),f.strokeStyle="#a855f7",f.lineWidth=1.5,f.strokeRect(16,capY,320,28),' +
+    'f.font="bold 11px system-ui",f.fillStyle="#fde047",f.textAlign="left",f.fillText("🎯 TARGET: "+C.name,26,capY+18),' +
+    'f.font="bold 11px system-ui",f.fillStyle="#ffffff",f.textAlign="right",f.fillText(R.toFixed(1)+" km",324,capY+18),f.textAlign="left"})()'
   ],
 ];
 
