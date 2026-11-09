@@ -1093,7 +1093,7 @@ const EDITS = [
     'if(o.fillStyle=D,Pn(o,B.pts,Be,Qe))o.fill();if(E*G>=tn.detail)o.strokeStyle="rgba(0,0,0,0.28)",o.lineWidth=Math.max(0.08*G,0.7*Q),o.stroke();' +
     'if(B.r*E>8){let cx=B.cx+Be,cy=B.cy+Qe,br=B.r*0.65,seed=Math.floor(O*1000)%16;' +
     // Perimeter parapet wall frame
-    'o.strokeStyle="rgba(15,23,42,0.35)",o.lineWidth=Math.max(0.5*G,Q),o.strokeRect(cx-br,cy-br,br*2,br*2);' +
+    '' +
     'if(seed<8){' +
     // 50% of buildings: Clean architectural roof deck with offset elevator/stairway penthouse
     'let pw=br*0.35,ph=br*0.25,ox=(seed%3-1)*br*0.4,oy=(Math.floor(seed/3)-1)*br*0.4;' +
@@ -1226,6 +1226,40 @@ const EDITS = [
     'f.moveTo(tx,ty-30),f.lineTo(tx,ty-10),f.moveTo(tx,ty+10),f.lineTo(tx,ty+30),f.stroke();' +
     'f.fillStyle="#ff2222",f.beginPath(),f.arc(tx,ty,2.5,0,Math.PI*2),f.fill();}' +
     '}else if(k.onFoot&&Q.current==="play")if(s.ride>=0)f.fillStyle="rgba(255,235,170,0.96)"'
+  ],
+  // ===== 24. Elevated Metro Station Vaulted Barrel Canopy (Image #3) =====
+  [
+    'elevated metro station canopy',
+    'function Y6(e,n,u,r,l,o,i){if(!y(n)||!y(u))return;let E=(l?14:32)*G,Q=(l?14:10)*G;',
+    'function Y6(e,n,u,r,l,o,i){if(!y(n)||!y(u))return;' +
+    'if(l){' +
+    // Elevated Metro Station: 54G long vaulted barrel canopy matching Image #3
+    'let sL=54*G,sW=22*G;e.save(),e.translate(n,u);' +
+    // 3D viaduct drop shadow
+    'e.fillStyle="rgba(0,0,0,0.5)",e.fillRect(-sL/2+6*G,-sW/2+10*G,sL,sW);' +
+    // Platform concourse deck & edge lights
+    'e.fillStyle="#475569",e.fillRect(-sL/2,-sW/2,sL,sW);' +
+    'e.fillStyle="#fde047",e.fillRect(-sL/2+2*G,-sW/2+1,sL-4*G,1.2),e.fillRect(-sL/2+2*G,sW/2-2.2,sL-4*G,1.2);' +
+    // Vaulted metallic curved barrel roof canopy (silver-grey gradient)
+    'let gr=e.createLinearGradient(0,-sW/2,0,sW/2);gr.addColorStop(0,"#cbd5e1"),gr.addColorStop(0.5,"#f1f5f9"),gr.addColorStop(1,"#94a3b8");' +
+    'e.fillStyle=gr,e.beginPath(),e.roundRect(-sL/2-2*G,-sW/2-1.5*G,sL+4*G,sW+3*G,5*G),e.fill();' +
+    'e.strokeStyle="#334155",e.lineWidth=Math.max(0.6*G,1.2*o),e.stroke();' +
+    // Arched segmental roof ribs
+    'e.strokeStyle="rgba(100,116,139,0.5)",e.lineWidth=Math.max(0.4*G,0.8*o);' +
+    'for(let rx=-sL/2+4*G;rx<sL/2;rx+=7*G){e.beginPath(),e.moveTo(rx,-sW/2-1.5*G),e.lineTo(rx,sW/2+1.5*G),e.stroke();}' +
+    // Central translucent cyan glass skylight strip
+    'let skyL=sL*0.52,skyW=sW*0.42;e.fillStyle="#38bdf8",e.beginPath(),e.roundRect(-skyL/2,-skyW/2,skyL,skyW,3*G),e.fill();' +
+    'e.strokeStyle="rgba(255,255,255,0.85)",e.lineWidth=Math.max(0.4*G,0.8*o),e.stroke();' +
+    'e.beginPath(),e.moveTo(-skyL/2+2,0),e.lineTo(skyL/2-2,0),e.stroke();' +
+    // Station Name Badge
+    'if(i>=tn.stationLabels*0.5&&r){' +
+    'let txt=r.replace(/metro/i,"").trim()+" METRO";e.font=`bold ${Math.max(9*o,7.5*G)}px system-ui`;' +
+    'let tw=e.measureText(txt).width;' +
+    'e.fillStyle="rgba(10,15,26,0.9)",e.fillRect(-tw/2-6,sW/2+4*G,tw+12,16);' +
+    'e.strokeStyle="#38bdf8",e.lineWidth=1,e.strokeRect(-tw/2-6,sW/2+4*G,tw+12,16);' +
+    'e.fillStyle="#f8fafc",e.textAlign="center",e.textBaseline="middle",e.fillText(txt,0,sW/2+4*G+8);}' +
+    'e.restore();return;}' +
+    'let E=(l?14:32)*G,Q=(l?14:10)*G;'
   ],
 ];
 
