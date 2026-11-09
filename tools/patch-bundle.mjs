@@ -80,7 +80,19 @@ const EDITS = [
   [
     'traffic weights',
     'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,12,12,12,14,',
-    'var Yi=[0,0,1,2,5,7,8,9,28,28,26,26,12,12,12,12,12,12,54,54,54,14,'
+    'var Yi=[' +
+    // Kaali-peeli taxis & civilian
+    '0,0,0,1,1,2,13,14,16,17,' +
+    // Public service: Fire Engine & Garbage Truck (Image #2) + School bus
+    '18,18,19,19,39,' +
+    // Vintage Fleet (Image #6: Roadster, Convertible, Cabriolet, Sidecar, Vespa, Cadillac, Gangster Coupe, Muscle)
+    '22,22,23,23,24,25,26,26,27,28,29,29,' +
+    // Supercars & Luxury (Porsche 911 GT3, Huracan, Aventador, Taycan, Ferrari, Bentley)
+    '56,56,57,57,58,59,9,84,85,86,' +
+    // State Ambassador with Flashing Red VIP Beacon
+    '89,89,' +
+    // 4 Gang Fleets (Image #7: Spiked Skull Car, Gun Truck, Dragon Supercar, Dragon SUV, Cyber Snake, Militia Truck)
+    '60,61,62,63,64,65,66,67,'
   ],
 
   // ===== audio: the SFX bus was 8-15x quieter than the music ===============
@@ -534,7 +546,29 @@ const EDITS = [
     'e.fillStyle="#e01f1f",a(e,n*0.465,u/2-2,n*0.07,4,1.3),e.fill();' +
     'e.fillStyle="rgba(255,120,120,0.45)",e.beginPath(),' +
     'e.arc(n*0.5,u/2,4.2,0,Math.PI*2),e.fill();' +
-    'e.fillStyle="#1b2a4a",e.fillRect(n*0.08,u/2-0.7,n*0.1,1.4)}}];'
+    'e.fillStyle="#1b2a4a",e.fillRect(n*0.08,u/2-0.7,n*0.1,1.4)}},' +
+    '{name:"Alibaug Ferry",l:88,w:32,power:580,top:240,gripF:6,gripR:5,steer:0.38,' +
+    'wheelbase:44,mass:5.5,boat:!0,fixedPal:1,sprite:(e,n,u)=>{' +
+    'e.fillStyle="#0f3868",a(e,0,0,n,u,6),e.fill();' +
+    'e.fillStyle="#ffffff",a(e,n*0.1,2.5,n*0.78,u-5,4),e.fill();' +
+    'e.fillStyle="#1e5ca8",a(e,n*0.22,5,n*0.52,u-10,3),e.fill();' +
+    'e.fillStyle="#bfe4ff";for(let pi=0;pi<7;pi++){e.fillRect(n*0.25+pi*8,3,5,2);e.fillRect(n*0.25+pi*8,u-5,5,2)}' +
+    'e.fillStyle="#ff9933",e.fillRect(2,u/2-2,5,1.3);' +
+    'e.fillStyle="#ffffff",e.fillRect(2,u/2-0.7,5,1.4);' +
+    'e.fillStyle="#128807",e.fillRect(2,u/2+0.7,5,1.3)}},' +
+    '{name:"Speedboat",l:42,w:18,power:960,top:520,gripF:9.8,gripR:8.4,steer:0.76,' +
+    'wheelbase:22,mass:0.75,boat:!0,nos:!0,fixedPal:0,sprite:(e,n,u)=>{' +
+    'e.fillStyle="#dc2626",e.beginPath(),e.moveTo(n,u/2),e.lineTo(n*0.4,0),e.lineTo(0,1.5),e.lineTo(0,u-1.5),e.lineTo(n*0.4,u),e.closePath(),e.fill();' +
+    'e.fillStyle="#ffffff",e.fillRect(n*0.18,3.5,n*0.45,u-7);' +
+    'e.fillStyle="#38bdf8",e.fillRect(n*0.5,3.5,4,u-7);' +
+    'e.fillStyle="#1e293b",e.fillRect(-3,2,4,3.5),e.fillRect(-3,u-5.5,4,3.5)}},' +
+    '{name:"Police Speedboat",l:44,w:18,power:1020,top:540,gripF:10.2,gripR:8.8,steer:0.78,' +
+    'wheelbase:23,mass:0.8,boat:!0,cop:!0,siren:1,nos:!0,fixedPal:1,sprite:(e,n,u)=>{' +
+    'e.fillStyle="#1e3a8a",e.beginPath(),e.moveTo(n,u/2),e.lineTo(n*0.4,0),e.lineTo(0,1.5),e.lineTo(0,u-1.5),e.lineTo(n*0.4,u),e.closePath(),e.fill();' +
+    'e.fillStyle="#f8fafc",e.fillRect(n*0.18,3.5,n*0.45,u-7);' +
+    'e.fillStyle="#ef4444",a(e,n*0.35,u/2-3.5,5,3.5,1),e.fill();' +
+    'e.fillStyle="#3b82f6",a(e,n*0.35,u/2,5,3.5,1),e.fill();' +
+    'e.fillStyle="#0ea5e9",e.fillRect(n*0.52,3.5,4,u-7)}}];'
   ],
   [
     'vip systems and the water',
@@ -561,14 +595,14 @@ const EDITS = [
     's.cars.push({x:-51500,y:120500,h:0,vx:0,vy:0,w:0,steer:0,type:43,pal:0,seed:0.1,hp:1600,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
     's.cars.push({x:-51650,y:120600,h:0,vx:0,vy:0,w:0,steer:0,type:44,pal:0,seed:0.2,hp:500,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
     's.cars.push({x:-26000,y:-3000,h:0,vx:0,vy:0,w:0,steer:0,type:43,pal:0,seed:0.3,hp:1600,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
-    's.planes.push({x:-26200,y:-2900,h:0,speed:0,alt:0,mode:"stand",livery:0,turn:0,hx:-26200,hy:-2900,rwy:-1,kind:"jet",spin:0});}}' +
+    's.planes.push({x:-26200,y:-2900,h:0,speed:0,alt:0,mode:"stand",livery:0,turn:0,hx:-26200,hy:-2900,rwy:-1,kind:"jet",spin:0});s.cars.push({x:-45200,y:116900,h:-0.4,vx:50,vy:-20,w:0,steer:0,type:90,pal:1,seed:0.1,hp:2000,player:!1,ai:"traffic",speed:100,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdBoat:1});s.cars.push({x:-45450,y:116600,h:1.2,vx:0,vy:0,w:0,steer:0,type:91,pal:0,seed:0.2,hp:300,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdBoat:1});s.cars.push({x:-44600,y:117600,h:1.5,vx:70,vy:70,w:0,steer:0,type:92,pal:1,seed:0.3,hp:450,player:!1,ai:"cop",speed:150,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:1,rider:null,hdBoat:1,patrol:!0});s.cars.push({x:-64850,y:92150,h:-1.5,vx:0,vy:0,w:0,steer:0,type:91,pal:0,seed:0.4,hp:300,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdBoat:1});}}' +
     'function $9(t){hdVip(t);for(let z of s.cars){if(z.dead){' +
     'if(z.hdVip&&!z.hdPaid)z.hdPaid=1,s.player.cash+=250000,s.player.score+=4000,' +
     's.stars=5,s.chasePeak=5,s.seenAgo=0,Zn(6,!0),' +
     'le("VIP DOWN — ₹2,50,000 wired. Police units responding!");' +
     'z.wreckT+=t;continue}' +
     // Drowning: ONLY when in actual deep water (NOT on bridges, NOT on any road, NOT on land!)
-    'if(!nl(z.x,z.y)&&!z.deck&&X9(z.x,z.y)===null&&!cu(D,z.x,z.y)&&!(Du(D,z.x,z.y,T(22))?.dist<=T(22))){z.hdW=(z.hdW??0)+t,z.speed=0,' +
+    'if(!nl(z.x,z.y)&&!z.deck&&X9(z.x,z.y)===null&&!cu(D,z.x,z.y)&&!(Du(D,z.x,z.y,T(22))?.dist<=T(22))&&!Ie(z.type).boat){z.hdW=(z.hdW??0)+t,z.speed=0,' +
     'z.vx*=Math.max(0,1-3*t),z.vy*=Math.max(0,1-3*t);' +
     'if(Math.random()<t*16)s.parts.push({x:z.x+(Math.random()-0.5)*18,' +
     'y:z.y+(Math.random()-0.5)*14,vx:(Math.random()-0.5)*40,vy:-25-Math.random()*35,' +
@@ -599,23 +633,43 @@ const EDITS = [
     'f.fillStyle="#1c1914",f.fillRect(-10,-8,20,16);' +
     'f.font="bold 12px system-ui",f.textAlign="center",f.fillStyle="#fcd34d",' +
     'f.fillText("GATEWAY OF INDIA",0,32),f.restore();}}' +
-    // 2. ANTILIA (Altamount Road): 27-storey asymmetric skyscraper with cantilevers & green hanging gardens
+    // 2. ANTILIA (Altamount Road): 27-storey architectural skyscraper (88x80px) with cantilevers, hanging gardens & 3 helipads
     '{let ax=-64800,ay=86000,aDist=Math.hypot(ax-s.cam.x,ay-s.cam.y);' +
-    'if(aDist<$/2+300){f.save(),f.translate(ax,ay);' +
-    // Tower shadow
-    'f.fillStyle="rgba(0,0,0,0.35)",f.fillRect(-22,-22,54,54);' +
-    // Lower tier
-    'f.fillStyle="#2d3748",f.fillRect(-24,-24,48,48);' +
-    // Cantilevered hanging garden levels (lush green foliage terraces)
-    'f.fillStyle="#2f855a",f.fillRect(-32,-14,20,28),f.fillRect(12,2,22,22);' +
-    // Reflective tinted blue glass facades
-    'f.fillStyle="#3182ce",f.fillRect(-18,-18,36,36);' +
-    'f.fillStyle="#63b3ed",f.fillRect(-14,-14,28,14);' +
-    // 3 rooftop helipads with glowing lights & "H" marking
-    'f.fillStyle="#1a202c",f.fillRect(-16,-8,32,16);' +
-    'f.strokeStyle="#e53e3e",f.lineWidth=1.5,f.strokeRect(-16,-8,32,16);' +
-    'f.fillStyle="#fff",f.font="bold 8px system-ui",f.textAlign="center",f.fillText("H",0,2);' +
-    'f.font="bold 12px system-ui",f.fillStyle="#fcd34d",f.fillText("ANTILIA — MUKESH AMBANI",0,34);' +
+    'if(aDist<$/2+400){f.save(),f.translate(ax,ay);' +
+    // Massive 25m drop shadow
+    'f.fillStyle="rgba(0,0,0,0.48)",f.fillRect(-36,-30,94,88);' +
+    // Ground & Podium Levels (Floors 1-6): Dark granite parking & ballroom base
+    'f.fillStyle="#1e293b",f.fillRect(-42,-36,84,76);' +
+    // Architectural vertical louvers on podium
+    'f.fillStyle="#475569";for(let li=-38;li<=36;li+=6)f.fillRect(li,-34,2,72);' +
+    // Lower Cantilever Block: Projects 14px to the west
+    'f.fillStyle="#334155",f.fillRect(-48,-24,44,52);' +
+    // Upper Cantilever Block: Projects 14px to the east
+    'f.fillStyle="#1e293b",f.fillRect(4,-28,42,48);' +
+    // Exposed structural W and X steel truss bracing
+    'f.strokeStyle="#94a3b8",f.lineWidth=1.5,f.strokeRect(-46,-22,40,48),f.strokeRect(6,-26,38,44);' +
+    // Lush hanging garden terraces (tropical trees & foliage overflowing)
+    'f.fillStyle="#15803d",f.fillRect(-48,-22,12,48),f.fillRect(36,-26,12,44);' +
+    'f.fillStyle="#22c55e",f.fillRect(-46,-18,8,40),f.fillRect(38,-22,8,36);' +
+    // Reflective cyan glass curtain walls
+    'f.fillStyle="#0284c7",f.fillRect(-30,-20,60,40);' +
+    'f.fillStyle="#38bdf8",f.fillRect(-26,-16,52,18);' +
+    // Summit 3-Helipad deck (Floors 25-27)
+    'f.fillStyle="#0f172a",f.fillRect(-24,-16,48,32);' +
+    'f.strokeStyle="#facc15",f.lineWidth=2,f.strokeRect(-24,-16,48,32);' +
+    // Main circular helipad landing zone
+    'f.fillStyle="#1e293b",f.beginPath(),f.arc(0,0,12,0,Math.PI*2),f.fill();' +
+    'f.strokeStyle="#ef4444",f.lineWidth=1.5,f.beginPath(),f.arc(0,0,12,0,Math.PI*2),f.stroke();' +
+    'f.fillStyle="#ffffff",f.font="bold 12px system-ui",f.textAlign="center",f.textBaseline="middle",f.fillText("H",0,0);' +
+    // 4 flashing red aircraft warning obstruction lights on summit corners
+    'let obsStrobe=0.5+0.5*Math.sin(s.t*8);' +
+    'f.fillStyle=`rgba(239,68,68,${0.3+0.7*obsStrobe})`;' +
+    'f.fillRect(-25,-17,4,4),f.fillRect(21,-17,4,4),f.fillRect(-25,13,4,4),f.fillRect(21,13,4,4);' +
+    // Elegant landmark label badge
+    'f.fillStyle="rgba(10,12,16,0.85)",f.fillRect(-64,44,128,24);' +
+    'f.strokeStyle="#facc15",f.lineWidth=1,f.strokeRect(-64,44,128,24);' +
+    'f.font="bold 10px system-ui",f.fillStyle="#fde047",f.textAlign="center",f.textBaseline="alphabetic",f.fillText("ANTILIA • 27 STOREYS",0,56);' +
+    'f.font="bold 8px system-ui",f.fillStyle="#cbd5e1",f.fillText("MUKESH AMBANI RESIDENCE",0,65);' +
     'f.restore();}}' +
     // 3. MANNAT (Bandstand Promenade): Neo-classical white heritage mansion with classical portico
     '{let mx=-55790,my=23185,mDist=Math.hypot(mx-s.cam.x,my-s.cam.y);' +
@@ -694,7 +748,7 @@ const EDITS = [
     'convoy survives the culler',
     'N=Math.hypot($.x-s.player.x,$.y-s.player.y),J=N>v;if($.dead&&$.wreckT>25&&J',
     'N=Math.hypot($.x-s.player.x,$.y-s.player.y),J=N>v;' +
-    'if(($.hdVip||$.hdEscort||$.hdMilitary)&&!$.dead)continue;' +
+    'if(($.hdVip||$.hdEscort||$.hdMilitary||$.hdBoat)&&!$.dead)continue;' +
     'if($.dead&&$.wreckT>25&&J'
   ],
 
@@ -703,7 +757,7 @@ const EDITS = [
   [
     'fo never despawns convoy',
     'if(v===s.player.carIdx){t.rider=null;return}',
-    'if(v===s.player.carIdx||t.hdVip||t.hdEscort||t.hdMilitary){t.rider=null;return}'
+    'if(v===s.player.carIdx||t.hdVip||t.hdEscort||t.hdMilitary||t.hdBoat){t.rider=null;return}'
   ],
 
   // ===== big map zooming + mouse wheel / bracket keys ======================
@@ -804,7 +858,263 @@ const EDITS = [
     '`Delivered — ₹${t.base}. Too slow for the bonus.`):t.kind==="cop"?' +
     '(v?`Scene handled — ₹${t.base} + ₹${z} response bonus.`:`Scene handled — ₹${t.base}. Too slow for the bonus.`):' +
     '(v?`Dropped — ₹${t.base} fare + ₹${z} tip.`:`Dropped — ₹${t.base} fare. Too slow for the tip.`))'
-  ]
+  ],
+  // ===== 1. Bridge 3D Drop Shadow =====
+  [
+    'bridge drop shadow',
+    'if(r.strokeStyle="rgba(0,0,0,0.42)",r.lineWidth=_+2.4*G,an(r,V.pts,Y*0.12,F*0.12))r.stroke();',
+    'if(r.strokeStyle="rgba(0,0,0,0.52)",r.lineWidth=_+Math.max(4*G,8*i),an(r,V.pts,Y+6*G,F+10*G))r.stroke();'
+  ],
+
+  // ===== 2. Bridge Guardrails, Concrete Barriers & Lane Markings (Always Visible at Any Zoom!) =====
+  [
+    'bridge guardrails and lane lines',
+    'if(r.strokeStyle=l.deck,r.lineWidth=Math.max(i*1.2,_),an(r,V.pts,Y,F))r.stroke();if(!E)continue;let B=Math.max(0.15*G,1*i);if(!V.oneway){if(r.strokeStyle=l.mark,r.lineWidth=B,r.setLineDash([3*G,6*G]),an(r,V.pts,Y,F))r.stroke();r.setLineDash([])}',
+    // 1. Thick concrete guardrail crash barriers (fenders) along BOTH edges (wide and bold!):
+    'r.strokeStyle="#cbd5e1";r.lineWidth=_+Math.max(6*G,10*i);if(an(r,V.pts,Y,F))r.stroke();' +
+    // 2. Inner asphalt road deck:
+    'if(r.strokeStyle=l.deck,r.lineWidth=Math.max(i*1.2,_),an(r,V.pts,Y,F))r.stroke();' +
+    // 3. Unconditional lane markings at ALL zoom levels (NO if (!E) gate!):
+    'let B=Math.max(1.4*G,1.8*i);' +
+    'if(!V.oneway){r.strokeStyle="#f59e0b",r.lineWidth=B*1.4;if(an(r,V.pts,Y,F))r.stroke()}' +
+    'else{r.strokeStyle="#f8fafc",r.lineWidth=B,r.setLineDash([5*G,7*G]);if(an(r,V.pts,Y,F))r.stroke();r.setLineDash([])}' +
+    // 4. Reflective white curb shoulder lines along inner concrete barriers:
+    'r.strokeStyle="rgba(255,255,255,0.75)",r.lineWidth=Math.max(0.8*G,i),r.setLineDash([8*G,12*G]);if(an(r,V.pts,Y,F))r.stroke();r.setLineDash([])'
+  ],
+
+  // ===== 3. Bridge Vehicle Fall & Height Physics =====
+  [
+    'bridge vehicle fall and height',
+    'function ai(t){let v=X9(t.x,t.y);if(v===null){t.deck=!1,t.under=!1;return}if(t.deck){t.under=!1;return}let z=Math.abs(Yn(t.h,v)),$=z<Q2||z>Math.PI-Q2;t.deck=$,t.under=!$}',
+    'function ai(t){let v=X9(t.x,t.y);' +
+    'if(v===null){if(t.deck){t.deck=!1;t.z=18;t.vz=-40;if(t.player)le("PLUNGED OFF BRIDGE!");}' +
+    'else{t.deck=!1}t.under=!1;return}' +
+    'if(t.deck){t.under=!1;return}' +
+    'let z=Math.abs(Yn(t.h,v)),$=z<Q2||z>Math.PI-Q2;t.deck=$,t.under=!$}'
+  ],
+
+  // ===== 4. Ambassador Flashing Red VIP Beacon =====
+  [
+    'ambassador flashing red beacon',
+    '!t.dead&&v.cop&&t.siren>0)P9(t,v);',
+    '!t.dead&&(v.cop&&t.siren>0||v.vip||v.name==="Ambassador (State)"))(v.vip||v.name==="Ambassador (State)"?(()=>{' +
+    'let st=0.5+0.5*Math.sin(s.t*14),al=0.25+0.55*st;' +
+    'f.fillStyle=`rgba(255,30,30,${al*0.35})`,f.beginPath(),f.arc(t.x,t.y,36,0,Math.PI*2),f.fill();' +
+    'f.fillStyle=`rgba(255,30,30,${al})`,f.beginPath(),f.arc(t.x,t.y,16,0,Math.PI*2),f.fill();' +
+    'f.save(),f.translate(t.x,t.y),f.rotate(t.h+s.t*8);' +
+    'f.fillStyle=`rgba(255,80,80,${0.4+0.5*st})`,f.beginPath(),f.moveTo(-2,-3),f.lineTo(24,-8),f.lineTo(24,8),f.lineTo(-2,3),f.closePath(),f.fill();' +
+    'f.restore()})():P9(t,v));'
+  ],
+
+  // ===== 5. Big Map Click to Set GPS Waypoint Pin =====
+  [
+    'big map click to set gps waypoint',
+    'if(s.mapOpen){s.mapOpen=!1;return}',
+    'if(s.mapOpen){let tW=window.innerWidth,tH=window.innerHeight,C=Math.min(tW,tH)*0.72,R=tW-C-18,h=(tH-C)/2;' +
+    'if(yn.x>=R&&yn.x<=R+C&&yn.y>=h&&yn.y<=h+C){' +
+    'if(yn.x>R+C-36&&yn.y<h+36){s.mapOpen=!1;return;}' +
+    'let hdZ=s.mapScale??1,currNr=Nr*hdZ;' +
+    'let wx=s.player.x+(yn.x-(R+C/2))*currNr,wy=s.player.y+(yn.y-(h+C/2))*currNr;' +
+    's.waypoint={x:wx,y:wy,name:"GPS PIN"};' +
+    'le("GPS DESTINATION PIN SET! Follow navigation compass.");' +
+    'return;}' +
+    's.mapOpen=!1;return}'
+  ],
+
+  // ===== 6. Big Map District & Landmark Labels with Zoom Scaling =====
+  [
+    'big map labels and gps marker',
+    'let[ue,ne]=S(d6,y6);f.fillStyle="#cfe6ff",f.beginPath(),f.arc(ue,ne,5,0,Math.PI*2),f.fill(),f.font="bold 11px system-ui",f.textAlign="left",f.fillText("CSMIA",ue+8,ne+4);',
+    // 1. Draw GPS Waypoint pin if active:
+    'if(s.waypoint){let[wpx,wpy]=S(s.waypoint.x,s.waypoint.y);' +
+    'if(wpx>=R&&wpx<=R+C&&wpy>=h&&wpy<=h+C){' +
+    'let wpPulse=0.5+0.5*Math.sin(s.t*8);' +
+    'f.strokeStyle="#c084fc",f.lineWidth=3,f.beginPath(),f.arc(wpx,wpy,10+6*wpPulse,0,Math.PI*2),f.stroke();' +
+    'f.fillStyle="#a855f7",f.beginPath(),f.arc(wpx,wpy,6,0,Math.PI*2),f.fill();' +
+    'f.fillStyle="#ffffff",f.font="bold 11px system-ui",f.textAlign="center",f.fillText(s.waypoint.name||"GPS PIN",wpx,wpy-12);}}' +
+    // 2. Top-right [X] close button:
+    'f.fillStyle="rgba(239,68,68,0.85)",f.fillRect(R+C-32,h+6,26,26);' +
+    'f.fillStyle="#ffffff",f.font="bold 16px sans-serif",f.textAlign="center",f.textBaseline="middle",f.fillText("✕",R+C-19,h+19);' +
+    // 3. Map Instructions footer:
+    'f.font="bold 10px system-ui",f.fillStyle="#fcd34d",f.textAlign="left",f.textBaseline="alphabetic",' +
+    'f.fillText("CLICK ANYWHERE ON MAP TO SET GPS WAYPOINT • [ / ] ZOOM",R+10,h+C-12);' +
+    // 4. CSMIA Airport label:
+    'let[ue,ne]=S(d6,y6);f.fillStyle="#cfe6ff",f.beginPath(),f.arc(ue,ne,5,0,Math.PI*2),f.fill(),f.font="bold 11px system-ui",f.textAlign="left",f.fillText("CSMIA AIRPORT",ue+8,ne+4);' +
+    // 5. All Major Mumbai Districts & Landmarks:
+    'const hdMapDistricts=[' +
+    '{n:"COLABA",x:-44000,y:121000},{n:"GATEWAY OF INDIA",x:-45800,y:116800},' +
+    '{n:"FORT / CST",x:-44500,y:104000},{n:"CHURCHGATE",x:-47500,y:108000},' +
+    '{n:"MARINE DRIVE",x:-50500,y:102000},{n:"GIRGAUM CHOWPATTY",x:-51500,y:92000},' +
+    '{n:"MALABAR HILL",x:-58000,y:88000},{n:"ANTILIA (AMBANI)",x:-64800,y:86000},' +
+    '{n:"WORLI",x:-52000,y:60000},{n:"BANDRA-WORLI SEA LINK",x:-45000,y:40000},' +
+    '{n:"DADAR",x:-33000,y:45000},{n:"BANDRA WEST / MANNAT",x:-55000,y:24000},' +
+    '{n:"BKC",x:-21741,y:8872},{n:"KURLA",x:-14728,y:11096},' +
+    '{n:"JUHU BEACH",x:-51899,y:-23144},{n:"ANDHERI",x:-37171,y:-29573},' +
+    '{n:"POWAI LAKE",x:-6797,y:-28637},{n:"GHATKOPAR",x:-2737,y:-10893},' +
+    '{n:"MULUND",x:23319,y:-57664},{n:"THANE",x:53161,y:-78739}];' +
+    'f.textAlign="center",f.textBaseline="middle";' +
+    'for(let d of hdMapDistricts){' +
+    'let[dx,dy]=S(d.x,d.y);' +
+    'if(dx<R+10||dy<h+10||dx>R+C-10||dy>h+C-10)continue;' +
+    'f.font="900 10px system-ui,sans-serif";' +
+    'f.fillStyle="rgba(4,6,10,0.88)",f.fillText(d.n,dx-1,dy),f.fillText(d.n,dx+1,dy),f.fillText(d.n,dx,dy-1),f.fillText(d.n,dx,dy+1);' +
+    'f.fillStyle="#fde047",f.fillText(d.n,dx,dy);}'
+  ],
+
+  // ===== 7. Authentic Architectural Roof Styling for All Buildings =====
+  [
+    'architectural roof styling for all buildings',
+    'let Ge=1+Math.floor(D*3);for(let _e=0;_e<Ge;_e++){let Xe=q.cx+L+(Un(D*31+_e,7)-0.5)*q.r*0.9,ae=q.cy+ve+(Un(D*17+_e,11)-0.5)*q.r*0.9;if(!y(Xe)||!y(ae))continue;let Me=ru(q.r*0.16,1.5*G,4*G);o.fillRect(Xe-Me/2,ae-Me/2,Me,Me),o.strokeRect(Xe-Me/2,ae-Me/2,Me,Me)}',
+    'if(q.r*E>10){let rcx=q.cx+L,rcy=q.cy+ve,rRad=q.r;' +
+    // Outer parapet wall coping rim (framed recessed roof surface)
+    'o.strokeStyle="rgba(15,23,42,0.45)",o.lineWidth=Math.max(0.6*G,1.2*Q),o.strokeRect(rcx-rRad*0.72,rcy-rRad*0.72,rRad*1.44,rRad*1.44);' +
+    'let arch=Math.floor(D*100)%5;' +
+    'if(arch===0||q.kind==="office"){' +
+    // 1. Pyramidal Glass Atrium / Skylight (Commercial & Office Towers)
+    'let sW=Math.min(rRad*0.42,10*G);' +
+    'o.fillStyle="#38bdf8",o.beginPath(),o.moveTo(rcx-sW,rcy+sW),o.lineTo(rcx,rcy),o.lineTo(rcx-sW,rcy-sW),o.closePath(),o.fill();' +
+    'o.fillStyle="#0284c7",o.beginPath(),o.moveTo(rcx+sW,rcy-sW),o.lineTo(rcx,rcy),o.lineTo(rcx+sW,rcy+sW),o.closePath(),o.fill();' +
+    'o.strokeStyle="rgba(255,255,255,0.75)",o.lineWidth=Math.max(0.5*G,Q),o.beginPath(),o.moveTo(rcx-sW*0.7,rcy-sW*0.7),o.lineTo(rcx+sW*0.7,rcy+sW*0.7),o.stroke();}' +
+    'else if(arch===1||q.kind==="house"){' +
+    // 2. Hipped Gabled Terracotta Tile Roof (Residential Bungalows & Houses)
+    'let sW=rRad*0.65;' +
+    'o.fillStyle="#b45309",o.beginPath(),o.moveTo(rcx-sW,rcy-sW),o.lineTo(rcx+sW,rcy-sW),o.lineTo(rcx,rcy),o.closePath(),o.fill();' +
+    'o.fillStyle="#78350f",o.beginPath(),o.moveTo(rcx-sW,rcy+sW),o.lineTo(rcx+sW,rcy+sW),o.lineTo(rcx,rcy),o.closePath(),o.fill();' +
+    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.6*G,Q),o.beginPath(),o.moveTo(rcx-sW,rcy-sW),o.lineTo(rcx+sW,rcy+sW),o.moveTo(rcx+sW,rcy-sW),o.lineTo(rcx-sW,rcy+sW),o.stroke();}' +
+    'else if(arch===2){' +
+    // 3. Photovoltaic Solar Panel Array Grid (Modern Green Offices)
+    'let pW=Math.min(rRad*0.5,9*G);' +
+    'o.fillStyle="#1e3a8a",o.fillRect(rcx-pW,rcy-pW*0.6,pW*2,pW*1.2);' +
+    'o.strokeStyle="#94a3b8",o.lineWidth=Math.max(0.3*G,0.6*Q),o.strokeRect(rcx-pW,rcy-pW*0.6,pW*2,pW*1.2);' +
+    'o.beginPath(),o.moveTo(rcx,rcy-pW*0.6),o.lineTo(rcx,rcy+pW*0.6),o.stroke();}' +
+    'else if(arch===3&&rRad>18){' +
+    // 4. Rooftop Terrace with Swimming Pool & Patio (Luxury Mansions)
+    'let pW=Math.min(rRad*0.45,8*G);' +
+    'o.fillStyle="#15803d",o.fillRect(rcx-pW-2,rcy-pW*0.5-2,pW*2+4,pW+4);' +
+    'o.fillStyle="#06b6d4",o.fillRect(rcx-pW,rcy-pW*0.5,pW*2,pW);' +
+    'o.strokeStyle="#cffafe",o.lineWidth=Math.max(0.4*G,0.7*Q),o.strokeRect(rcx-pW,rcy-pW*0.5,pW*2,pW);}' +
+    'else{' +
+    // 5. Corrugated Industrial Sheet Roof with Blue Weatherproof Tarp (Chawls / High-Density)
+    'let sW=rRad*0.6;' +
+    'o.fillStyle="#475569",o.fillRect(rcx-sW,rcy-sW*0.7,sW*2,sW*1.4);' +
+    'o.fillStyle="#0284c7",o.fillRect(rcx-sW*0.3,rcy-sW*0.4,sW*0.8,sW*0.7);}}'
+  ],
+  // ===== 8. Automatically mark all Mumbai flyovers as elevated bridges =====
+  [
+    'flyovers marked as bridges',
+    'Pe=Nt(),Fe=$t(se),Ge=r[A];u[A]={id:A,cls:L,bridge:(ve&1)!==0,tunnel:(ve&2)!==0,oneway:(ve&4)!==0,lanes:Ye,width:ke,layer:Pe,pts:Fe,...Ge?{name:Ge}:{}}',
+    'Pe=Nt(),Fe=$t(se),Ge=r[A];let isFl=!!(Ge&&/flyover|overbridge|bridge|sealink|sea link/i.test(Ge));u[A]={id:A,cls:L,bridge:(ve&1)!==0||isFl,tunnel:(ve&2)!==0,oneway:(ve&4)!==0,lanes:Ye,width:ke,layer:isFl?Math.max(1,Pe):Pe,pts:Fe,...Ge?{name:Ge}:{}}'
+  ],
+
+  // ===== 9. Gate for architectural roofs lowered to normal gameplay view (q.r*E > 10) =====
+  [
+    'architectural roof zoom gate',
+    'E*G>=tn.fine&&q.r*E>46',
+    'q.r*E>10'
+  ],
+  // ===== 10. High Speed Vehicle Handling (Easy turning at 400+ km/h) =====
+  [
+    'high speed vehicle handling',
+    'te=K.steer*(1-M*0.18)/(1+Math.pow(Math.abs(k)/300,1.7)*1.05);',
+    'te=K.steer*(1-M*0.12)/(1+Math.pow(Math.abs(k)/580,1.25)*0.38);'
+  ],
+
+  // ===== 11. Top Speed of All Vehicles Boosted 65% =====
+  [
+    'top speed of all vehicles boosted',
+    'k=ze(k,-170,K.top*(1-M*0.45)*(t.nosOn?1.22:1));',
+    'k=ze(k,-240,K.top*1.65*(1-M*0.35)*(t.nosOn?1.35:1));'
+  ],
+
+  // ===== 12. Acceleration Boosted 45% =====
+  [
+    'acceleration of all vehicles boosted',
+    'let Je=fe*K.power*(1-M*0.4)/K.mass*(k<0?1.6:1);',
+    'let Je=fe*K.power*1.45*(1-M*0.3)/K.mass*(k<0?1.8:1);'
+  ],
+
+  // ===== 13. Speed Blur with Blurry Streaking Red Tail Lights =====
+  [
+    'speed blur blurry tail lights',
+    'f.fill()}if(!t.dead&&v.tank)f.save(),f.rotate(Yn(t.h,t.tur??t.h)),f.fillStyle="#3f4739"',
+    'f.fill()};let curSpd=Math.hypot(t.vx,t.vy);' +
+    'if(curSpd>140&&!t.dead){' +
+    'let sLen=Math.min(48,(curSpd-120)*0.18),sAl=Math.min(0.85,(curSpd-120)/240);' +
+    'for(let sgn of[-1,1]){let lx=-v.l/2,ly=sgn*v.w*0.36/2;' +
+    'let gr=f.createLinearGradient(lx,ly,lx-sLen,ly);' +
+    'gr.addColorStop(0,`rgba(255,40,40,${sAl})`);' +
+    'gr.addColorStop(0.4,`rgba(239,68,68,${sAl*0.5})`);' +
+    'gr.addColorStop(1,"rgba(239,68,68,0)");' +
+    'f.fillStyle=gr,f.fillRect(lx-sLen,ly-2,sLen,4);' +
+    'f.fillStyle="#ff2222",f.fillRect(lx-1,ly-1.5,2,3);}}' +
+    'if(!t.dead&&v.tank)f.save(),f.rotate(Yn(t.h,t.tur??t.h)),f.fillStyle="#3f4739"'
+  ],
+  // ===== 14. Train Locomotive & Metro Engine Custom Sprites (Image #1) =====
+  [
+    'train locomotive custom sprites',
+    'let E=r==="mail"&&o===0,Q=o===0||o===n.length-1,V=(E?20:l.L)*G,_=l.W*G,H=_*0.42;if(e.save()',
+    'let E=r==="mail"&&o===0,Q=o===0||o===n.length-1,V=(E?20:l.L)*G,_=l.W*G,H=_*0.42;' +
+    'let hdTr=(o===0&&window.__hdGetCustomSprite)?window.__hdGetCustomSprite(r==="metro"?"metro-engine":"locomotive"):null;' +
+    'if(hdTr){e.save(),e.translate(i.x,i.y),e.rotate(i.h),e.drawImage(hdTr,-V/2,-_/2,V,_),e.restore();continue;}' +
+    'if(e.save()'
+  ],
+
+  // ===== 15. All Rectangular Buildings Get Architectural Roofs in h6 (Image #3) =====
+  [
+    'h6 architectural roof styling',
+    'if(o.fillStyle=D,Pn(o,B.pts,Be,Qe))o.fill();if(E*G>=tn.detail)o.strokeStyle="rgba(0,0,0,0.28)",o.lineWidth=Math.max(0.08*G,0.7*Q),o.stroke()}',
+    'if(o.fillStyle=D,Pn(o,B.pts,Be,Qe))o.fill();if(E*G>=tn.detail)o.strokeStyle="rgba(0,0,0,0.28)",o.lineWidth=Math.max(0.08*G,0.7*Q),o.stroke();' +
+    'if(B.r*E>8){let cx=B.cx+Be,cy=B.cy+Qe,br=B.r*0.6,arch=Math.floor(O*100)%5;' +
+    'if(arch===0||j===1){' +
+    // 1. Pyramidal Glass Skylight
+    'let sw=Math.min(br*0.5,8*G);' +
+    'o.fillStyle="#38bdf8",o.beginPath(),o.moveTo(cx-sw,cy+sw),o.lineTo(cx,cy),o.lineTo(cx-sw,cy-sw),o.closePath(),o.fill();' +
+    'o.fillStyle="#0284c7",o.beginPath(),o.moveTo(cx+sw,cy-sw),o.lineTo(cx,cy),o.lineTo(cx+sw,cy+sw),o.closePath(),o.fill();' +
+    'o.strokeStyle="rgba(255,255,255,0.75)",o.lineWidth=Math.max(0.4*G,Q),o.beginPath(),o.moveTo(cx-sw*0.7,cy-sw*0.7),o.lineTo(cx+sw*0.7,cy+sw*0.7),o.stroke();}' +
+    'else if(arch===1||j===0){' +
+    // 2. Hipped Terracotta Roof
+    'o.fillStyle="#b45309",o.beginPath(),o.moveTo(cx-br,cy-br),o.lineTo(cx+br,cy-br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
+    'o.fillStyle="#78350f",o.beginPath(),o.moveTo(cx-br,cy+br),o.lineTo(cx+br,cy+br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
+    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.5*G,Q),o.beginPath(),o.moveTo(cx-br,cy-br),o.lineTo(cx+br,cy+br),o.moveTo(cx+br,cy-br),o.lineTo(cx-br,cy+br),o.stroke();}' +
+    'else if(arch===2){' +
+    // 3. Solar Panel Grid
+    'let pw=Math.min(br*0.6,7*G);' +
+    'o.fillStyle="#1e3a8a",o.fillRect(cx-pw,cy-pw*0.6,pw*2,pw*1.2);' +
+    'o.strokeStyle="#94a3b8",o.lineWidth=Math.max(0.3*G,0.5*Q),o.strokeRect(cx-pw,cy-pw*0.6,pw*2,pw*1.2);}' +
+    'else if(arch===3&&B.r>16){' +
+    // 4. Rooftop Pool & Lawn
+    'let pw=Math.min(br*0.5,6*G);' +
+    'o.fillStyle="#15803d",o.fillRect(cx-pw-2,cy-pw*0.5-2,pw*2+4,pw+4);' +
+    'o.fillStyle="#06b6d4",o.fillRect(cx-pw,cy-pw*0.5,pw*2,pw);' +
+    'o.strokeStyle="#cffafe",o.lineWidth=Math.max(0.4*G,0.6*Q),o.strokeRect(cx-pw,cy-pw*0.5,pw*2,pw);}' +
+    'else{' +
+    // 5. Corrugated Sheet Roof with Blue Tarp
+    'o.fillStyle="#475569",o.fillRect(cx-br,cy-br*0.7,br*2,br*1.4);' +
+    'o.fillStyle="#0284c7",o.fillRect(cx-br*0.3,cy-br*0.4,br*0.8,br*0.7);}}' +
+    '}'
+  ],
+  // ===== 17. Vertical Propeller Rotation (Nose Vertical Plane Sweep) =====
+  [
+    'propeller vertical rotation',
+    'function _v(e,n,u,r,l,o){e.save(),e.translate(n,u),e.fillStyle=o?"rgba(200,214,230,0.16)":"rgba(240,248,255,0.22)",e.beginPath(),e.arc(0,0,r,0,Math.PI*2),e.fill(),e.strokeStyle=o?"rgba(210,224,240,0.4)":"rgba(250,254,255,0.5)",e.lineWidth=Math.max(0.18*G,0.5);for(let i=0;i<2;i++){let E=l+i*(Math.PI/2);e.beginPath(),e.moveTo(Math.cos(E)*r,Math.sin(E)*r),e.lineTo(-Math.cos(E)*r,-Math.sin(E)*r),e.stroke()}e.fillStyle=o?"#8d959e":"#4a525a",e.beginPath(),e.arc(0,0,r*0.16,0,Math.PI*2),e.fill(),e.restore()}',
+    'function _v(e,n,u,r,l,o){e.save(),e.translate(n,u);' +
+    // Upright vertical spinning blur ellipse across the nose
+    'e.fillStyle=o?"rgba(200,214,230,0.28)":"rgba(240,248,255,0.35)",e.beginPath(),e.ellipse(0,0,1.4*G,r,0,0,Math.PI*2),e.fill();' +
+    // Vertical spinning propeller blades
+    'let by=r*Math.cos(l*12);e.strokeStyle=o?"#ffffff":"#f8fafc",e.lineWidth=Math.max(0.6*G,1.2);' +
+    'e.beginPath(),e.moveTo(0,-by),e.lineTo(0,by),e.stroke();' +
+    // High-visibility yellow safety tips on blade tips
+    'e.fillStyle="#facc15",e.fillRect(-1.5,-Math.abs(by)-1,3,3),e.fillRect(-1.5,Math.abs(by)-2,3,3);' +
+    // Center nose spinner cone
+    'e.fillStyle="#1e293b",e.beginPath(),e.arc(0,0,r*0.22,0,Math.PI*2),e.fill(),e.restore();}'
+  ],
+
+  // ===== 18. Flying Aircraft Stays Locked in Frame (No offset drift at high altitude) =====
+  [
+    'flying aircraft locked in frame',
+    'f.rotate(t.h),$>0){f.translate(-$*0.35,-$*0.25);let g=1+$*0.007;if(f.scale(g,g),t.pitch)f.rotate(t.pitch)}',
+    'f.rotate(t.h),$>0){let g=ze(1+$*0.002,1,1.38);if(f.scale(g,g),t.pitch)f.rotate(t.pitch)}'
+  ],
 ];
 
 const check = process.argv.includes('--check');
