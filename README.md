@@ -8,18 +8,24 @@ just serves the files. Sections 1 and 2 below are the one-time setup that has
 already been done; keep them for the next project.
 
 ```
-index.html                     landing page: callsign + spawn district, hands off to /play
+index.html                     login card (player id + PIN) + spawn district, hands off to /play
 play/index.html                the game shell
 games/helmsdeep/helmsdeep.js   game bundle (382 KB, patched — see below)
 games/helmsdeep/helmsdeep.css  shell styles
 games/helmsdeep/touch-controls.js  on-screen controls for phones/tablets
 games/helmsdeep/spawn-select.js    applies ?spawn=<district> to the game menu
+games/helmsdeep/session-tracker.js login gate + play-time heartbeats
+api/account.js                 POST signup/login, returns a signed token
+api/session.js                 POST session heartbeats (append-only blobs)
+api/stats.js                   GET aggregated player/play-time totals (admin key)
+api/_lib.js                    Vercel Blob REST + HMAC token helpers
+stats/index.html               owner dashboard for the numbers above
 mumbai-map.json                baked OpenStreetMap city (3 MB, loaded from "/")
 music/*.mp3                    soundtrack (26 tracks, ~100 MB)
 music/tracks.json              playlist the game fetches
 vercel.json                    rewrites /api/helmsdeep/tracks -> /music/tracks.json
 tools/make-tracks.mjs          regenerates music/tracks.json
-tools/patch-bundle.mjs         re-applies the Mumbai look to a fresh bundle
+tools/patch-bundle.mjs         re-applies the Mumbai look and feel to a fresh bundle
 ```
 
 The game bundle requests three absolute paths, which is why the layout is fixed:
@@ -31,11 +37,46 @@ The six spawn districts in `index.html` are the same six the game offers
 coordinates. `spawn-select.js` clicks the matching district button in the game
 menu, so the landing card and the game never disagree.
 
-`tools/patch-bundle.mjs` holds the look pass over the minified bundle: a less
-washed-out palette, a visible sea swell, kaali-peeli livery on the Cabbie
-(black body, yellow roof) and a Mumbai-weighted traffic mix with ~13% taxis.
-Run `node tools/patch-bundle.mjs` after replacing `helmsdeep.js` with a fresh
-build, and `--check` to confirm a bundle is patched.
+`tools/patch-bundle.mjs` holds every change made to the minified bundle — 52
+exact, idempotent substitutions, each asserting its target appears once. Run
+`node tools/patch-bundle.mjs` after replacing `helmsdeep.js` with a fresh build,
+and `--check` to confirm a bundle is patched. It covers:
+
+- **Look** — less washed-out palette, visible sea swell, lighter airport apron
+  and runways, brighter rain, vignette cut from 0.38 to 0.20.
+- **Audio** — the SFX bus ran at 0.17 while the music element played at 0.42, so
+  everything was buried. Master is 0.62 behind a limiter, music 0.17, and the
+  engine bus now swings 0.10 → 0.36 with the throttle. Tyre screech and brake
+  squeal existed but were capped at 0.42/0.28; they are 0.95/0.66 and trigger at
+  lower slip.
+- **Collisions** — a flat 55/45 velocity blend became a mass-weighted normal
+  impulse with restitution and a tangential kick that spins the lighter car;
+  damage starts at 130 closing speed instead of 200.
+- **Explosions** — blasts now ignite neighbours (`burn` fuse 0.45 s instead of
+  2.4 s), knock cars back, and throw 54/40 hot particles with a white core; the
+  particle budget went 220 → 620 so flames are not starved.
+- **Aircraft** — up to three "planes" per apron were scenery that `nearestPlane`
+  could never return, which is why they could not be boarded. Scenery is off,
+  the real parked-plane cap is 14, and boarding reach is 95 m.
+- **Jobs** — the Flo trucks and police cars join the existing hire loop as kinds
+  `flo` and `cop`: consignment runs (₹260 + ₹1.9/m, failed if you spill the
+  load) and dispatch call-outs (₹180 + ₹1.3/m), both with pins, par-time bonus
+  and HUD badge. The news crew needed six bodies in one 90 m circle within 90 s;
+  two is enough now, so CH9 Mumbai Live actually turns up.
+
+## Who played, and for how long
+
+Login is mandatory: `index.html` creates or signs into a player id with a PIN,
+`/play` bounces anyone without a token, and `session-tracker.js` posts the
+running total once a minute (counting only while the tab is visible).
+
+Open **`/stats`** and paste the admin key to see ids created, how many actually
+played, session count, total minutes and a per-player table. The key is the
+`HD_ADMIN_KEY` environment variable on the Vercel project (Settings →
+Environment Variables). Storage is a Vercel Blob store (`helmsdeep-players`),
+already provisioned and connected, so `BLOB_READ_WRITE_TOKEN` and `HD_SECRET`
+are set for you. There is no Google sign-in; add one later by swapping the
+`/api/account` call in `index.html` for an OAuth provider.
 
 ---
 
