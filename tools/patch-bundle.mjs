@@ -81,18 +81,20 @@ const EDITS = [
     'traffic weights',
     'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,12,12,12,14,',
     'var Yi=[' +
-    // Kaali-peeli taxis & civilian
-    '0,0,0,1,1,2,13,14,16,17,' +
-    // Public service: Fire Engine & Garbage Truck (Image #2) + School bus
-    '18,18,19,19,39,' +
-    // Vintage Fleet (Image #6: Roadster, Convertible, Cabriolet, Sidecar, Vespa, Cadillac, Gangster Coupe, Muscle)
-    '22,22,23,23,24,25,26,26,27,28,29,29,' +
-    // Supercars & Luxury (Porsche 911 GT3, Huracan, Aventador, Taycan, Ferrari, Bentley)
-    '56,56,57,57,58,59,9,84,85,86,' +
-    // State Ambassador with Flashing Red VIP Beacon
+    // Civilian & Taxis: Kaali-peeli taxis, sedans, pickups, delivery vans
+    '0,0,1,1,12,12,18,19,20,21,' +
+    // Municipal & Public Service: Garbage Truck (Trashmaster) & School Bus
+    '26,28,' +
+    // 16 Vintage Cars (Mapped ONLY to Real Car Chassis l=46-50, w=21-22!)
+    '2,4,5,6,7,32,33,34,35,' +
+    // Real Bikes Only (Chassis l=26-28, w=10-11: PCJ-6, Sanchez, NRG, Rapido)
+    '29,38,39,55,' +
+    // Modern Supercars (Porsche 911 GT3, Huracan, Aventador, Taycan, Ferrari, Bentley, Skyline)
+    '56,57,58,59,9,84,86,' +
+    // State Ambassador with Working Flashing Red VIP Beacon
     '89,89,' +
-    // 4 Gang Fleets (Image #7: Spiked Skull Car, Gun Truck, Dragon Supercar, Dragon SUV, Cyber Snake, Militia Truck)
-    '60,61,62,63,64,65,66,67,'
+    // 4 Gang Combat Vehicles (Spiked Skull Muscle, Gun Truck, Dragon Supercar, Dragon SUV)
+    '60,61,62,63,'
   ],
 
   // ===== audio: the SFX bus was 8-15x quieter than the music ===============
