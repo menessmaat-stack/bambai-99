@@ -1,4 +1,4 @@
-# BAMBAI '99 — static web build
+# HELM'S DEEP — static web build
 
 Live: <https://bambai-99-ma-at1.vercel.app> (`/` landing, `/play` game)
 Repo: <https://github.com/menessmaat-stack/bambai-99>
