@@ -132,66 +132,17 @@ const EDITS = [
   ['gunshot crack', 'K.gain.setValueAtTime(0.4,t)', 'K.gain.setValueAtTime(0.6,t)'],
   ['gunshot thump', 'X.gain.setValueAtTime(0.35,t)', 'X.gain.setValueAtTime(0.52,t)'],
 
-  // Impacts only fired `En.thud`, a 120 Hz blip, and only above 130 closing
-  // speed, so metal on metal was effectively silent. `crunch` is a new one-shot:
-  // a swept bandpass noise burst (sheet metal) over a short square thump.
+  // Impacts are silent on purpose: every synthesised version of metal-on-metal
+  // sounded wrong, so the thud is dropped rather than left as a bad blip.
   [
-    'crunch sfx',
-    'let En={shot:()=>{if(!L||B.current||L.state!=="running")return;',
-    'let En={crunch:(hdV)=>{if(!L||B.current||L.state!=="running")return;try{' +
-    'let hdT=L.currentTime,hdG=ze(typeof hdV==="number"?hdV:0.5,0.08,1),' +
-    // sheet-metal partials: inharmonic ratios, long-ish ring, that is what makes
-    // it read as metal rather than as a thump
-    'hdP=[1,1.58,2.13,2.79,3.46,4.37],hdB=180+hdG*120;' +
-    'for(let hdI=0;hdI<hdP.length;hdI++){' +
-    'let hdO=L.createOscillator(),hdGn=L.createGain();' +
-    'hdO.type=hdI<2?"triangle":"square",' +
-    'hdO.frequency.setValueAtTime(hdB*hdP[hdI]*(0.98+Math.random()*0.05),hdT),' +
-    'hdO.frequency.exponentialRampToValueAtTime(hdB*hdP[hdI]*0.82,hdT+0.5);' +
-    'let hdA=hdG*0.17/(1+hdI*0.55);' +
-    'hdGn.gain.setValueAtTime(0,hdT),hdGn.gain.linearRampToValueAtTime(hdA,hdT+0.004),' +
-    'hdGn.gain.exponentialRampToValueAtTime(0.0008,hdT+0.3+0.45/(1+hdI*0.5)),' +
-    'hdO.connect(hdGn),hdGn.connect(ve),hdO.start(hdT),hdO.stop(hdT+0.95)}' +
-    // short bright transient: the dent, before the ring
-    'let hdN=Math.floor(L.sampleRate*0.09),hdBuf=L.createBuffer(1,hdN,L.sampleRate),' +
-    'hdCh=hdBuf.getChannelData(0);' +
-    'for(let hdI=0;hdI<hdN;hdI++)hdCh[hdI]=(Math.random()*2-1)*Math.pow(1-hdI/hdN,3.1);' +
-    'let hdSrc=L.createBufferSource();hdSrc.buffer=hdBuf;' +
-    'let hdBp=L.createBiquadFilter();hdBp.type="bandpass",hdBp.Q.value=1.4,' +
-    'hdBp.frequency.setValueAtTime(3400,hdT),' +
-    'hdBp.frequency.exponentialRampToValueAtTime(1100,hdT+0.09);' +
-    'let hdNg=L.createGain();hdNg.gain.setValueAtTime(hdG*0.5,hdT),' +
-    'hdNg.gain.exponentialRampToValueAtTime(0.001,hdT+0.1),' +
-    'hdSrc.connect(hdBp),hdBp.connect(hdNg),hdNg.connect(ve),hdSrc.start(hdT);' +
-    // body of the car taking the hit
-    'let hdOsc=L.createOscillator(),hdOg=L.createGain();hdOsc.type="square",' +
-    'hdOsc.frequency.setValueAtTime(104,hdT),' +
-    'hdOsc.frequency.exponentialRampToValueAtTime(44,hdT+0.12),' +
-    'hdOg.gain.setValueAtTime(hdG*0.42,hdT),' +
-    'hdOg.gain.exponentialRampToValueAtTime(0.001,hdT+0.16),' +
-    'hdOsc.connect(hdOg),hdOg.connect(ve),hdOsc.start(hdT),hdOsc.stop(hdT+0.18)}catch{}},' +
-    'shot:()=>{if(!L||B.current||L.state!=="running")return;'
-  ],
-  // Contact is resolved every frame, so each sound is rate limited off the game
-  // clock: scrapes at ~3/s, hits at ~2/s. Without this a single shunt fires the
-  // crunch four or five times and sounds like a machine gun.
-  [
-    'scrape on light contact',
-    'if(te>40){if(N)z.vx-=ee*te*0.5,z.vy-=M*te*0.5;if(K)Z.vx+=ee*te*0.5,Z.vy+=M*te*0.5}',
-    'if(te>40){if(N)z.vx-=ee*te*0.5,z.vy-=M*te*0.5;if(K)Z.vx+=ee*te*0.5,Z.vy+=M*te*0.5;' +
-    'if((z.player||Z.player)&&te<=130&&s.t-(s.hdScr??-9)>0.35)s.hdScr=s.t,En.crunch(0.1+te/420)}'
-  ],
-  [
-    'crunch on car impact',
+    'no car impact sound',
     'En.thud(te/600),te>330)',
-    'En.thud(Math.min(0.7,te/420)),s.t-(s.hdHit??-9)>0.45&&(s.hdHit=s.t,' +
-    'En.crunch(Math.min(1,0.3+te/380))),te>330)'
+    'te>330)'
   ],
   [
-    'crunch on wall impact',
+    'no wall impact sound',
     'iu(t.x,t.y,Math.min(10,Ee*0.04)),En.thud(Ee/500)',
-    'iu(t.x,t.y,Math.min(10,Ee*0.04)),En.thud(Math.min(0.7,Ee/380)),' +
-    's.t-(s.hdHit??-9)>0.45&&(s.hdHit=s.t,En.crunch(Math.min(1,0.3+Ee/420)))'
+    'iu(t.x,t.y,Math.min(10,Ee*0.04))'
   ],
   // With everything louder the bus can clip on a pile-up, so the master now
   // runs through a limiter instead of straight into the speakers.
@@ -404,7 +355,7 @@ const EDITS = [
   [
     'spilled load fails the delivery',
     'if(En.thud(0.3),t.shed===J)le("Mattresses all over the road.")}function U5(',
-    'if(En.thud(0.3),t.shed===J)le("Mattresses all over the road.");' +
+    'if(t.shed===J)le("Mattresses all over the road.");' +
     'if(t.player&&s.fare&&s.fare.kind==="flo")hi("Load spilled — consignment written off.")}function U5('
   ],
 
@@ -512,23 +463,6 @@ const EDITS = [
     'r.setLineDash([]),r.restore()}break}'
   ],
 
-  // ===== anything that drives into the sea goes under ======================
-  // `nl(x,y)` is the game's own land test. A car off the edge loses drive,
-  // throws spray for a second and a half, and then sinks — cop cars included.
-  [
-    'cars drown',
-    'function $9(t){for(let z of s.cars){if(z.dead){z.wreckT+=t;continue}if(z.hp<=0',
-    'function $9(t){for(let z of s.cars){if(z.dead){z.wreckT+=t;continue}' +
-    'if(!nl(z.x,z.y)){z.hdW=(z.hdW??0)+t,z.speed=0,' +
-    'z.vx*=Math.max(0,1-3*t),z.vy*=Math.max(0,1-3*t);' +
-    'if(Math.random()<t*16)s.parts.push({x:z.x+(Math.random()-0.5)*18,' +
-    'y:z.y+(Math.random()-0.5)*14,vx:(Math.random()-0.5)*40,vy:-25-Math.random()*35,' +
-    'life:0.45+Math.random()*0.3,max:0.75,r:2+Math.random()*4,col:"#d8eef8",glow:!0});' +
-    'if(z.hdW>1.6){z.dead=!0,z.wreckT=0,z.hp=0,En.thud(0.5);' +
-    'if(z.player)s.player.carIdx=-1,s.player.onFoot=!0,to(18),le("Sank it. You swam out.");' +
-    'else if(z.ai==="cop")le("Police cruiser in the drink.");continue}}else z.hdW=0;if(z.hp<=0'
-  ],
-
   // ===== bazooka ===========================================================
   // The missile system already existed for the tank; this exposes it as a
   // carried weapon, on foot or at the wheel, with a brighter exhaust trail.
@@ -588,13 +522,153 @@ const EDITS = [
     'Qr(N,!0),le("+25 — hopefully they jaywalked."),En.thud(0.3)',
     'if(k&&!k.dead&&Math.hypot(k.x-N.x,k.y-N.y)<22){let hdV=Math.hypot(k.vx,k.vy);' +
     'if(hdV>110)Qr(N,!0),le("+25 — hopefully they jaywalked."),' +
-    'En.thud(0.35),En.crunch(0.3),k.vx*=0.92,k.vy*=0.92;' +
+    'k.vx*=0.92,k.vy*=0.92;' +
     'else if(hdV>40){let hdA=Math.atan2(k.vy,k.vx),' +
     'hdP=fu(N.x+Math.cos(hdA)*hdV*0.07,N.y+Math.sin(hdA)*hdV*0.07,6,N.x,N.y);' +
     'N.x=hdP.x,N.y=hdP.y,N.kind="flee",N.wpX=N.x+Math.cos(hdA)*200,N.wpY=N.y+Math.sin(hdA)*200,' +
-    'N.hits=(N.hits??0)+1,En.thud(0.22),s.cam.shake=Math.max(s.cam.shake,4),' +
+    'N.hits=(N.hits??0)+1,s.cam.shake=Math.max(s.cam.shake,4),' +
     'k.vx*=0.9,k.vy*=0.9,s.decals.push({x:N.x,y:N.y,a:0.3,r:4,kind:"blood"});' +
     'if(N.hits>=3)Qr(N,!1)}}'
+  ],
+
+  // ===== VIP Mumbai: state convoys, bungalows, bodyguards, bounties ========
+  // A white state sedan with a red beacon (index 89, appended so no existing
+  // index shifts), a police + SWAT escort, the seven addresses everyone in
+  // Mumbai can point to, a posse on the gate, and a contract payout if the
+  // beacon car ever stops moving.
+  [
+    'state car type',
+    '{name:"Gurkha LX",l:48,w:25,power:700,top:360,gripF:8.6,gripR:8,steer:0.6,' +
+    'wheelbase:31,mass:1.6,sprite:(e,n,u,r)=>qt(e,n,u,r,!1),fixedPal:5}];',
+    '{name:"Gurkha LX",l:48,w:25,power:700,top:360,gripF:8.6,gripR:8,steer:0.6,' +
+    'wheelbase:31,mass:1.6,sprite:(e,n,u,r)=>qt(e,n,u,r,!1),fixedPal:5},' +
+    '{name:"Ambassador (State)",l:47,w:22,power:540,top:365,gripF:9,gripR:7.9,steer:0.56,' +
+    'wheelbase:30,mass:1.26,fixedPal:4,vip:!0,sprite:(e,n,u,r)=>{' +
+    'H5(e,n,u,["#f2f2ee","#cbcbc4","#ffffff"]);' +
+    'e.fillStyle="#141519",a(e,n*0.455,u/2-2.6,n*0.09,5.2,1.7),e.fill();' +
+    'e.fillStyle="#e01f1f",a(e,n*0.465,u/2-2,n*0.07,4,1.3),e.fill();' +
+    'e.fillStyle="rgba(255,120,120,0.45)",e.beginPath(),' +
+    'e.arc(n*0.5,u/2,4.2,0,Math.PI*2),e.fill();' +
+    'e.fillStyle="#1b2a4a",e.fillRect(n*0.08,u/2-0.7,n*0.1,1.4)}}];'
+  ],
+  [
+    'vip systems and the water',
+    'function $9(t){for(let z of s.cars){if(z.dead){z.wreckT+=t;continue}if(z.hp<=0',
+    // The addresses are the public ones every Mumbai cabbie knows.
+    'var hdAMB=89,hdVIPH=[' +
+    '{n:"MANNAT",who:"Shah Rukh Khan",lon:72.8196,lat:19.0433},' +
+    '{n:"GALAXY",who:"Salman Khan",lon:72.8266,lat:19.0557},' +
+    '{n:"JALSA",who:"Amitabh Bachchan",lon:72.825,lat:19.073},' +
+    '{n:"ANTILIA",who:"Mukesh Ambani",lon:72.8097,lat:18.9676},' +
+    '{n:"MATOSHREE",who:"Thackeray family",lon:72.839,lat:19.0548},' +
+    '{n:"VARSHA",who:"Chief Minister",lon:72.8118,lat:18.9256},' +
+    '{n:"SAHYADRI",who:"State guest house",lon:72.8204,lat:18.929}];' +
+    'function hdVipXY(h){if(h.x===void 0)h.x=T((h.lon-72.9)*kv),h.y=T(-(h.lat-19.08)*Av);return h}' +
+    'function hdVip(t){let p=s.player,near=null,nd=1/0;' +
+    'for(let i=0;i<hdVIPH.length;i++){let h=hdVipXY(hdVIPH[i]),' +
+    'd=Math.hypot(h.x-p.x,h.y-p.y);if(d<nd)nd=d,near=h}' +
+    'if(near&&nd<T(240)){let g=0;for(let q of s.peds)if(!q.dead&&q.hdGuard)g++;' +
+    'for(let k=g;k<4;k++){let an=W()*Math.PI*2,rr2=T(16)+W()*T(24),' +
+    'gx=near.x+Math.cos(an)*rr2,gy=near.y+Math.sin(an)*rr2;' +
+    's.peds.push({x:gx,y:gy,h:an,speed:20+W()*12,kind:"cop",seed:W(),leg:0,' +
+    'wpX:near.x+Math.cos(an)*T(24),wpY:near.y+Math.sin(an)*T(24),phase:W()*6,' +
+    'dead:!1,deadT:0,copShootCd:0,hdGuard:1})}' +
+    'if(s.t-(s.hdVipMsg??-99)>35)s.hdVipMsg=s.t,' +
+    'le(near.n+" — "+near.who+". Security on the gate.")}' +
+    'if(s.t<12||s.t-(s.hdConvoyT??-99)<45)return;' +
+    'let live=0;for(let q of s.cars)if(!q.dead&&(q.hdVip||q.hdEscort))live++;' +
+    'if(live>0||s.cars.length>=Ru)return;' +
+    'let n=lu(D,W,p.x,p.y,ro()*0.6);if(hn(n.x,n.y))return;' +
+    'let lane=fr(D,n.x,n.y,n.heading,W,T(6));if(!lane)return;s.hdConvoyT=s.t;' +
+    'let mk=(ty,off,ai,flag)=>{let c={x:lane.x-Math.cos(lane.h)*off,' +
+    'y:lane.y-Math.sin(lane.h)*off,h:lane.h,vx:0,vy:0,w:0,steer:0,type:ty,pal:4,' +
+    'seed:W(),hp:ou(ty),player:!1,ai:ai,speed:115+W()*35,stuck:0,panic:0,shootCd:0,' +
+    'burn:0,dead:!1,wreckT:0,siren:0,rider:lane,hostile:0,patrol:ai==="cop"?!0:void 0};' +
+    'c[flag]=1,s.cars.push(c)};' +
+    'mk(hdAMB,0,"traffic","hdVip"),mk(30,T(10),"cop","hdEscort"),mk(45,T(-10),"cop","hdEscort"),' +
+    'le("State convoy on the road — red beacon, full escort.")}' +
+    // $9 now also pays the contract and drowns anything that leaves the kerb
+    'function $9(t){hdVip(t);for(let z of s.cars){if(z.dead){' +
+    'if(z.hdVip&&!z.hdPaid)z.hdPaid=1,s.player.cash+=250000,s.player.score+=4000,' +
+    's.stars=5,s.chasePeak=5,s.seenAgo=0,Zn(6,!0),' +
+    'le("VIP DOWN — ₹2,50,000 wired. Every unit in the city is coming.");' +
+    'z.wreckT+=t;continue}' +
+    'if(!nl(z.x,z.y)){z.hdW=(z.hdW??0)+t,z.speed=0,' +
+    'z.vx*=Math.max(0,1-3*t),z.vy*=Math.max(0,1-3*t);' +
+    'if(Math.random()<t*16)s.parts.push({x:z.x+(Math.random()-0.5)*18,' +
+    'y:z.y+(Math.random()-0.5)*14,vx:(Math.random()-0.5)*40,vy:-25-Math.random()*35,' +
+    'life:0.45+Math.random()*0.3,max:0.75,r:2+Math.random()*4,col:"#d8eef8",glow:!0});' +
+    'if(z.hdW>1.6){z.dead=!0,z.wreckT=0,z.hp=0,En.thud(0.5);' +
+    'if(z.player)s.player.carIdx=-1,s.player.onFoot=!0,to(18),le("Sank it. You swam out.");' +
+    'else if(z.ai==="cop")le("Police cruiser in the drink.");continue}}else z.hdW=0;' +
+    'if(z.hp<=0'
+  ],
+  [
+    'vip residence markers',
+    'f.fillText(h.label,h.x,h.y+S+14)}}if(s.waypoint){let C=s.waypoint;',
+    'f.fillText(h.label,h.x,h.y+S+14)}}' +
+    'for(let hdI=0;hdI<hdVIPH.length;hdI++){let hdH=hdVipXY(hdVIPH[hdI]);' +
+    'if(Math.abs(hdH.x-s.cam.x)>$/2+200||Math.abs(hdH.y-s.cam.y)>N/2+200)continue;' +
+    'let hdR=24+Math.sin(s.t*2.2+hdI)*3;' +
+    'f.fillStyle="rgba(255,196,80,0.12)",f.beginPath(),' +
+    'f.arc(hdH.x,hdH.y,hdR,0,Math.PI*2),f.fill(),' +
+    'f.strokeStyle="rgba(255,196,80,0.85)",f.lineWidth=2.6,f.beginPath(),' +
+    'f.arc(hdH.x,hdH.y,hdR,0,Math.PI*2),f.stroke(),' +
+    'f.font="bold 11px system-ui",f.textAlign="center",' +
+    'f.fillStyle="rgba(255,226,160,0.95)",f.fillText(hdH.n,hdH.x,hdH.y-hdR-7),' +
+    'f.font="bold 9px system-ui",f.fillStyle="rgba(228,230,224,0.82)",' +
+    'f.fillText(hdH.who,hdH.x,hdH.y+hdR+12)}' +
+    'for(let hdK=0;hdK<s.cars.length;hdK++){let hdV=s.cars[hdK];' +
+    'if(!hdV.hdVip||hdV.dead)continue;' +
+    'let hdM=20+Math.sin(s.t*6)*3;' +
+    'f.strokeStyle="rgba(255,70,70,0.9)",f.lineWidth=2.4,f.beginPath(),' +
+    'f.arc(hdV.x,hdV.y,hdM,0,Math.PI*2),f.stroke(),' +
+    'f.font="bold 9px system-ui",f.textAlign="center",' +
+    'f.fillStyle="rgba(255,170,170,0.95)",' +
+    'f.fillText("STATE CONVOY",hdV.x,hdV.y-hdM-6)}' +
+    'if(s.waypoint){let C=s.waypoint;'
+  ],
+
+  // Every remaining impact cue goes as well — landings, punches, tank crushes
+  // and the cargo spill. No synthesised collision sound survived the ear test,
+  // so collisions are silent for the player and for the AI alike.
+  [
+    'no vehicle landing sound',
+    't.pitch=0,En.thud(Math.min(0.45,Ee/350));',
+    't.pitch=0;'
+  ],
+  [
+    'no heli landing sound',
+    't.pitch=0,En.thud(Math.min(0.5,N/320)),N>170',
+    't.pitch=0,N>170'
+  ],
+  [
+    'no punch sound',
+    'z.wpY=z.y+Math.sin(N)*320,En.thud(0.2),s.cam.shake',
+    'z.wpY=z.y+Math.sin(N)*320,s.cam.shake'
+  ],
+  [
+    'no crush sound',
+    'iu((z.x+Z.x)/2,(z.y+Z.y)/2,8),En.thud(0.6),s.cam.shake',
+    'iu((z.x+Z.x)/2,(z.y+Z.y)/2,8),s.cam.shake'
+  ],
+
+  // The convoy is spawned on a road near the player, and the traffic culler
+  // would otherwise delete it the same frame it appears.
+  [
+    'convoy survives the culler',
+    'N=Math.hypot($.x-s.player.x,$.y-s.player.y),J=N>v;if($.dead&&$.wreckT>25&&J',
+    'N=Math.hypot($.x-s.player.x,$.y-s.player.y),J=N>v;' +
+    'if(($.hdVip||$.hdEscort)&&!$.dead)continue;' +
+    'if($.dead&&$.wreckT>25&&J'
+  ],
+
+  // fo(t) despawns ambient cars when they run out of road; VIP convoy cars must
+  // never be deleted by it — they just re-bind to the next lane.
+  [
+    'fo never despawns convoy',
+    'if(v===s.player.carIdx){t.rider=null;return}',
+    'if(v===s.player.carIdx||t.hdVip||t.hdEscort){t.rider=null;return}'
   ],
 
   ['news crew threshold', 'if(z<=5)continue;', 'if(z<=1)continue;'],

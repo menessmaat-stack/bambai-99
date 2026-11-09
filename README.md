@@ -21,7 +21,7 @@ api/stats.js                   GET aggregated player/play-time totals (admin key
 api/_lib.js                    Vercel Blob REST + HMAC token helpers
 stats/index.html               owner dashboard for the numbers above
 mumbai-map.json                baked OpenStreetMap city (3 MB, loaded from "/")
-music/*.mp3                    soundtrack (26 tracks, ~100 MB)
+music/*.mp3                    soundtrack (36 tracks, ~145 MB)
 music/tracks.json              playlist the game fetches
 vercel.json                    rewrites /api/helmsdeep/tracks -> /music/tracks.json
 tools/make-tracks.mjs          regenerates music/tracks.json
@@ -71,10 +71,18 @@ and `--check` to confirm a bundle is patched. It covers:
   throws spray and sinks after 1.6 s, police cruisers included.
 - **Bazooka** — seventh weapon slot, 12 rockets, reusing the tank's missile
   system from on foot or at the wheel, with a flame-and-smoke exhaust trail.
-- **Impacts** — the crunch is now six inharmonic metal partials (1, 1.58, 2.13,
-  2.79, 3.46, 4.37) over a bright transient, so it rings like sheet metal.
-  Pedestrians below 110 closing speed are knocked down, displaced and sent
-  fleeing (three hits kill) instead of being untouched or instantly dead.
+- **Collisions** — completely silent. Every impact cue (car-on-car, AI-on-AI,
+  wall hits, pedestrian thuds, landings, punches, crushes) has been removed.
+  Physics still applies (damage, knockback, displacement), but there is zero
+  audio playback. Pedestrians below 110 closing speed are knocked down,
+  displaced and sent fleeing (three hits kill) without any hit noise.
+- **VIP Mumbai & State Convoy** — seven iconic residences marked on the map with
+  gold rings and security details on the gates: Mannat (SRK), Galaxy (Salman Khan),
+  Jalsa (Amitabh Bachchan), Antilia (Ambani), Matoshree (Thackeray), Varsha (CM)
+  and Sahyadri. A state convoy periodically rolls through the city: a white
+  Ambassador (State) sedan with a flashing red beacon, flanked by a police
+  Cruiser and a SWAT van. Taking down the VIP car pays out a ₹2,50,000 bounty
+  and slaps on 5 wanted stars.
 - **Jobs** — the Flo trucks and police cars join the existing hire loop as kinds
   `flo` and `cop`: consignment runs (₹260 + ₹1.9/m, failed if you spill the
   load) and dispatch call-outs (₹180 + ₹1.3/m), both with pins, par-time bonus

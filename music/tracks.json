@@ -38,10 +38,6 @@
       "url": "/music/chrome-monsoon.mp3"
     },
     {
-      "title": "Circles On Your Palm",
-      "url": "/music/circles-on-your-palm.mp3"
-    },
-    {
       "title": "Eh Pal Rukk Jaan",
       "url": "/music/eh-pal-rukk-jaan.mp3"
     },
@@ -150,5 +146,5 @@
       "url": "/music/where-the-road-fades.mp3"
     }
   ],
-  "total": 37
+  "total": 36
 }
