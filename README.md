@@ -8,21 +8,34 @@ just serves the files. Sections 1 and 2 below are the one-time setup that has
 already been done; keep them for the next project.
 
 ```
-index.html                     landing page: alias + spawn card, hands off to /play
+index.html                     landing page: callsign + spawn district, hands off to /play
 play/index.html                the game shell
-games/helmsdeep/helmsdeep.js   game bundle (382 KB)
+games/helmsdeep/helmsdeep.js   game bundle (382 KB, patched — see below)
 games/helmsdeep/helmsdeep.css  shell styles
 games/helmsdeep/touch-controls.js  on-screen controls for phones/tablets
+games/helmsdeep/spawn-select.js    applies ?spawn=<district> to the game menu
 mumbai-map.json                baked OpenStreetMap city (3 MB, loaded from "/")
 music/*.mp3                    soundtrack (26 tracks, ~100 MB)
 music/tracks.json              playlist the game fetches
 vercel.json                    rewrites /api/helmsdeep/tracks -> /music/tracks.json
 tools/make-tracks.mjs          regenerates music/tracks.json
+tools/patch-bundle.mjs         re-applies the Mumbai look to a fresh bundle
 ```
 
 The game bundle requests three absolute paths, which is why the layout is fixed:
 `/mumbai-map.json`, `/api/helmsdeep/tracks` (rewritten by `vercel.json`) and the
 track URLs inside `music/tracks.json`.
+
+The six spawn districts in `index.html` are the same six the game offers
+(`bkc`, `airport`, `juhu`, `bandra`, `kurla`, `andheri`), with the game's own
+coordinates. `spawn-select.js` clicks the matching district button in the game
+menu, so the landing card and the game never disagree.
+
+`tools/patch-bundle.mjs` holds the look pass over the minified bundle: a less
+washed-out palette, a visible sea swell, kaali-peeli livery on the Cabbie
+(black body, yellow roof) and a Mumbai-weighted traffic mix with ~13% taxis.
+Run `node tools/patch-bundle.mjs` after replacing `helmsdeep.js` with a fresh
+build, and `--check` to confirm a bundle is patched.
 
 ---
 
