@@ -1074,10 +1074,8 @@ const EDITS = [
     'let pW=Math.min(rRad*0.6,8*G);o.fillStyle="#1e3a8a",o.fillRect(rcx-pW,rcy-pW*0.5,pW*2,pW);' +
     'o.strokeStyle="#94a3b8",o.lineWidth=Math.max(0.3*G,0.5*Q),o.strokeRect(rcx-pW,rcy-pW*0.5,pW*2,pW);}' +
     'else if(seed===12||seed===13){' +
-    // Clean terracotta roof with single horizontal ridge beam (NO ORANGE X!)
-    'o.fillStyle="#991b1b",o.beginPath(),o.moveTo(rcx-rRad*0.6,rcy-rRad*0.6),o.lineTo(rcx+rRad*0.6,rcy-rRad*0.6),o.lineTo(rcx,rcy),o.closePath(),o.fill();' +
-    'o.fillStyle="#78350f",o.beginPath(),o.moveTo(rcx-rRad*0.6,rcy+rRad*0.6),o.lineTo(rcx+rRad*0.6,rcy+rRad*0.6),o.lineTo(rcx,rcy),o.closePath(),o.fill();' +
-    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.4*G,Q),o.beginPath(),o.moveTo(rcx-rRad*0.6,rcy),o.lineTo(rcx+rRad*0.6,rcy),o.stroke();}' +
+    // Solid uniform architectural roof deck (ZERO BROKEN TRIANGLES!)
+    'o.fillStyle="rgba(0,0,0,0.06)",o.fillRect(rcx-rRad*0.6,rcy-rRad*0.6,rRad*1.2,rRad*1.2);}' +
     'else if(arch===2){' +
     // 3. Photovoltaic Solar Panel Array Grid (Modern Green Offices)
     'let pW=Math.min(rRad*0.5,9*G);' +
@@ -1179,15 +1177,8 @@ const EDITS = [
     'o.strokeStyle="#94a3b8",o.lineWidth=Math.max(0.3*G,0.5*Q),o.strokeRect(cx-pw,cy-pw*0.5,pw*2,pw);' +
     'o.beginPath(),o.moveTo(cx,cy-pw*0.5),o.lineTo(cx,cy+pw*0.5),o.stroke();}' +
     'else if(seed===12){' +
-    // Clean gabled terracotta roof with single horizontal ridge beam
-    'o.fillStyle="#991b1b",o.beginPath(),o.moveTo(cx-br,cy-br),o.lineTo(cx+br,cy-br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
-    'o.fillStyle="#78350f",o.beginPath(),o.moveTo(cx-br,cy+br),o.lineTo(cx+br,cy+br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
-    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.5*G,Q),o.beginPath(),o.moveTo(cx-br,cy),o.lineTo(cx+br,cy),o.stroke();}' +
-    'else if(seed===13){' +
-    // Clean gabled terracotta roof with single vertical ridge beam
-    'o.fillStyle="#b45309",o.beginPath(),o.moveTo(cx-br,cy-br),o.lineTo(cx-br,cy+br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
-    'o.fillStyle="#78350f",o.beginPath(),o.moveTo(cx+br,cy-br),o.lineTo(cx+br,cy+br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
-    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.5*G,Q),o.beginPath(),o.moveTo(cx,cy-br),o.lineTo(cx,cy+br),o.stroke();}' +
+    // Solid uniform architectural roof deck (ZERO BROKEN TRIANGLES!)
+    'o.fillStyle="rgba(0,0,0,0.06)",o.fillRect(cx-br+2,cy-br+2,br*2-4,br*2-4);}' +
     'else if(seed===14){' +
     // Rare iconic geometric glass skylight (commercial)
     'let sw=Math.min(br*0.45,7*G);' +
