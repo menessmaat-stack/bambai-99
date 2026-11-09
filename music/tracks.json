@@ -18,6 +18,10 @@
       "url": "/music/asphalt-veins.mp3"
     },
     {
+      "title": "Asphalt Vendetta",
+      "url": "/music/asphalt-vendetta.mp3"
+    },
+    {
       "title": "Bending The Steel",
       "url": "/music/bending-the-steel.mp3"
     },
@@ -26,12 +30,24 @@
       "url": "/music/beyond-the-white-line.mp3"
     },
     {
+      "title": "Blacktop At Redline",
+      "url": "/music/blacktop-at-redline.mp3"
+    },
+    {
       "title": "Chrome Monsoon",
       "url": "/music/chrome-monsoon.mp3"
     },
     {
+      "title": "Circles On Your Palm",
+      "url": "/music/circles-on-your-palm.mp3"
+    },
+    {
       "title": "Eh Pal Rukk Jaan",
       "url": "/music/eh-pal-rukk-jaan.mp3"
+    },
+    {
+      "title": "Lion S Stride",
+      "url": "/music/lion-s-stride.mp3"
     },
     {
       "title": "Midnight Apex",
@@ -40,6 +56,10 @@
     {
       "title": "Midnight Pursuit",
       "url": "/music/midnight-pursuit.mp3"
+    },
+    {
+      "title": "Patterns On The Floor",
+      "url": "/music/patterns-on-the-floor.mp3"
     },
     {
       "title": "Pavement Vengeance",
@@ -54,12 +74,24 @@
       "url": "/music/redline-at-midnight.mp3"
     },
     {
+      "title": "Redline Command",
+      "url": "/music/redline-command.mp3"
+    },
+    {
       "title": "Redline Pressure",
       "url": "/music/redline-pressure.mp3"
     },
     {
       "title": "Redline Ritual",
       "url": "/music/redline-ritual.mp3"
+    },
+    {
+      "title": "Redline Run",
+      "url": "/music/redline-run.mp3"
+    },
+    {
+      "title": "Redline Victory",
+      "url": "/music/redline-victory.mp3"
     },
     {
       "title": "The Final Onslaught",
@@ -94,6 +126,18 @@
       "url": "/music/track-26.mp3"
     },
     {
+      "title": "Track 36",
+      "url": "/music/track-36.mp3"
+    },
+    {
+      "title": "Untamed Monsoon",
+      "url": "/music/untamed-monsoon.mp3"
+    },
+    {
+      "title": "Where Giants Stood",
+      "url": "/music/where-giants-stood.mp3"
+    },
+    {
       "title": "Where The Current Breaks",
       "url": "/music/where-the-current-breaks.mp3"
     },
@@ -106,5 +150,5 @@
       "url": "/music/where-the-road-fades.mp3"
     }
   ],
-  "total": 26
+  "total": 37
 }

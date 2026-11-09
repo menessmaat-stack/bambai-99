@@ -57,9 +57,9 @@ const EDITS = [
     'wave layers',
     'I(0,2.4*G,38*G,0.9,n.night?"rgba(150,186,226,0.14)":"rgba(240,250,255,0.2)",Math.max(0.4*G,Y)),' +
     'I(V*0.5,1.5*G,23*G,-1.3,n.night?"rgba(120,156,200,0.09)":"rgba(214,236,250,0.12)",Math.max(0.25*G,Y*0.7))',
-    'I(V*0.25,5.2*G,74*G,0.45,n.night?"rgba(96,136,178,0.18)":"rgba(255,255,255,0.16)",Math.max(1.8*G,Y*1.5)),' +
-    'I(0,3.4*G,38*G,0.9,n.night?"rgba(150,186,226,0.28)":"rgba(240,250,255,0.44)",Math.max(1.1*G,Y)),' +
-    'I(V*0.5,2.2*G,23*G,-1.3,n.night?"rgba(120,156,200,0.2)":"rgba(214,236,250,0.3)",Math.max(0.7*G,Y*0.7))'
+    'I(V*0.25,6.4*G,96*G,0.3,n.night?"rgba(96,136,178,0.1)":"rgba(255,255,255,0.08)",Math.max(1.4*G,Y*1.2)),' +
+    'I(0,4.2*G,54*G,0.55,n.night?"rgba(150,186,226,0.11)":"rgba(240,250,255,0.13)",Math.max(0.9*G,Y)),' +
+    'I(V*0.5,2.6*G,31*G,-0.8,n.night?"rgba(120,156,200,0.07)":"rgba(214,236,250,0.09)",Math.max(0.6*G,Y*0.7))'
   ],
 
   // ===== Cabbie: kaali-peeli, not a New York checker cab ===================
@@ -81,7 +81,7 @@ const EDITS = [
   [
     'traffic weights',
     'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,12,12,12,14,',
-    'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,12,12,12,12,12,12,12,12,12,12,12,54,54,54,14,'
+    'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,40,41,42,56,57,12,12,12,12,12,12,12,12,12,12,12,54,54,54,14,'
   ],
 
   // ===== audio: the SFX bus was 8-15x quieter than the music ===============
@@ -140,22 +140,36 @@ const EDITS = [
     'let En={shot:()=>{if(!L||B.current||L.state!=="running")return;',
     'let En={crunch:(hdV)=>{if(!L||B.current||L.state!=="running")return;try{' +
     'let hdT=L.currentTime,hdG=ze(typeof hdV==="number"?hdV:0.5,0.08,1),' +
-    'hdN=Math.floor(L.sampleRate*0.3),hdBuf=L.createBuffer(1,hdN,L.sampleRate),' +
+    // sheet-metal partials: inharmonic ratios, long-ish ring, that is what makes
+    // it read as metal rather than as a thump
+    'hdP=[1,1.58,2.13,2.79,3.46,4.37],hdB=180+hdG*120;' +
+    'for(let hdI=0;hdI<hdP.length;hdI++){' +
+    'let hdO=L.createOscillator(),hdGn=L.createGain();' +
+    'hdO.type=hdI<2?"triangle":"square",' +
+    'hdO.frequency.setValueAtTime(hdB*hdP[hdI]*(0.98+Math.random()*0.05),hdT),' +
+    'hdO.frequency.exponentialRampToValueAtTime(hdB*hdP[hdI]*0.82,hdT+0.5);' +
+    'let hdA=hdG*0.17/(1+hdI*0.55);' +
+    'hdGn.gain.setValueAtTime(0,hdT),hdGn.gain.linearRampToValueAtTime(hdA,hdT+0.004),' +
+    'hdGn.gain.exponentialRampToValueAtTime(0.0008,hdT+0.3+0.45/(1+hdI*0.5)),' +
+    'hdO.connect(hdGn),hdGn.connect(ve),hdO.start(hdT),hdO.stop(hdT+0.95)}' +
+    // short bright transient: the dent, before the ring
+    'let hdN=Math.floor(L.sampleRate*0.09),hdBuf=L.createBuffer(1,hdN,L.sampleRate),' +
     'hdCh=hdBuf.getChannelData(0);' +
-    'for(let hdI=0;hdI<hdN;hdI++)hdCh[hdI]=(Math.random()*2-1)*Math.pow(1-hdI/hdN,2.3);' +
+    'for(let hdI=0;hdI<hdN;hdI++)hdCh[hdI]=(Math.random()*2-1)*Math.pow(1-hdI/hdN,3.1);' +
     'let hdSrc=L.createBufferSource();hdSrc.buffer=hdBuf;' +
-    'let hdBp=L.createBiquadFilter();hdBp.type="bandpass",hdBp.Q.value=0.8,' +
-    'hdBp.frequency.setValueAtTime(2100,hdT),' +
-    'hdBp.frequency.exponentialRampToValueAtTime(430,hdT+0.26);' +
-    'let hdNg=L.createGain();hdNg.gain.setValueAtTime(hdG*0.8,hdT),' +
-    'hdNg.gain.exponentialRampToValueAtTime(0.001,hdT+0.3),' +
+    'let hdBp=L.createBiquadFilter();hdBp.type="bandpass",hdBp.Q.value=1.4,' +
+    'hdBp.frequency.setValueAtTime(3400,hdT),' +
+    'hdBp.frequency.exponentialRampToValueAtTime(1100,hdT+0.09);' +
+    'let hdNg=L.createGain();hdNg.gain.setValueAtTime(hdG*0.5,hdT),' +
+    'hdNg.gain.exponentialRampToValueAtTime(0.001,hdT+0.1),' +
     'hdSrc.connect(hdBp),hdBp.connect(hdNg),hdNg.connect(ve),hdSrc.start(hdT);' +
+    // body of the car taking the hit
     'let hdOsc=L.createOscillator(),hdOg=L.createGain();hdOsc.type="square",' +
-    'hdOsc.frequency.setValueAtTime(95,hdT),' +
-    'hdOsc.frequency.exponentialRampToValueAtTime(40,hdT+0.1),' +
-    'hdOg.gain.setValueAtTime(hdG*0.55,hdT),' +
-    'hdOg.gain.exponentialRampToValueAtTime(0.001,hdT+0.14),' +
-    'hdOsc.connect(hdOg),hdOg.connect(ve),hdOsc.start(hdT),hdOsc.stop(hdT+0.15)}catch{}},' +
+    'hdOsc.frequency.setValueAtTime(104,hdT),' +
+    'hdOsc.frequency.exponentialRampToValueAtTime(44,hdT+0.12),' +
+    'hdOg.gain.setValueAtTime(hdG*0.42,hdT),' +
+    'hdOg.gain.exponentialRampToValueAtTime(0.001,hdT+0.16),' +
+    'hdOsc.connect(hdOg),hdOg.connect(ve),hdOsc.start(hdT),hdOsc.stop(hdT+0.18)}catch{}},' +
     'shot:()=>{if(!L||B.current||L.state!=="running")return;'
   ],
   // Contact is resolved every frame, so each sound is rate limited off the game
@@ -344,7 +358,11 @@ const EDITS = [
     '{id:"worli",label:"Worli Sea Face",lon:72.8179,lat:19.0117},' +
     '{id:"marine",label:"Marine Drive",lon:72.8237,lat:18.9458},' +
     '{id:"fort",label:"CSMT & Fort",lon:72.8358,lat:18.9405},' +
-    '{id:"colaba",label:"Colaba Causeway",lon:72.826,lat:18.9151}]'
+    '{id:"colaba",label:"Colaba Causeway",lon:72.826,lat:18.9151},' +
+    '{id:"powai",label:"Powai Lake",lon:72.9073,lat:19.1187},' +
+    '{id:"ghatkopar",label:"Ghatkopar",lon:72.9084,lat:19.0857},' +
+    '{id:"mulund",label:"Mulund",lon:72.9567,lat:19.1721},' +
+    '{id:"thane",label:"Thane Station",lon:72.9758,lat:19.1865}]'
   ],
   [
     'job offer wording',
@@ -394,6 +412,191 @@ const EDITS = [
   // s.deaths is capped at 64 and the cluster also had to be under 90 s old, so
   // CH9 Mumbai Live effectively never turned up. Two bodies is enough now; the
   // 25 s cooldown and the one-crew-at-a-time rule still hold it back.
+  // ===== HUD scale: 11 px type is fine on a laptop and enormous on a phone ===
+  // The HUD is drawn in CSS pixels after the world, so on a 390 px screen it ate
+  // a third of the view. The transform is reset at the top of every frame (an
+  // early return inside the HUD must not leak a scale into the next one), and
+  // the HUD block then scales itself down while `t`/`v` are divided by the same
+  // factor so everything anchored to an edge stays on that edge.
+  [
+    'frame transform reset',
+    'y9=()=>{let t=d.width/x,v=d.height/x;if(t<8||v<8)return;if(c5(',
+    'y9=()=>{let t=d.width/x,v=d.height/x;if(t<8||v<8)return;f.setTransform(x,0,0,x,0,0);if(c5('
+  ],
+  [
+    'hud scale',
+    'f.fillStyle=fe,f.fillRect(0,0,t,v),f.textBaseline="middle",' +
+    'f.fillStyle="rgba(10,12,14,0.62)",f.fillRect(14,14,190,64)',
+    'f.fillStyle=fe,f.fillRect(0,0,t,v);' +
+    'let hdU=Math.min(1,Math.max(0.58,t/1180));' +
+    'if(hdU<1)f.setTransform(x*hdU,0,0,x*hdU,0,0),t/=hdU,v/=hdU;' +
+    'f.textBaseline="middle",f.fillStyle="rgba(10,12,14,0.62)",f.fillRect(14,14,190,64)'
+  ],
+
+  // ===== speed blur =========================================================
+  // Radial streaks from the centre of the screen once a quick car or a bike is
+  // past 55% of its top speed. Slow vehicles never get them, so a Cabbie at full
+  // tilt stays clean and a Lamborghini does not.
+  [
+    'speed lines',
+    'f.fillRect(0,0,t,v)}let ee=Math.max(1,Math.min(t,v)*0.42),M=Math.max(ee+1,Math.max(t,v)*0.72),' +
+    'fe=f.createRadialGradient(t/2,v/2,ee,t/2,v/2,M);',
+    'f.fillRect(0,0,t,v)}{let hdC=!s.player.onFoot&&s.player.carIdx>=0?s.cars[s.player.carIdx]:null,' +
+    'hdD=hdC?Ie(hdC.type):null;' +
+    'if(hdD&&(hdD.top>=430||hdD.bike)&&!hdC.dead){' +
+    'let hdS=Math.hypot(hdC.vx,hdC.vy)/(hdD.top||400);' +
+    'if(hdS>0.55){let hdA=Math.min(0.42,(hdS-0.55)*1.3),hdR=Math.max(t,v)*0.34;' +
+    'f.save(),f.globalAlpha=hdA,f.strokeStyle="rgba(228,240,255,0.9)",f.lineWidth=1.5;' +
+    'for(let hdI=0;hdI<30;hdI++){' +
+    'let hdG=hdI*2.3999+s.t*0.7,hdL=hdR*(0.5+(hdI%7)/9),hdE=hdL+30+hdS*90;' +
+    'f.beginPath(),f.moveTo(t/2+Math.cos(hdG)*hdL,v/2+Math.sin(hdG)*hdL),' +
+    'f.lineTo(t/2+Math.cos(hdG)*hdE,v/2+Math.sin(hdG)*hdE),f.stroke()}' +
+    'f.restore()}}}' +
+    'let ee=Math.max(1,Math.min(t,v)*0.42),M=Math.max(ee+1,Math.max(t,v)*0.72),' +
+    'fe=f.createRadialGradient(t/2,v/2,ee,t/2,v/2,M);'
+  ],
+
+  // ===== the player on foot was a 6 px blob on a busy street ================
+  [
+    'player marker ring',
+    'd9=()=>{let t=s.player;if(!t.onFoot)return;if(f.save(),f.translate(t.x,t.y),t.chute)',
+    'd9=()=>{let t=s.player;if(!t.onFoot)return;' +
+    'f.save(),f.translate(t.x,t.y),f.fillStyle="rgba(252,211,77,0.16)",' +
+    'f.beginPath(),f.arc(0,0,12,0,Math.PI*2),f.fill(),' +
+    'f.strokeStyle="rgba(252,211,77,0.95)",f.lineWidth=1.4,f.beginPath(),' +
+    'f.arc(0,0,11.5+Math.sin(s.t*4)*1.1,0,Math.PI*2),f.stroke(),' +
+    'f.fillStyle="rgba(252,211,77,0.95)",f.beginPath(),' +
+    'f.moveTo(Math.cos(t.h)*15.5,Math.sin(t.h)*15.5),' +
+    'f.lineTo(Math.cos(t.h+2.6)*10,Math.sin(t.h+2.6)*10),' +
+    'f.lineTo(Math.cos(t.h-2.6)*10,Math.sin(t.h-2.6)*10),' +
+    'f.closePath(),f.fill(),f.restore();' +
+    'if(f.save(),f.translate(t.x,t.y),t.chute)'
+  ],
+
+  // ===== supercars people have heard of ====================================
+  ['porsche 911', '{name:"Comet GTR",', '{name:"Porsche 911 GT3",'],
+  ['lamborghini huracan', '{name:"Vacca",', '{name:"Lamborghini Huracan",'],
+  ['lamborghini aventador', '{name:"Zentorno",', '{name:"Lamborghini Aventador",'],
+  ['porsche taycan', '{name:"Osiris",', '{name:"Porsche Taycan",'],
+
+  // ===== gangs: they existed but you never met enough of them ==============
+  // `s9()` keeps at most four `ai:"gang"` cars alive and draws them from $5 —
+  // four generic coupes plus the four badged crew cars. Widen the pool with the
+  // premium sedans and the supercars, and raise the cap.
+  [
+    'gang car pool',
+    'var $5=[32,33,34,35,60,61,62,63];',
+    'var $5=[32,33,34,35,60,61,62,63,60,61,62,63,40,41,42,56,57,58,59];'
+  ],
+  ['gang car cap', 'if(t>=4)return;let v=s.player,z=oo();', 'if(t>=7)return;let v=s.player,z=oo();'],
+  ['gang spawn attempts', 'for(let $=0;$<6&&t<4;$++)', 'for(let $=0;$<8&&t<7;$++)'],
+
+  // ===== surf: the sea has to break on the shore, not stripe the bay =======
+  // Every coastal landmass is stroked with two animated dashed lines whose
+  // phase and width pulse, so the waterline froths and the open water keeps
+  // only a faint swell.
+  [
+    'shore surf',
+    'case"land":{if(!Pn(r,V.pts))break;if(r.fillStyle=l.land,r.fill("evenodd"),i)' +
+    'r.strokeStyle=l.shore,r.lineWidth=Math.max(0.9*G,1.4*E),r.stroke();break}',
+    'case"land":{if(!Pn(r,V.pts))break;if(r.fillStyle=l.land,r.fill("evenodd"),i){' +
+    'r.strokeStyle=l.shore,r.lineWidth=Math.max(0.9*G,1.4*E),r.stroke();' +
+    'let hdT=y(n.t)?n.t:0,hdPh=0.5+0.5*Math.sin(hdT*1.5+(V.pts[0]||0)*0.0006);' +
+    'r.save(),r.lineCap="round",' +
+    'r.strokeStyle=n.night?`rgba(196,220,240,${0.12+hdPh*0.22})`:`rgba(255,255,255,${0.2+hdPh*0.38})`,' +
+    'r.lineWidth=Math.max(1.5*G,2.4*E),' +
+    'r.setLineDash([(7+hdPh*9)*G,(9-hdPh*3)*G]),r.lineDashOffset=-hdT*24*G,r.stroke(),' +
+    'r.strokeStyle=n.night?`rgba(150,186,226,${0.08+(1-hdPh)*0.14})`:`rgba(226,244,255,${0.12+(1-hdPh)*0.24})`,' +
+    'r.lineWidth=Math.max(0.9*G,1.5*E),' +
+    'r.setLineDash([4*G,(12+hdPh*6)*G]),r.lineDashOffset=hdT*16*G,r.stroke(),' +
+    'r.setLineDash([]),r.restore()}break}'
+  ],
+
+  // ===== anything that drives into the sea goes under ======================
+  // `nl(x,y)` is the game's own land test. A car off the edge loses drive,
+  // throws spray for a second and a half, and then sinks — cop cars included.
+  [
+    'cars drown',
+    'function $9(t){for(let z of s.cars){if(z.dead){z.wreckT+=t;continue}if(z.hp<=0',
+    'function $9(t){for(let z of s.cars){if(z.dead){z.wreckT+=t;continue}' +
+    'if(!nl(z.x,z.y)){z.hdW=(z.hdW??0)+t,z.speed=0,' +
+    'z.vx*=Math.max(0,1-3*t),z.vy*=Math.max(0,1-3*t);' +
+    'if(Math.random()<t*16)s.parts.push({x:z.x+(Math.random()-0.5)*18,' +
+    'y:z.y+(Math.random()-0.5)*14,vx:(Math.random()-0.5)*40,vy:-25-Math.random()*35,' +
+    'life:0.45+Math.random()*0.3,max:0.75,r:2+Math.random()*4,col:"#d8eef8",glow:!0});' +
+    'if(z.hdW>1.6){z.dead=!0,z.wreckT=0,z.hp=0,En.thud(0.5);' +
+    'if(z.player)s.player.carIdx=-1,s.player.onFoot=!0,to(18),le("Sank it. You swam out.");' +
+    'else if(z.ai==="cop")le("Police cruiser in the drink.");continue}}else z.hdW=0;if(z.hp<=0'
+  ],
+
+  // ===== bazooka ===========================================================
+  // The missile system already existed for the tank; this exposes it as a
+  // carried weapon, on foot or at the wheel, with a brighter exhaust trail.
+  [
+    'bazooka in the weapon tables',
+    'sr=["pistol","smg","shotgun","rifle","grenade","flamer"],' +
+    'Uv={pistol:240,smg:600,shotgun:120,rifle:90,grenade:25,flamer:900}',
+    'sr=["pistol","smg","shotgun","rifle","grenade","flamer","bazooka"],' +
+    'Uv={pistol:240,smg:600,shotgun:120,rifle:90,grenade:25,flamer:900,bazooka:12}'
+  ],
+  [
+    'bazooka stats',
+    'flamer:{name:"FLAMER",cd:0.045,pellets:1,spread:0.22,speed:230,ttl:0.42,dmg:0,auto:!0,heat:0.6,kind:"stream"}}',
+    'flamer:{name:"FLAMER",cd:0.045,pellets:1,spread:0.22,speed:230,ttl:0.42,dmg:0,auto:!0,heat:0.6,kind:"stream"},' +
+    'bazooka:{name:"BAZOOKA",cd:1.15,pellets:1,spread:0.012,speed:600,ttl:2.2,dmg:0,auto:!1,heat:1.8,kind:"rocket"}}'
+  ],
+  [
+    'bazooka ammo slot',
+    'function q5(){return{pistol:0,smg:0,shotgun:0,rifle:0,grenade:0,flamer:0}}',
+    'function q5(){return{pistol:0,smg:0,shotgun:0,rifle:0,grenade:0,flamer:0,bazooka:0}}'
+  ],
+  [
+    'bazooka fire',
+    'N.ammo[J]-1),Z.kind==="throw"){',
+    'N.ammo[J]-1),Z.kind==="rocket"){let hdS=N.carIdx>=0?s.cars[N.carIdx]:null;' +
+    's.missiles.push({x:t+Math.cos(z)*$,y:v+Math.sin(z)*$,' +
+    'vx:Math.cos(z)*Z.speed,vy:Math.sin(z)*Z.speed,ttl:Z.ttl,src:hdS,smoke:0,arm:0.09}),' +
+    'En.boom(),s.cam.shake=Math.max(s.cam.shake,9),Zn(Z.heat,!1);return}' +
+    'if(Z.kind==="throw"){'
+  ],
+  [
+    'rocket exhaust trail',
+    'if($.smoke-=t,$.smoke<=0&&s.parts.length<ht)$.smoke=0.02,' +
+    's.parts.push({x:$.x,y:$.y,vx:-$.vx*0.05,vy:-$.vy*0.05,life:0.5,max:0.5,' +
+    'r:2.6+Math.random()*2,col:"#8d8d8d"});',
+    'if($.smoke-=t,$.smoke<=0&&s.parts.length<ht){$.smoke=0.012;' +
+    'let hdH=Math.random();s.parts.push({x:$.x,y:$.y,vx:-$.vx*0.08+(Math.random()-0.5)*40,' +
+    'vy:-$.vy*0.08+(Math.random()-0.5)*40,life:0.45+Math.random()*0.5,max:0.95,' +
+    'r:2.4+Math.random()*3.6,col:hdH<0.3?"#ffd98a":hdH<0.55?"#ff8a2a":"#9a9a9a",glow:hdH<0.55});' +
+    's.parts.push({x:$.x,y:$.y,vx:0,vy:0,life:0.12,max:0.12,r:5.5,col:"#fff3c0",glow:!0})}'
+  ],
+  [
+    'ammo hint mentions seven slots',
+    '`${Z.name} — out of ammo. 1-6 to switch.`',
+    '`${Z.name} — out of ammo. 1-7 to switch.`'
+  ],
+  [
+    'seven weapon keys',
+    'if(Q.current==="play"&&v>="1"&&v<="6")t2(Number(v)-1)',
+    'if(Q.current==="play"&&v>="1"&&v<="7")t2(Number(v)-1)'
+  ],
+
+  // ===== people get hit, not just killed ==================================
+  [
+    'pedestrian knockdown',
+    'if(k&&!k.dead&&Math.hypot(k.x-N.x,k.y-N.y)<22&&Math.hypot(k.vx,k.vy)>110)' +
+    'Qr(N,!0),le("+25 — hopefully they jaywalked."),En.thud(0.3)',
+    'if(k&&!k.dead&&Math.hypot(k.x-N.x,k.y-N.y)<22){let hdV=Math.hypot(k.vx,k.vy);' +
+    'if(hdV>110)Qr(N,!0),le("+25 — hopefully they jaywalked."),' +
+    'En.thud(0.35),En.crunch(0.3),k.vx*=0.92,k.vy*=0.92;' +
+    'else if(hdV>40){let hdA=Math.atan2(k.vy,k.vx),' +
+    'hdP=fu(N.x+Math.cos(hdA)*hdV*0.07,N.y+Math.sin(hdA)*hdV*0.07,6,N.x,N.y);' +
+    'N.x=hdP.x,N.y=hdP.y,N.kind="flee",N.wpX=N.x+Math.cos(hdA)*200,N.wpY=N.y+Math.sin(hdA)*200,' +
+    'N.hits=(N.hits??0)+1,En.thud(0.22),s.cam.shake=Math.max(s.cam.shake,4),' +
+    'k.vx*=0.9,k.vy*=0.9,s.decals.push({x:N.x,y:N.y,a:0.3,r:4,kind:"blood"});' +
+    'if(N.hits>=3)Qr(N,!1)}}'
+  ],
+
   ['news crew threshold', 'if(z<=5)continue;', 'if(z<=1)continue;'],
   [
     'job payout wording',

@@ -203,6 +203,12 @@
                 <option value="kurla">Kurla Station</option>
                 <option value="andheri">Andheri Metro</option>
               </optgroup>
+              <optgroup label="East / Thane">
+                <option value="powai">Powai Lake</option>
+                <option value="ghatkopar">Ghatkopar</option>
+                <option value="mulund">Mulund</option>
+                <option value="thane">Thane Station</option>
+              </optgroup>
               <optgroup label="South Mumbai">
                 <option value="dadar">Dadar West</option>
                 <option value="worli">Worli Sea Face</option>
@@ -258,14 +264,18 @@
       worli: { lat: 19.0117, lng: 72.8179, zoom: 14, name: "Worli Sea Face" },
       marine: { lat: 18.9458, lng: 72.8237, zoom: 14, name: "Marine Drive" },
       fort: { lat: 18.9405, lng: 72.8358, zoom: 14, name: "CSMT & Fort" },
-      colaba: { lat: 18.9151, lng: 72.826, zoom: 14, name: "Colaba Causeway" }
+      colaba: { lat: 18.9151, lng: 72.826, zoom: 14, name: "Colaba Causeway" },
+      powai: { lat: 19.1187, lng: 72.9073, zoom: 14, name: "Powai Lake" },
+      ghatkopar: { lat: 19.0857, lng: 72.9084, zoom: 14, name: "Ghatkopar" },
+      mulund: { lat: 19.1721, lng: 72.9567, zoom: 14, name: "Mulund" },
+      thane: { lat: 19.1865, lng: 72.9758, zoom: 14, name: "Thane Station" }
     };
 
     function initMumbaiMap() {
       // Centred on the slice of Mumbai the game actually bakes: Bandra, BKC,
       // Kurla, Juhu and the airport.
       map = L.map('mumbaiMap', {
-        center: [19.01, 72.852],
+        center: [19.05, 72.89],
         zoom: 11,
         zoomControl: false,
         attributionControl: false

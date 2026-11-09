@@ -65,6 +65,16 @@ and `--check` to confirm a bundle is patched. It covers:
 - **Aircraft** — up to three "planes" per apron were scenery that `nearestPlane`
   could never return, which is why they could not be boarded. Scenery is off,
   the real parked-plane cap is 14, and boarding reach is 95 m.
+- **Sea** — the open water keeps a faint swell and the drama moved to the
+  coastline: every landmass is stroked with two animated dashed foam lines, so
+  surf breaks along the shore. Anything that drives into the water loses drive,
+  throws spray and sinks after 1.6 s, police cruisers included.
+- **Bazooka** — seventh weapon slot, 12 rockets, reusing the tank's missile
+  system from on foot or at the wheel, with a flame-and-smoke exhaust trail.
+- **Impacts** — the crunch is now six inharmonic metal partials (1, 1.58, 2.13,
+  2.79, 3.46, 4.37) over a bright transient, so it rings like sheet metal.
+  Pedestrians below 110 closing speed are knocked down, displaced and sent
+  fleeing (three hits kill) instead of being untouched or instantly dead.
 - **Jobs** — the Flo trucks and police cars join the existing hire loop as kinds
   `flo` and `cop`: consignment runs (₹260 + ₹1.9/m, failed if you spill the
   load) and dispatch call-outs (₹180 + ₹1.3/m), both with pins, par-time bonus

@@ -22,7 +22,11 @@
     worli: "Worli Sea Face",
     marine: "Marine Drive",
     fort: "CSMT & Fort",
-    colaba: "Colaba Causeway"
+    colaba: "Colaba Causeway",
+    powai: "Powai Lake",
+    ghatkopar: "Ghatkopar",
+    mulund: "Mulund",
+    thane: "Thane Station"
   };
 
   var want = LABELS[new URLSearchParams(location.search).get('spawn')];

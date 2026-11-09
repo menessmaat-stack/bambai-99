@@ -109,9 +109,11 @@
    *  44 from the top, in canvas CSS pixels. */
   function openMap() {
     var r = canvas.getBoundingClientRect();
-    var scale = r.width / (canvas.width / (window.devicePixelRatio || 1));
-    var size = 176 * (isFinite(scale) && scale > 0 ? scale : 1);
-    var pt = { x: r.right - 14 - size / 2, y: r.top + 44 + size / 2 };
+    // The bundle scales its whole HUD by hdU = clamp(cssWidth/1180, 0.58, 1) on
+    // small screens, so the minimap disc shrinks and moves with it.
+    var hud = Math.min(1, Math.max(0.58, r.width / 1180));
+    var size = 176 * hud;
+    var pt = { x: r.right - 14 * hud - size / 2, y: r.top + (44 * hud) + size / 2 };
     mouse(canvas, 'mousemove', pt, 0);
     mouse(canvas, 'mousedown', pt, 1);
     mouse(window, 'mouseup', pt, 0);
@@ -229,16 +231,17 @@
     '#hd-top svg{width:18px;height:18px;}',
     '#hd-more{position:absolute;left:calc(14px + env(safe-area-inset-left));',
     'top:calc(134px + env(safe-area-inset-top));display:none;',
-    'grid-template-columns:repeat(4,46px);gap:8px;}',
+    'grid-template-columns:repeat(6,38px);gap:6px;}',
     '#hd-more.hd-open{display:grid;}',
-    '#hd-more button{height:40px;border-radius:12px;}',
-    '#hd-more svg{width:19px;height:19px;}',
+    '#hd-more button{height:34px;border-radius:10px;opacity:.9;}',
+    '#hd-more svg{width:17px;height:17px;}',
     // one-time fullscreen invitation
-    '#hd-touch button#hd-fs{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);',
-    'pointer-events:auto;width:76px;height:76px;border-radius:50%;border:0;color:#0b0e13;',
-    'background:radial-gradient(circle at 35% 30%,#ffe9a8,#f0bc28 70%);',
-    'box-shadow:0 6px 24px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;}',
-    '#hd-touch button#hd-fs svg{width:30px;height:30px;stroke-width:2;}',
+    '#hd-touch button#hd-fs{position:absolute;left:50%;',
+    'top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);',
+    'pointer-events:auto;width:40px;height:30px;border-radius:9px;color:#0b0e13;',
+    'background:linear-gradient(180deg,rgba(252,211,77,.95),rgba(240,188,40,.95));',
+    'border:1px solid rgba(255,236,160,.9);box-shadow:0 2px 10px rgba(0,0,0,.4);}',
+    '#hd-touch button#hd-fs svg{width:17px;height:17px;stroke-width:2.1;}',
     '@media (max-height:380px){#hd-pedals button{width:50px;height:40px;}',
     '#hd-steer{width:142px;height:46px;}#hd-act button.hd-fire{width:54px;height:54px;}',
     '#hd-act button{width:42px;height:36px;}}'
@@ -423,7 +426,7 @@
       toggleFullscreen();
       dismiss();
     });
-    setTimeout(dismiss, 12000);
+    setTimeout(dismiss, 7000);
   }
 
   /* ---------- aim: touching the street points the gun -------------------- */
