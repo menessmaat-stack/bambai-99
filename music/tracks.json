@@ -2,11 +2,11 @@
   "ok": true,
   "tracks": [
     {
-      "title": "A Heavy Heart at Dawn",
+      "title": "A Heavy Heart At Dawn",
       "url": "/music/a-heavy-heart-at-dawn.mp3"
     },
     {
-      "title": "Architect of Dawn",
+      "title": "Architect Of Dawn",
       "url": "/music/architect-of-dawn.mp3"
     },
     {
@@ -18,11 +18,11 @@
       "url": "/music/asphalt-veins.mp3"
     },
     {
-      "title": "Bending the Steel",
+      "title": "Bending The Steel",
       "url": "/music/bending-the-steel.mp3"
     },
     {
-      "title": "Beyond the White Line",
+      "title": "Beyond The White Line",
       "url": "/music/beyond-the-white-line.mp3"
     },
     {
@@ -66,7 +66,7 @@
       "url": "/music/the-final-onslaught.mp3"
     },
     {
-      "title": "The Last Vigil at Dawn",
+      "title": "The Last Vigil At Dawn",
       "url": "/music/the-last-vigil-at-dawn.mp3"
     },
     {
@@ -78,32 +78,32 @@
       "url": "/music/the-space-left-behind.mp3"
     },
     {
-      "title": "The Weight of Quiet Rooms",
+      "title": "The Weight Of Quiet Rooms",
       "url": "/music/the-weight-of-quiet-rooms.mp3"
     },
     {
-      "title": "The Weight of Will",
+      "title": "The Weight Of Will",
       "url": "/music/the-weight-of-will.mp3"
     },
     {
-      "title": "The Weight of Yesterday",
+      "title": "The Weight Of Yesterday",
       "url": "/music/the-weight-of-yesterday.mp3"
     },
     {
-      "title": "Where the Current Breaks",
+      "title": "Track 26",
+      "url": "/music/track-26.mp3"
+    },
+    {
+      "title": "Where The Current Breaks",
       "url": "/music/where-the-current-breaks.mp3"
     },
     {
-      "title": "Where the Monsoon Rests",
+      "title": "Where The Monsoon Rests",
       "url": "/music/where-the-monsoon-rests.mp3"
     },
     {
-      "title": "Where the Road Fades",
+      "title": "Where The Road Fades",
       "url": "/music/where-the-road-fades.mp3"
-    },
-    {
-      "title": "限界突破のフルスロットル",
-      "url": "/music/track-26.mp3"
     }
   ],
   "total": 26
