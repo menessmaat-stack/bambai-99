@@ -1030,25 +1030,25 @@ const EDITS = [
     'E*G>=tn.fine&&q.r*E>46',
     'q.r*E>10'
   ],
-  // ===== 10. High Speed Vehicle Handling (Easy turning at 400+ km/h) =====
+  // ===== 10. High Speed Vehicle Handling (Easy turning for Player Only!) =====
   [
     'high speed vehicle handling',
     'te=K.steer*(1-M*0.18)/(1+Math.pow(Math.abs(k)/300,1.7)*1.05);',
-    'te=K.steer*(1-M*0.12)/(1+Math.pow(Math.abs(k)/580,1.25)*0.38);'
+    'te=t.player?K.steer*(1-M*0.12)/(1+Math.pow(Math.abs(k)/580,1.25)*0.38):K.steer*(1-M*0.18)/(1+Math.pow(Math.abs(k)/300,1.7)*1.05);'
   ],
 
-  // ===== 11. Top Speed of All Vehicles Boosted 65% =====
+  // ===== 11. Top Speed Boosted for Player Only (Normal people stay at normal speed!) =====
   [
     'top speed of all vehicles boosted',
     'k=ze(k,-170,K.top*(1-M*0.45)*(t.nosOn?1.22:1));',
-    'k=ze(k,-240,K.top*1.65*(1-M*0.35)*(t.nosOn?1.35:1));'
+    'k=ze(k,-170,(t.player?K.top*1.85:K.top)*(1-M*0.45)*(t.nosOn?1.35:1));'
   ],
 
-  // ===== 12. Acceleration Boosted 45% =====
+  // ===== 12. Acceleration Boosted for Player Only (Normal people stay at normal speed!) =====
   [
     'acceleration of all vehicles boosted',
     'let Je=fe*K.power*(1-M*0.4)/K.mass*(k<0?1.6:1);',
-    'let Je=fe*K.power*1.45*(1-M*0.3)/K.mass*(k<0?1.8:1);'
+    'let Je=fe*(t.player?K.power*1.6:K.power)*(1-M*0.4)/K.mass*(k<0?1.6:1);'
   ],
 
   // ===== 13. Speed Blur with Blurry Streaking Red Tail Lights =====
@@ -1077,38 +1077,49 @@ const EDITS = [
     'if(e.save()'
   ],
 
-  // ===== 15. All Rectangular Buildings Get Architectural Roofs in h6 (Image #3) =====
+  // ===== 15. Realistic Architectural Roof Diversity (No Stamped Repetitive X's!) =====
   [
     'h6 architectural roof styling',
     'if(o.fillStyle=D,Pn(o,B.pts,Be,Qe))o.fill();if(E*G>=tn.detail)o.strokeStyle="rgba(0,0,0,0.28)",o.lineWidth=Math.max(0.08*G,0.7*Q),o.stroke()}',
     'if(o.fillStyle=D,Pn(o,B.pts,Be,Qe))o.fill();if(E*G>=tn.detail)o.strokeStyle="rgba(0,0,0,0.28)",o.lineWidth=Math.max(0.08*G,0.7*Q),o.stroke();' +
-    'if(B.r*E>8){let cx=B.cx+Be,cy=B.cy+Qe,br=B.r*0.6,arch=Math.floor(O*100)%5;' +
-    'if(arch===0||j===1){' +
-    // 1. Pyramidal Glass Skylight
-    'let sw=Math.min(br*0.5,8*G);' +
-    'o.fillStyle="#38bdf8",o.beginPath(),o.moveTo(cx-sw,cy+sw),o.lineTo(cx,cy),o.lineTo(cx-sw,cy-sw),o.closePath(),o.fill();' +
-    'o.fillStyle="#0284c7",o.beginPath(),o.moveTo(cx+sw,cy-sw),o.lineTo(cx,cy),o.lineTo(cx+sw,cy+sw),o.closePath(),o.fill();' +
-    'o.strokeStyle="rgba(255,255,255,0.75)",o.lineWidth=Math.max(0.4*G,Q),o.beginPath(),o.moveTo(cx-sw*0.7,cy-sw*0.7),o.lineTo(cx+sw*0.7,cy+sw*0.7),o.stroke();}' +
-    'else if(arch===1||j===0){' +
-    // 2. Hipped Terracotta Roof
-    'o.fillStyle="#b45309",o.beginPath(),o.moveTo(cx-br,cy-br),o.lineTo(cx+br,cy-br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
+    'if(B.r*E>8){let cx=B.cx+Be,cy=B.cy+Qe,br=B.r*0.65,seed=Math.floor(O*1000)%16;' +
+    // Perimeter parapet wall frame
+    'o.strokeStyle="rgba(15,23,42,0.35)",o.lineWidth=Math.max(0.5*G,Q),o.strokeRect(cx-br,cy-br,br*2,br*2);' +
+    'if(seed<8){' +
+    // 50% of buildings: Clean architectural roof deck with offset elevator/stairway penthouse
+    'let pw=br*0.35,ph=br*0.25,ox=(seed%3-1)*br*0.4,oy=(Math.floor(seed/3)-1)*br*0.4;' +
+    'o.fillStyle="rgba(24,30,40,0.45)",o.fillRect(cx+ox,cy+oy,pw,ph);' +
+    'o.strokeStyle="rgba(10,14,20,0.6)",o.lineWidth=Math.max(0.3*G,0.5*Q),o.strokeRect(cx+ox,cy+oy,pw,ph);}' +
+    'else if(seed===8||seed===9){' +
+    // Standing seam metal roof (parallel fine architectural lines)
+    'o.strokeStyle="rgba(20,26,35,0.35)",o.lineWidth=Math.max(0.3*G,0.5*Q);' +
+    'for(let lx=-br+4;lx<br-2;lx+=6*G){o.beginPath(),o.moveTo(cx+lx,cy-br+2),o.lineTo(cx+lx,cy+br-2),o.stroke();}}' +
+    'else if(seed===10||seed===11){' +
+    // Dark navy photovoltaic solar array grid
+    'let pw=Math.min(br*0.7,8*G);' +
+    'o.fillStyle="#1e3a8a",o.fillRect(cx-pw,cy-pw*0.5,pw*2,pw);' +
+    'o.strokeStyle="#94a3b8",o.lineWidth=Math.max(0.3*G,0.5*Q),o.strokeRect(cx-pw,cy-pw*0.5,pw*2,pw);' +
+    'o.beginPath(),o.moveTo(cx,cy-pw*0.5),o.lineTo(cx,cy+pw*0.5),o.stroke();}' +
+    'else if(seed===12){' +
+    // Clean gabled terracotta roof with single horizontal ridge beam
+    'o.fillStyle="#991b1b",o.beginPath(),o.moveTo(cx-br,cy-br),o.lineTo(cx+br,cy-br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
     'o.fillStyle="#78350f",o.beginPath(),o.moveTo(cx-br,cy+br),o.lineTo(cx+br,cy+br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
-    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.5*G,Q),o.beginPath(),o.moveTo(cx-br,cy-br),o.lineTo(cx+br,cy+br),o.moveTo(cx+br,cy-br),o.lineTo(cx-br,cy+br),o.stroke();}' +
-    'else if(arch===2){' +
-    // 3. Solar Panel Grid
-    'let pw=Math.min(br*0.6,7*G);' +
-    'o.fillStyle="#1e3a8a",o.fillRect(cx-pw,cy-pw*0.6,pw*2,pw*1.2);' +
-    'o.strokeStyle="#94a3b8",o.lineWidth=Math.max(0.3*G,0.5*Q),o.strokeRect(cx-pw,cy-pw*0.6,pw*2,pw*1.2);}' +
-    'else if(arch===3&&B.r>16){' +
-    // 4. Rooftop Pool & Lawn
-    'let pw=Math.min(br*0.5,6*G);' +
-    'o.fillStyle="#15803d",o.fillRect(cx-pw-2,cy-pw*0.5-2,pw*2+4,pw+4);' +
-    'o.fillStyle="#06b6d4",o.fillRect(cx-pw,cy-pw*0.5,pw*2,pw);' +
-    'o.strokeStyle="#cffafe",o.lineWidth=Math.max(0.4*G,0.6*Q),o.strokeRect(cx-pw,cy-pw*0.5,pw*2,pw);}' +
+    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.5*G,Q),o.beginPath(),o.moveTo(cx-br,cy),o.lineTo(cx+br,cy),o.stroke();}' +
+    'else if(seed===13){' +
+    // Clean gabled terracotta roof with single vertical ridge beam
+    'o.fillStyle="#b45309",o.beginPath(),o.moveTo(cx-br,cy-br),o.lineTo(cx-br,cy+br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
+    'o.fillStyle="#78350f",o.beginPath(),o.moveTo(cx+br,cy-br),o.lineTo(cx+br,cy+br),o.lineTo(cx,cy),o.closePath(),o.fill();' +
+    'o.strokeStyle="#451a03",o.lineWidth=Math.max(0.5*G,Q),o.beginPath(),o.moveTo(cx,cy-br),o.lineTo(cx,cy+br),o.stroke();}' +
+    'else if(seed===14){' +
+    // Rare iconic geometric glass skylight (commercial)
+    'let sw=Math.min(br*0.45,7*G);' +
+    'o.fillStyle="#38bdf8",o.fillRect(cx-sw,cy-sw*0.5,sw*2,sw);' +
+    'o.strokeStyle="rgba(255,255,255,0.7)",o.lineWidth=Math.max(0.4*G,Q),o.strokeRect(cx-sw,cy-sw*0.5,sw*2,sw);}' +
     'else{' +
-    // 5. Corrugated Sheet Roof with Blue Tarp
-    'o.fillStyle="#475569",o.fillRect(cx-br,cy-br*0.7,br*2,br*1.4);' +
-    'o.fillStyle="#0284c7",o.fillRect(cx-br*0.3,cy-br*0.4,br*0.8,br*0.7);}}' +
+    // Luxury rooftop pool & lawn
+    'let pw=Math.min(br*0.5,6*G);' +
+    'o.fillStyle="#15803d",o.fillRect(cx-pw-1,cy-pw*0.5-1,pw*2+2,pw+2);' +
+    'o.fillStyle="#06b6d4",o.fillRect(cx-pw,cy-pw*0.5,pw*2,pw);}}' +
     '}'
   ],
   // ===== 17. Vertical Propeller Rotation (Nose Vertical Plane Sweep) =====
