@@ -1,0 +1,100 @@
+/* Helm's Deep shell styles.
+ *
+ * The component was written for Tailwind inside the Next.js site. Palantir has
+ * no Tailwind build and must work without a CDN, so the handful of utilities
+ * the game's JSX actually uses are declared here by hand. Everything else the
+ * game draws is canvas.
+ */
+.relative { position: relative; }
+.absolute { position: absolute; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.right-3 { right: .75rem; }
+.top-3 { top: .75rem; }
+.z-10 { z-index: 10; }
+
+.block { display: block; }
+.flex { display: flex; }
+.grid { display: grid; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gap-2 { gap: .5rem; }
+.gap-3 { gap: .75rem; }
+.gap-4 { gap: 1rem; }
+.gap-x-8 { column-gap: 2rem; }
+.gap-y-1 { row-gap: .25rem; }
+
+.w-full { width: 100%; }
+.h-\[calc\(100vh-118px\)\] { height: calc(100vh - 118px); }
+.min-h-\[640px\] { min-height: 640px; }
+.max-w-md { max-width: 28rem; }
+.max-w-lg { max-width: 32rem; }
+.mt-2 { margin-top: .5rem; }
+
+.px-3 { padding-left: .75rem; padding-right: .75rem; }
+.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+.px-7 { padding-left: 1.75rem; padding-right: 1.75rem; }
+.px-8 { padding-left: 2rem; padding-right: 2rem; }
+.py-1\.5 { padding-top: .375rem; padding-bottom: .375rem; }
+.py-2\.5 { padding-top: .625rem; padding-bottom: .625rem; }
+.py-3 { padding-top: .75rem; padding-bottom: .75rem; }
+
+.overflow-hidden { overflow: hidden; }
+.rounded-lg { border-radius: .5rem; }
+.rounded-xl { border-radius: .75rem; }
+.rounded-2xl { border-radius: 1rem; }
+.border { border-width: 1px; border-style: solid; }
+.border-neutral-800 { border-color: #262626; }
+
+.bg-\[\#101418\] { background-color: #101418; }
+.bg-amber-400 { background-color: #fbbf24; }
+.bg-neutral-700 { background-color: #404040; }
+.bg-neutral-800 { background-color: #262626; }
+.bg-black\/50 { background-color: rgba(0, 0, 0, .5); }
+.bg-black\/70 { background-color: rgba(0, 0, 0, .7); }
+.bg-gradient-to-b { background-image: linear-gradient(to bottom, var(--tw-from), var(--tw-via), var(--tw-to)); }
+.from-black\/80 { --tw-from: rgba(0, 0, 0, .8); }
+.via-black\/70 { --tw-via: rgba(0, 0, 0, .7); }
+.to-black\/85 { --tw-to: rgba(0, 0, 0, .85); }
+
+.text-black { color: #000; }
+.text-amber-300 { color: #fcd34d; }
+.text-sky-300 { color: #7dd3fc; }
+.text-red-400 { color: #f87171; }
+.text-neutral-200 { color: #e5e5e5; }
+.text-neutral-300 { color: #d4d4d4; }
+.text-neutral-400 { color: #a3a3a3; }
+.text-neutral-500 { color: #737373; }
+
+.text-xs { font-size: .75rem; line-height: 1rem; }
+.text-sm { font-size: .875rem; line-height: 1.25rem; }
+.text-base { font-size: 1rem; line-height: 1.5rem; }
+.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+.text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+.font-black { font-weight: 900; }
+.uppercase { text-transform: uppercase; }
+.tracking-tight { letter-spacing: -.025em; }
+.tracking-wide { letter-spacing: .025em; }
+
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .4), 0 4px 6px -4px rgba(0, 0, 0, .4); }
+.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .6); }
+.drop-shadow-lg { filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .45)); }
+.backdrop-blur { backdrop-filter: blur(8px); }
+.backdrop-blur-sm { backdrop-filter: blur(4px); }
+
+.cursor-crosshair { cursor: crosshair; }
+.cursor-not-allowed { cursor: not-allowed; }
+.transition { transition: all .15s ease; }
+.hover\:scale-105:hover { transform: scale(1.05); }
+.hover\:bg-amber-300:hover { background-color: #fcd34d; }
+.hover\:bg-neutral-700:hover { background-color: #404040; }
+.hover\:bg-black\/70:hover { background-color: rgba(0, 0, 0, .7); }
+
+.font-brutal { font-family: Bangers, Impact, sans-serif; letter-spacing: .06em; }
+.font-display { font-family: Inter, system-ui, sans-serif; }
