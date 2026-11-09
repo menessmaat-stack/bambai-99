@@ -995,7 +995,7 @@ const EDITS = [
     'let Ge=1+Math.floor(D*3);for(let _e=0;_e<Ge;_e++){let Xe=q.cx+L+(Un(D*31+_e,7)-0.5)*q.r*0.9,ae=q.cy+ve+(Un(D*17+_e,11)-0.5)*q.r*0.9;if(!y(Xe)||!y(ae))continue;let Me=ru(q.r*0.16,1.5*G,4*G);o.fillRect(Xe-Me/2,ae-Me/2,Me,Me),o.strokeRect(Xe-Me/2,ae-Me/2,Me,Me)}',
     'if(q.r*E>10){let rcx=q.cx+L,rcy=q.cy+ve,rRad=q.r;' +
     // Outer parapet wall coping rim (framed recessed roof surface)
-    'o.strokeStyle="rgba(15,23,42,0.45)",o.lineWidth=Math.max(0.6*G,1.2*Q),o.strokeRect(rcx-rRad*0.72,rcy-rRad*0.72,rRad*1.44,rRad*1.44);' +
+    '' +
     'let arch=Math.floor(D*100)%5;' +
     'if(arch===0||q.kind==="office"){' +
     // 1. Pyramidal Glass Atrium / Skylight (Commercial & Office Towers)
