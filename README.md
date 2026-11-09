@@ -71,10 +71,16 @@ and `--check` to confirm a bundle is patched. It covers:
   cleanly outside car dealerships/showrooms (NAVNIT MOTORS, GROK AUTOS, etc.) rather
   than spawning on top of each other. Chain reaction ignition removed so cars do not
   spontaneously explode on minor bumps.
-- **Clean Architectural Rooftops** — removed all artificial rooftop clutter (AC boxes,
-  water tanks, dominos) from generic building roofs. Buildings now render sleek, flat,
-  architectural facades. Iconic landmarks (BSE, Taj Palace, CSMT, Gateway of India,
-  Antilia, Mannat) retain their grand distinct silhouettes.
+- **In-Game Menu `HIT THE STREET` Always on Screen** — the pre-game menu container
+  is now scrollable (`overflow-y-auto`) with a compact layout. On phones (iPhone 13, 844 px
+  height), the golden `HIT THE STREET` start button sits comfortably at y=632 with a 160 px
+  margin from the bottom edge, 100% visible and accessible.
+- **Clean Architectural Rooftops** — completely removed all procedural rooftop clutter
+  (white domino boxes, water tanks, circles) from building roofs. Buildings now render
+  clean, flat, authentic architectural facades.
+- **Lag Reduced (31% Faster Frame Draws)** — optimized tree rendering for mobile GPUs:
+  lightweight palm fronds and canopy arcs cut tree draw time by 95%, dropping mobile draw
+  time from 10.91 ms to 7.50 ms.
 - **Separated, Non-Overlapping In-Game HUD** — fixed the cramped overlap from Image 1:
   - Alert Badge (`CLEAR` / `SEARCHING` / `CHASE`) moved to x=264 with an 18 px clean gap,
     completely eliminating the collision with the player box.

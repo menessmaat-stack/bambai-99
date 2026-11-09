@@ -761,7 +761,7 @@ const EDITS = [
   [
     'mumbai realistic trees',
     'function aE(e,n){let u=Bl(n.pts);if(!u)return;let r=u.x1-u.x0,l=u.y1-u.y0;if(!y(r)||!y(l)||r<15*G||l<15*G)return;let o=ru(Math.floor(r*l/(450*G*G)),1,60);e.fillStyle="rgba(28,56,26,0.45)";for(let i=0;i<o;i++){let E=u.x0+Un(i*13.7+u.x0,u.y0)*r,Q=u.y0+Un(i*7.3+u.y0,u.x1)*l;if(!y(E)||!y(Q))continue;if(!j6(n.pts,E,Q))continue;let V=(2.5+Un(E,Q)*2.5)*G;e.beginPath(),e.arc(E,Q,V,0,Math.PI*2),e.fill()}}',
-    'function aE(e,n){let u=Bl(n.pts);if(!u)return;let r=u.x1-u.x0,l=u.y1-u.y0;if(!y(r)||!y(l)||r<15*G||l<15*G)return;let o=ru(Math.floor(r*l/(450*G*G)),1,50);for(let i=0;i<o;i++){let E=u.x0+Un(i*13.7+u.x0,u.y0)*r,Q=u.y0+Un(i*7.3+u.y0,u.x1)*l;if(!y(E)||!y(Q)||!j6(n.pts,E,Q))continue;let V=(2.8+Un(E,Q)*2.8)*G,isPalm=Un(E*3.1,Q*7.7)>0.42;e.fillStyle="rgba(10,14,10,0.28)",e.beginPath(),e.arc(E+1*G,Q+1.5*G,V*0.88,0,Math.PI*2),e.fill();if(isPalm){e.save(),e.translate(E,Q);for(let fi=0;fi<8;fi++){let ang=(fi/8)*Math.PI*2+Un(fi,i)*0.2;e.fillStyle=fi%2===0?"#38772d":"#4c943c",e.beginPath(),e.moveTo(0,0),e.quadraticCurveTo(Math.cos(ang)*V*0.6,Math.sin(ang)*V*0.6,Math.cos(ang)*V*1.15,Math.sin(ang)*V*1.15),e.quadraticCurveTo(Math.cos(ang+0.3)*V*0.7,Math.sin(ang+0.3)*V*0.7,0,0),e.fill()}e.fillStyle="#664d2b",e.beginPath(),e.arc(0,0,V*0.2,0,Math.PI*2),e.fill(),e.restore()}else{e.fillStyle="#2b5f23",e.beginPath(),e.arc(E,Q,V,0,Math.PI*2),e.fill(),e.fillStyle="#3f8134";for(let li=0;li<5;li++){let la=(li/5)*Math.PI*2;e.beginPath(),e.arc(E+Math.cos(la)*V*0.45,Q+Math.sin(la)*V*0.45,V*0.52,0,Math.PI*2),e.fill()}e.fillStyle="#5ca34a",e.beginPath(),e.arc(E-V*0.2,Q-V*0.25,V*0.38,0,Math.PI*2),e.fill()}}}'
+    'function aE(e,n){let u=Bl(n.pts);if(!u)return;let r=u.x1-u.x0,l=u.y1-u.y0;if(!y(r)||!y(l)||r<15*G||l<15*G)return;let o=ru(Math.floor(r*l/(750*G*G)),1,22);for(let i=0;i<o;i++){let E=u.x0+Un(i*13.7+u.x0,u.y0)*r,Q=u.y0+Un(i*7.3+u.y0,u.x1)*l;if(!y(E)||!y(Q)||!j6(n.pts,E,Q))continue;let V=(2.6+Un(E,Q)*2.4)*G,isPalm=Un(E*3.1,Q*7.7)>0.42;if(isPalm){e.save(),e.translate(E,Q),e.strokeStyle="#3d8234",e.lineWidth=Math.max(1.8*G,2);for(let fi=0;fi<6;fi++){let ang=(fi/6)*Math.PI*2;e.beginPath(),e.moveTo(0,0),e.lineTo(Math.cos(ang)*V,Math.sin(ang)*V),e.stroke()}e.fillStyle="#664d2b",e.beginPath(),e.arc(0,0,V*0.24,0,Math.PI*2),e.fill(),e.restore()}else{e.fillStyle="#2d6325",e.beginPath(),e.arc(E,Q,V,0,Math.PI*2),e.fill(),e.fillStyle="#489938",e.beginPath(),e.arc(E-V*0.2,Q-V*0.2,V*0.5,0,Math.PI*2),e.fill()}}}'
   ],
   // ===== Iconic Mumbai Landmarks + Rooftop AC chillers, water tanks, chawl tarpaulins (matching user reference sheets) =====
   [
@@ -783,6 +783,17 @@ const EDITS = [
     'alert badge position',
     'f.fillStyle="rgba(10,12,14,0.62)",f.fillRect(214,11,122,30),f.save(),f.globalAlpha=R,f.shadowColor=C.glow,f.shadowBlur=14,f.fillStyle=C.col,f.beginPath(),f.arc(229,26,7,0,Math.PI*2),f.fill(),f.restore(),f.fillStyle=C.col,f.font="bold 11px system-ui",f.textAlign="left",f.fillText(C.label,242,26),s.alert==="search")f.fillStyle="rgba(232,228,218,0.7)",f.font="9px system-ui",f.fillText(`stay hidden ${Math.max(0,15-Math.floor(s.seenAgo))}s`,242,38)',
     'f.fillStyle="rgba(10,12,14,0.78)",f.fillRect(264,11,118,28),f.save(),f.globalAlpha=R,f.shadowColor=C.glow,f.shadowBlur=12,f.fillStyle=C.col,f.beginPath(),f.arc(278,25,6,0,Math.PI*2),f.fill(),f.restore(),f.fillStyle=C.col,f.font="bold 10px system-ui",f.textAlign="left",f.fillText(C.label,290,25),s.alert==="search")f.fillStyle="rgba(203,213,225,0.8)",f.font="8px system-ui",f.fillText(`stay hidden ${Math.max(0,15-Math.floor(s.seenAgo))}s`,290,34)'
+  ],
+  // ===== In-Game Menu: HIT THE STREET guaranteed 100% on-screen on mobile =====
+  [
+    'in-game menu scrollable container',
+    'className:"absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-black/80 via-black/70 to-black/85 px-6 text-center backdrop-blur-sm"',
+    'className:"absolute inset-0 flex flex-col items-center justify-start md:justify-center gap-2 md:gap-3 bg-gradient-to-b from-black/92 via-black/85 to-black/95 px-4 md:px-6 py-4 md:py-6 overflow-y-auto text-center backdrop-blur-md"'
+  ],
+  [
+    'hide desktop keyboard table on mobile',
+    'className:"grid grid-cols-2 gap-x-8 gap-y-1 text-left text-xs text-neutral-400"',
+    'className:"hidden md:grid grid-cols-2 gap-x-8 gap-y-1 text-left text-xs text-neutral-400"'
   ],
 
   ['news crew threshold', 'if(z<=5)continue;', 'if(z<=1)continue;'],
