@@ -350,17 +350,16 @@ const EDITS = [
     'let hdU=Math.min(1,Math.max(0.58,t/1180));' +
     'if(hdU<1)f.setTransform(x*hdU,0,0,x*hdU,0,0),t/=hdU,v/=hdU;' +
     // Clean top-left player card: wider (240px), 3 distinct rows, zero text collisions!
-    'f.textBaseline="middle",f.fillStyle="rgba(10,12,14,0.72)",f.fillRect(14,14,240,74);' +
-    'f.fillStyle="#cbd5e0",f.font="bold 10px system-ui",f.textAlign="left",f.fillText("HEALTH",24,28);' +
-    'f.fillStyle="#2d3748",f.fillRect(72,23,120,9);' +
-    'f.fillStyle=k.hp>40?"#48bb78":"#f56565",f.fillRect(72,23,120*ze(k.hp/100,0,1),9);' +
-    'f.fillStyle="#a0aec0",f.font="bold 9px system-ui",f.fillText(`${Math.round(k.hp)}%`,200,28);' +
-    'f.fillStyle="#f5b000",f.font="bold 12px system-ui",f.fillText(`₹ ${Math.max(0,Math.round(k.cash)).toLocaleString()}`,24,49);' +
-    'f.fillStyle="#cbd5e0",f.font="bold 9px system-ui",f.fillText(`SCORE ${k.score}`,160,49);' +
+    'f.textBaseline="middle",f.fillStyle="rgba(10,12,14,0.85)",f.fillRect(14,14,240,112);' +
+    'f.fillStyle="#a0aec0",f.font="bold 9px system-ui",f.textAlign="left",f.fillText("HEALTH",24,28);' +
+    'f.fillStyle="#2d3748",f.fillRect(72,24,120,8);' +
+    'f.fillStyle=k.hp>40?"#48bb78":"#f56565",f.fillRect(72,24,120*ze(k.hp/100,0,1),8);' +
+    'f.fillStyle="#e2e8f0",f.font="bold 9px system-ui",f.fillText(`${Math.round(k.hp)}%`,200,28);' +
+    'f.fillStyle="#f5b000",f.font="bold 11px system-ui",f.fillText(`₹ ${Math.max(0,Math.round(k.cash)).toLocaleString()}`,24,46);' +
+    'f.fillStyle="#94a3b8",f.font="bold 8px system-ui",f.fillText(`SCORE ${k.score}`,160,46);' +
     'let te=vr[k.weapon],He=k.ammo[k.weapon]??0;' +
-    'f.fillStyle=He>0?"#e2e8f0":"#fc8181",f.font="bold 10px system-ui",f.fillText(`${te.name} (${He})`,24,68);' +
-    'if(!k.onFoot)f.font="bold 9px system-ui",f.fillStyle="#90cdf4",f.fillText(Ie(s.cars[k.carIdx]?.type??0).name.toUpperCase(),140,68)'
-  ],
+    'f.fillStyle=He>0?"#e2e8f0":"#fc8181",f.font="bold 9px system-ui",f.fillText(`${te.name} (${He})`,24,62);' +
+    'if(!k.onFoot)f.font="bold 8px system-ui",f.fillStyle="#90cdf4",f.fillText(Ie(s.cars[k.carIdx]?.type??0).name.toUpperCase(),135,62)'  ],
 
   // ===== speed blur =========================================================
   // Radial streaks from the centre of the screen once a quick car or a bike is
@@ -770,10 +769,20 @@ const EDITS = [
     'if(e.kind==="religious")return"temple";return""}',
     'if(e.kind==="religious")return"temple";if(/taj.*palace|taj.*hotel/.test(n))return"taj";if(/csmt|cst|chhatrapati shivaji/.test(n))return"csmt";if(/bse|stock exchange/.test(n))return"bse";if(/one bkc/.test(n))return"onebkc";if(/air india/.test(n))return"airindia";if(/express tower/.test(n))return"express";if(/mantralaya/.test(n))return"mantralaya";if(/asiatic|town hall/.test(n))return"asiatic";return""}'
   ],
+  // ===== Custom PNG Image Sprite Hook (supports dropping PNGs into /sprites/cars/) =====
   [
-    'rooftop architectural features',
-    'if(u.kind==="house"||n===""&&u.kind!=="office"&&u.r<12*G){let _=E+(i-0.5)*u.r*0.5,H=Q+(Un(i,9)-0.5)*u.r*0.5;if(e.fillStyle="#c5cdd3",e.beginPath(),e.ellipse(_,H,1.8*G,1.15*G,0,0,Math.PI*2),e.fill(),e.fillStyle="#9aa4ac",e.fillRect(_-0.35*G,H-2.1*G,0.7*G,1.2*G),i>0.4){e.strokeStyle="#6a5a40",e.lineWidth=Math.max(0.1*G,o),e.beginPath(),e.moveTo(E-2.4*G,Q+1.6*G),e.lineTo(E+2.4*G,Q+1.6*G),e.stroke();let I=["#c45c2a","#3a6e50","#4a5f82","#8a8a3a"];for(let Y=0;Y<3;Y++)e.strokeStyle=I[Y],e.beginPath(),e.moveTo(E-1.8*G+Y*1.2*G,Q+1.6*G),e.lineTo(E-1.8*G+Y*1.2*G,Q+2.8*G),e.stroke()}}}',
-    'if(n==="bse"){e.fillStyle="#ef4444",e.beginPath(),e.arc(E,Q,2.5*G,0,Math.PI*2),e.fill(),e.strokeStyle="#ffffff",e.lineWidth=Math.max(0.2*G,o),e.beginPath(),e.moveTo(E,Q),e.lineTo(E,Q-6*G),e.stroke()}else if(n==="airindia"){e.fillStyle="#dc2626",e.fillRect(E-2.5*G,Q-1.8*G,5*G,3.6*G),e.fillStyle="#ffffff",e.fillRect(E-1*G,Q-0.8*G,2*G,1.6*G)}else if(n==="taj"){e.fillStyle="#b91c1c",e.beginPath(),e.arc(E,Q,3.6*G,0,Math.PI*2),e.fill(),e.fillStyle="#f59e0b",e.beginPath(),e.arc(E,Q,1.4*G,0,Math.PI*2),e.fill()}else if(n==="csmt"){e.fillStyle="#0f766e",e.beginPath(),e.arc(E,Q,3.2*G,0,Math.PI*2),e.fill()}if(u.kind==="office"||u.r>=12*G){let _=E+(Un(E,Q)-0.5)*u.r*0.4,H=Q+(Un(Q,E)-0.5)*u.r*0.4;e.fillStyle="#cbd5e1",e.fillRect(_-2.4*G,H-1.4*G,4.8*G,2.8*G),e.fillStyle="#475569",e.beginPath(),e.arc(_-1.2*G,H,0.8*G,0,Math.PI*2),e.arc(_+1.2*G,H,0.8*G,0,Math.PI*2),e.fill();let wx=E-(Un(E*2,Q)-0.5)*u.r*0.4,wy=Q-(Un(Q*2,E)-0.5)*u.r*0.4;e.fillStyle="#0284c7",e.beginPath(),e.arc(wx,wy,1.4*G,0,Math.PI*2),e.fill(),e.fillStyle="#0369a1",e.beginPath(),e.arc(wx,wy,0.8*G,0,Math.PI*2),e.fill(),e.fillStyle="#334155",e.fillRect(E-2*G,Q-2*G,4*G,4*G)}else if(u.kind==="house"||u.kind==="apartment"||u.r<12*G){let _=E+(i-0.5)*u.r*0.5,H=Q+(Un(i,9)-0.5)*u.r*0.5;e.fillStyle="#0f172a",e.beginPath(),e.ellipse(_,H,1.6*G,1.6*G,0,0,Math.PI*2),e.fill(),e.fillStyle="#334155",e.beginPath(),e.arc(_,H,0.8*G,0,Math.PI*2),e.fill();if((Un(E,H)*10|0)%2===0)e.fillStyle="#2563eb",e.fillRect(E-2.5*G,Q-1.8*G,5*G,3.6*G)}}'
+    'custom png sprite hook',
+    'return u.sprite(V,u.l,u.w,_),V5.set(o,Q),Q}',
+    'let hdImg=window.__hdGetCustomSprite?window.__hdGetCustomSprite(e,u):null;' +
+    'if(hdImg&&hdImg.complete&&hdImg.naturalWidth>0){V.drawImage(hdImg,0,0,u.l,u.w)}' +
+    'else{u.sprite(V,u.l,u.w,_)}' +
+    'return V5.set(o,Q),Q}'
+  ],
+  // ===== Move Alert Badge to x=264 so it NEVER overlaps the player card =====
+  [
+    'alert badge position',
+    'f.fillStyle="rgba(10,12,14,0.62)",f.fillRect(214,11,122,30),f.save(),f.globalAlpha=R,f.shadowColor=C.glow,f.shadowBlur=14,f.fillStyle=C.col,f.beginPath(),f.arc(229,26,7,0,Math.PI*2),f.fill(),f.restore(),f.fillStyle=C.col,f.font="bold 11px system-ui",f.textAlign="left",f.fillText(C.label,242,26),s.alert==="search")f.fillStyle="rgba(232,228,218,0.7)",f.font="9px system-ui",f.fillText(`stay hidden ${Math.max(0,15-Math.floor(s.seenAgo))}s`,242,38)',
+    'f.fillStyle="rgba(10,12,14,0.78)",f.fillRect(264,11,118,28),f.save(),f.globalAlpha=R,f.shadowColor=C.glow,f.shadowBlur=12,f.fillStyle=C.col,f.beginPath(),f.arc(278,25,6,0,Math.PI*2),f.fill(),f.restore(),f.fillStyle=C.col,f.font="bold 10px system-ui",f.textAlign="left",f.fillText(C.label,290,25),s.alert==="search")f.fillStyle="rgba(203,213,225,0.8)",f.font="8px system-ui",f.fillText(`stay hidden ${Math.max(0,15-Math.floor(s.seenAgo))}s`,290,34)'
   ],
 
   ['news crew threshold', 'if(z<=5)continue;', 'if(z<=1)continue;'],

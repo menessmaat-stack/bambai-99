@@ -71,13 +71,19 @@ and `--check` to confirm a bundle is patched. It covers:
   cleanly outside car dealerships/showrooms (NAVNIT MOTORS, GROK AUTOS, etc.) rather
   than spawning on top of each other. Chain reaction ignition removed so cars do not
   spontaneously explode on minor bumps.
-- **Authentic Mumbai Rooftops (Matching Reference Images 1, 4, 5, 6)** — buildings
-  now feature authentic Mumbai architectural details:
-  - Rooftop twin-fan AC condenser chillers and elevator penthouses on commercial towers.
-  - Black & blue Sintex cylindrical water storage tanks on apartment roofs.
-  - Blue tarpaulin patches on chawls and dense residential blocks.
-  - Iconic landmarks recognized and rendered: BSE antenna & trading dome, Taj Palace
-    red dome, CSMT gothic dome, Air India red logo penthouse, One BKC solar arrays.
+- **Clean Architectural Rooftops** — removed all artificial rooftop clutter (AC boxes,
+  water tanks, dominos) from generic building roofs. Buildings now render sleek, flat,
+  architectural facades. Iconic landmarks (BSE, Taj Palace, CSMT, Gateway of India,
+  Antilia, Mannat) retain their grand distinct silhouettes.
+- **Separated, Non-Overlapping In-Game HUD** — fixed the cramped overlap from Image 1:
+  - Alert Badge (`CLEAR` / `SEARCHING` / `CHASE`) moved to x=264 with an 18 px clean gap,
+    completely eliminating the collision with the player box.
+  - Player Card deepened to 112 px so Health, Cash, Score, Weapon, Vehicle, FEAR, and
+    NOS bars all sit 100% inside the card with zero vertical spill or clipping.
+- **Custom PNG Sprite Loading (/sprites/cars/)** — drop any top-down PNG car
+  sprite (facing right, transparent background) into `sprites/cars/` (e.g. `porsche.png`,
+  `lambo.png`, `ambassador.png`, `taxi.png`, `auto.png`). The engine detects and draws
+  your image file directly! Any missing vehicle falls back to procedural vector rendering.
 - **Custom Supercar & Sports Car Sprites (Matching Reference Sheets)** — redesigned
   from generic models to custom top-down pixel-perfect graphics:
   - **Porsche 911 GT3** (type 56): vibrant orange body (#ea580c) with dual bold black
