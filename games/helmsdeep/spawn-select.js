@@ -17,7 +17,12 @@
     juhu: "Juhu Beach",
     bandra: "Bandra West",
     kurla: "Kurla Station",
-    andheri: "Andheri Metro"
+    andheri: "Andheri Metro",
+    dadar: "Dadar West",
+    worli: "Worli Sea Face",
+    marine: "Marine Drive",
+    fort: "CSMT & Fort",
+    colaba: "Colaba Causeway"
   };
 
   var want = LABELS[new URLSearchParams(location.search).get('spawn')];

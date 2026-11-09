@@ -329,6 +329,23 @@ const EDITS = [
     'let v=s.cars[t.carIdx];if(!v||v.dead)return null;let hdD=Ie(v.type);' +
     'return hdD.hire??(hdD.flo?"flo":hdD.cop?"cop":null)}'
   ],
+
+  // ===== South Mumbai ======================================================
+  // The baked map already covers the whole metropolitan region — Colaba,
+  // Nariman Point, CSMT, Worli and Dadar are all in mumbai-map.json with their
+  // roads, stations and 222 named places. Only the start-district table was
+  // confined to the Bandra/BKC/Juhu cluster, so nobody could reach them. These
+  // coordinates are read back out of the baked data itself.
+  [
+    'south mumbai districts',
+    '{id:"andheri",label:"Andheri Metro",lon:72.847,lat:19.12}]',
+    '{id:"andheri",label:"Andheri Metro",lon:72.847,lat:19.12},' +
+    '{id:"dadar",label:"Dadar West",lon:72.8382,lat:19.0239},' +
+    '{id:"worli",label:"Worli Sea Face",lon:72.8179,lat:19.0117},' +
+    '{id:"marine",label:"Marine Drive",lon:72.8237,lat:18.9458},' +
+    '{id:"fort",label:"CSMT & Fort",lon:72.8358,lat:18.9405},' +
+    '{id:"colaba",label:"Colaba Causeway",lon:72.826,lat:18.9151}]'
+  ],
   [
     'job offer wording',
     'le("Someone is flagging you down — drive to the marker.")',

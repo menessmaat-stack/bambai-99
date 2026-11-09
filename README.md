@@ -32,9 +32,12 @@ The game bundle requests three absolute paths, which is why the layout is fixed:
 `/mumbai-map.json`, `/api/helmsdeep/tracks` (rewritten by `vercel.json`) and the
 track URLs inside `music/tracks.json`.
 
-The six spawn districts in `index.html` are the same six the game offers
-(`bkc`, `airport`, `juhu`, `bandra`, `kurla`, `andheri`), with the game's own
-coordinates. `spawn-select.js` clicks the matching district button in the game
+The eleven spawn districts in `index.html` are the same eleven the game offers:
+`bkc`, `airport`, `juhu`, `bandra`, `kurla`, `andheri` in the suburbs and
+`dadar`, `worli`, `marine`, `fort`, `colaba` in South Mumbai, with the game's own
+coordinates. `mumbai-map.json` already covers the whole metropolitan region
+(31 x 48 km, bounds -97169..111867 x -169321..154534, 1828 places, 162 stations),
+so adding a district is only a table entry — no re-baking. `spawn-select.js` clicks the matching district button in the game
 menu, so the landing card and the game never disagree.
 
 `tools/patch-bundle.mjs` holds every change made to the minified bundle — 52
@@ -199,7 +202,7 @@ events the bundle already listens for, so touch and desktop run identical code.
 | On screen | Does |
 | --- | --- |
 | Left pedals ▲ ▼ | throttle, brake/reverse (walk on foot) |
-| Right strip | drag to steer, PUBG style — the key is pulsed in proportion to how far the thumb travels, so small drags feather the wheel |
+| Right strip | drag to steer, PUBG style — the key is pulsed in proportion to how far the thumb travels, so small drags feather the wheel. No label: the knob is the affordance |
 | FIRE | holds fire; works on foot and in a vehicle |
 | Touch the street | aims — the shot goes towards your finger |
 | NOS | nitro in a car, sprint on foot, climb in a heli |
@@ -209,8 +212,8 @@ events the bundle already listens for, so touch and desktop run identical code.
 | ⋯ | map, transit, weapon, marker, music, skip, view, zoom, race, time, punch |
 | II | pause |
 
-Landscape plays best. The pad hides itself whenever a menu is open so the menu
-buttons stay tappable. Append `?touch=1` to `/play` to force the pad on a
+Landscape plays best. Every key is an icon, never text. The pad hides itself whenever a menu is open
+so the menu buttons stay tappable. Append `?touch=1` to `/play` to force the pad on a
 desktop browser, `?touch=0` to turn it off on a phone.
 
 ## 8. Deploying from the terminal with API tokens

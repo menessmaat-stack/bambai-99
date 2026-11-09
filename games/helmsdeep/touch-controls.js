@@ -7,11 +7,14 @@
  * does.
  *
  * Layout, left thumb to right thumb:
- *   GAS / BRAKE pedals          W / S
+ *   throttle / brake pedals     W / S
  *   steering strip              A / D, drag like PUBG's look control
- *   FIRE                        mousedown on the canvas
+ *   enter · handbrake · nitro · FIRE
  *   tap the street              mousemove on the canvas (aim)
  *   small key row               fullscreen · extras drawer · pause
+ *
+ * Everything is an icon: a phone screen is too small to read 9 px words
+ * mid-corner, and the steering strip needs no caption once you have dragged it.
  *
  * Steering is the part that has to feel analogue on a binary key: the strip
  * reports how far the thumb has travelled, and the key is pulsed with a duty
@@ -117,6 +120,8 @@
 
   /* ---------- analogue steering on a binary key -------------------------- */
 
+  var knob = null;
+
   function steerLoop(ts) {
     var mag = Math.abs(steer);
     if (mag < 0.12) {
@@ -132,66 +137,111 @@
       if (wantOn) press(wanted, wanted === 'd' ? 'KeyD' : 'KeyA');
       else release(wanted);
     }
-    paintSteer();
+    if (knob) {
+      knob.style.transform = 'translateX(' + (steer * 60).toFixed(1) + 'px)';
+      knob.style.opacity = mag < 0.12 ? '0.5' : '1';
+    }
     steerRaf = requestAnimationFrame(steerLoop);
-  }
-
-  var knob = null;
-  function paintSteer() {
-    if (!knob) return;
-    knob.style.transform = 'translateX(' + (steer * 58).toFixed(1) + 'px)';
-    knob.style.opacity = Math.abs(steer) < 0.12 ? '0.45' : '1';
   }
 
   /* ---------- widgets ---------------------------------------------------- */
 
+  /** Inline stroke icons, drawn on a 24x24 grid. */
+  var ICON = {
+    gas: 'M12 4 L19 13 H14.5 V20 H9.5 V13 H5 Z',
+    brake: 'M12 20 L5 11 H9.5 V4 H14.5 V11 H19 Z',
+    enter: 'M4 5 v14 M4 12 h11 M11 8 l4 4 -4 4 M19 5 v14',
+    hand: 'M7 20 h10 M12 20 V9 M12 9 l5 -5 M9 14 h6',
+    nos: 'M12 3 c3 4 5 6 5 10 a5 5 0 0 1 -10 0 c0 -3 2 -4 3 -6 c1 2 2 2 2 4 c1 -3 0 -5 0 -8 Z',
+    fire: 'M12 3 v4 M12 17 v4 M3 12 h4 M17 12 h4 M12 9 a3 3 0 1 0 0 6 a3 3 0 1 0 0 -6',
+    full: 'M4 9 V4 h5 M15 4 h5 v5 M20 15 v5 h-5 M9 20 H4 v-5',
+    more: 'M6.5 12 h.01 M12 12 h.01 M17.5 12 h.01',
+    pause: 'M9 5 v14 M15 5 v14',
+    map: 'M9 4 L3 7 v13 l6 -3 6 3 6 -3 V4 l-6 3 Z M9 4 v13 M15 7 v13',
+    train: 'M7 4 h10 a2 2 0 0 1 2 2 v8 a2 2 0 0 1 -2 2 H7 a2 2 0 0 1 -2 -2 V6 a2 2 0 0 1 2 -2 Z M5 10 h14 M8.5 20 l2 -4 M15.5 20 l-2 -4',
+    gun: 'M3 9 h12 l2 4 h4 M7 13 v4 h4 M3 9 v4 h4',
+    pin: 'M12 21 s6 -6.5 6 -11 a6 6 0 1 0 -12 0 c0 4.5 6 11 6 11 Z M12 8 a2 2 0 1 0 0 4 a2 2 0 1 0 0 -4',
+    music: 'M9 18 V6 l10 -2 v12 M9 18 a2.5 2.5 0 1 1 -2.5 -2.5 a2.5 2.5 0 0 1 2.5 2.5 M19 16 a2.5 2.5 0 1 1 -2.5 -2.5 a2.5 2.5 0 0 1 2.5 2.5',
+    skip: 'M5 5 l9 7 -9 7 Z M18 5 v14',
+    eye: 'M2 12 s4 -6 10 -6 s10 6 10 6 s-4 6 -10 6 s-10 -6 -10 -6 Z M12 9.5 a2.5 2.5 0 1 0 0 5 a2.5 2.5 0 1 0 0 -5',
+    zoomIn: 'M11 18 a7 7 0 1 1 0 -14 a7 7 0 0 1 0 14 Z M20 20 l-4.5 -4.5 M11 8 v6 M8 11 h6',
+    zoomOut: 'M11 18 a7 7 0 1 1 0 -14 a7 7 0 0 1 0 14 Z M20 20 l-4.5 -4.5 M8 11 h6',
+    flag: 'M6 21 V4 M6 4 h11 l-2 4 2 4 H6',
+    clock: 'M12 21 a9 9 0 1 1 0 -18 a9 9 0 0 1 0 18 Z M12 7 v5 l3 2',
+    punch: 'M6 12 V9 a2 2 0 0 1 4 0 M10 11 V7.5 a2 2 0 0 1 4 0 v3.5 M14 11 V8.5 a2 2 0 0 1 4 0 V14 a5 5 0 0 1 -5 5 h-2 a5 5 0 0 1 -5 -5 v-2'
+  };
+
+  function svg(name) {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ICON[name] + '"/></svg>';
+  }
+
   var STYLE = [
     '#hd-touch{position:fixed;inset:0;z-index:40;pointer-events:none;',
-    'font:800 10px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;',
     '-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}',
     '#hd-touch.hd-hidden{display:none;}',
+    '#hd-touch svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;',
+    'stroke-linecap:round;stroke-linejoin:round;pointer-events:none;}',
     '#hd-touch button{pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;',
-    'display:flex;align-items:center;justify-content:center;color:#e8e4da;',
-    'background:rgba(10,14,20,.38);border:1px solid rgba(232,228,218,.2);',
-    'backdrop-filter:blur(2px);border-radius:11px;font:inherit;text-transform:uppercase;',
-    'will-change:transform,background;transition:background .08s linear;}',
-    '#hd-touch button.hd-on{background:rgba(252,211,77,.8);border-color:#fcd34d;color:#0a0e14;}',
-    // left thumb: two small pedals
-    '#hd-pedals{position:absolute;left:calc(12px + env(safe-area-inset-left));',
-    'bottom:calc(12px + env(safe-area-inset-bottom));display:grid;gap:6px;}',
-    '#hd-pedals button{width:58px;height:42px;font-size:15px;}',
-    // right thumb: steering strip, sized for a thumb sweep
-    '#hd-steer{position:absolute;right:calc(12px + env(safe-area-inset-right));',
-    'bottom:calc(12px + env(safe-area-inset-bottom));width:150px;height:52px;',
+    'display:flex;align-items:center;justify-content:center;padding:0;',
+    'color:rgba(236,240,245,.92);',
+    'background:linear-gradient(180deg,rgba(26,33,44,.58),rgba(10,14,20,.5));',
+    'border:1px solid rgba(255,255,255,.14);border-radius:14px;',
+    'box-shadow:0 2px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1);',
+    '-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);',
+    'will-change:transform;transition:transform .07s ease,background .07s linear;}',
+    '#hd-touch button.hd-on{transform:scale(.94);',
+    'background:linear-gradient(180deg,rgba(252,211,77,.94),rgba(240,188,40,.94));',
+    'border-color:rgba(255,232,150,.9);color:#0b0e13;}',
+    // left thumb: throttle over brake
+    '#hd-pedals{position:absolute;left:calc(14px + env(safe-area-inset-left));',
+    'bottom:calc(14px + env(safe-area-inset-bottom));display:grid;gap:8px;}',
+    '#hd-pedals button{width:56px;height:46px;border-radius:16px;}',
+    '#hd-pedals svg{width:24px;height:24px;}',
+    // right thumb: the steering strip, no caption
+    '#hd-steer{position:absolute;right:calc(14px + env(safe-area-inset-right));',
+    'bottom:calc(14px + env(safe-area-inset-bottom));width:164px;height:52px;',
     'pointer-events:auto;touch-action:none;border-radius:26px;',
-    'background:rgba(10,14,20,.34);border:1px solid rgba(232,228,218,.18);',
+    'background:linear-gradient(180deg,rgba(26,33,44,.5),rgba(10,14,20,.44));',
+    'border:1px solid rgba(255,255,255,.12);',
+    'box-shadow:0 2px 12px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);',
+    '-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);',
     'display:flex;align-items:center;justify-content:center;}',
-    '#hd-steer .hd-track{position:absolute;left:14px;right:14px;height:2px;background:rgba(232,228,218,.22);}',
-    '#hd-steer .hd-knob{width:30px;height:30px;border-radius:50%;',
-    'background:rgba(252,211,77,.85);opacity:.45;will-change:transform;}',
-    '#hd-steer .hd-tag{position:absolute;bottom:4px;font-size:8px;color:#8b94a3;letter-spacing:.14em;}',
-    // small action keys above the strip
-    '#hd-act{position:absolute;right:calc(12px + env(safe-area-inset-right));',
-    'bottom:calc(72px + env(safe-area-inset-bottom));display:flex;gap:6px;align-items:flex-end;}',
-    '#hd-act button{width:50px;height:38px;}',
-    '#hd-act button.hd-fire{width:58px;height:58px;border-radius:50%;font-size:11px;',
-    'background:rgba(220,38,38,.36);border-color:rgba(248,113,113,.5);color:#fecaca;}',
-    '#hd-act button.hd-fire.hd-on{background:rgba(248,113,113,.88);color:#180405;}',
+    '#hd-steer .hd-track{position:absolute;left:18px;right:18px;height:3px;border-radius:2px;',
+    'background:rgba(255,255,255,.14);}',
+    '#hd-steer .hd-knob{width:34px;height:34px;border-radius:50%;opacity:.5;',
+    'background:radial-gradient(circle at 35% 30%,#ffe9a8,#f0bc28 70%);',
+    'box-shadow:0 2px 8px rgba(0,0,0,.45);will-change:transform,opacity;}',
+    // action cluster above the strip
+    '#hd-act{position:absolute;right:calc(14px + env(safe-area-inset-right));',
+    'bottom:calc(76px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:flex-end;}',
+    '#hd-act button{width:46px;height:40px;}',
+    '#hd-act button.hd-fire{width:62px;height:62px;border-radius:50%;',
+    'background:radial-gradient(circle at 38% 30%,rgba(248,113,113,.5),rgba(153,27,27,.62));',
+    'border-color:rgba(248,113,113,.55);color:#ffe4e4;}',
+    '#hd-act button.hd-fire svg{width:26px;height:26px;}',
+    '#hd-act button.hd-fire.hd-on{',
+    'background:radial-gradient(circle at 38% 30%,#fca5a5,#dc2626);color:#2a0606;',
+    'border-color:#fecaca;}',
     // utility row, clear of the minimap
-    '#hd-top{position:absolute;left:calc(12px + env(safe-area-inset-left));',
-    'top:calc(92px + env(safe-area-inset-top));display:flex;gap:6px;}',
-    '#hd-top button{height:32px;padding:0 10px;font-size:10px;border-radius:9px;}',
-    '#hd-more{position:absolute;left:calc(12px + env(safe-area-inset-left));',
-    'top:calc(130px + env(safe-area-inset-top));display:none;',
-    'grid-template-columns:repeat(4,64px);gap:5px;}',
+    '#hd-top{position:absolute;left:calc(14px + env(safe-area-inset-left));',
+    'top:calc(92px + env(safe-area-inset-top));display:flex;gap:8px;}',
+    '#hd-top button{width:38px;height:34px;border-radius:11px;}',
+    '#hd-top svg{width:18px;height:18px;}',
+    '#hd-more{position:absolute;left:calc(14px + env(safe-area-inset-left));',
+    'top:calc(134px + env(safe-area-inset-top));display:none;',
+    'grid-template-columns:repeat(4,46px);gap:8px;}',
     '#hd-more.hd-open{display:grid;}',
-    '#hd-more button{height:34px;font-size:9px;}',
+    '#hd-more button{height:40px;border-radius:12px;}',
+    '#hd-more svg{width:19px;height:19px;}',
     // one-time fullscreen invitation
-    '#hd-fs{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);',
-    'pointer-events:auto;padding:14px 22px;border-radius:14px;font:800 12px/1.3 Inter,system-ui,sans-serif;',
-    'letter-spacing:.1em;text-transform:uppercase;color:#0a0e14;background:#fcd34d;border:0;}',
-    '@media (max-height:380px){#hd-pedals button{width:52px;height:36px;}',
-    '#hd-steer{width:132px;height:46px;}#hd-act button.hd-fire{width:50px;height:50px;}}'
+    '#hd-touch button#hd-fs{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);',
+    'pointer-events:auto;width:76px;height:76px;border-radius:50%;border:0;color:#0b0e13;',
+    'background:radial-gradient(circle at 35% 30%,#ffe9a8,#f0bc28 70%);',
+    'box-shadow:0 6px 24px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;}',
+    '#hd-touch button#hd-fs svg{width:30px;height:30px;stroke-width:2;}',
+    '@media (max-height:380px){#hd-pedals button{width:50px;height:40px;}',
+    '#hd-steer{width:142px;height:46px;}#hd-act button.hd-fire{width:54px;height:54px;}',
+    '#hd-act button{width:42px;height:36px;}}'
   ].join('');
 
   function el(tag, attrs, parent) {
@@ -202,9 +252,9 @@
   }
 
   /** A button that holds a key down for as long as a finger is on it. */
-  function holdBtn(parent, label, k, code, cls) {
-    var b = el('button', { type: 'button', class: cls || '' }, parent);
-    b.textContent = label;
+  function holdBtn(parent, icon, label, k, code, cls) {
+    var b = el('button', { type: 'button', class: cls || '', 'aria-label': label }, parent);
+    b.innerHTML = svg(icon);
     bind(b,
       function () { b.classList.add('hd-on'); press(k, code); },
       function () { b.classList.remove('hd-on'); release(k); });
@@ -212,9 +262,9 @@
   }
 
   /** A button that fires one key tap per touch. */
-  function tapBtn(parent, label, run) {
-    var b = el('button', { type: 'button' }, parent);
-    b.textContent = label;
+  function tapBtn(parent, icon, label, run) {
+    var b = el('button', { type: 'button', 'aria-label': label }, parent);
+    b.innerHTML = svg(icon);
     bind(b,
       function () { b.classList.add('hd-on'); run(); },
       function () { b.classList.remove('hd-on'); });
@@ -250,23 +300,22 @@
 
     // Left thumb: throttle over brake/reverse.
     var pedals = el('div', { id: 'hd-pedals' }, ui);
-    holdBtn(pedals, '\u25B2', 'w', 'KeyW');
-    holdBtn(pedals, '\u25BC', 's', 'KeyS');
+    holdBtn(pedals, 'gas', 'Accelerate', 'w', 'KeyW');
+    holdBtn(pedals, 'brake', 'Brake and reverse', 's', 'KeyS');
 
     // Right thumb: steer by dragging, PUBG style.
     var strip = el('div', { id: 'hd-steer' }, ui);
     el('div', { class: 'hd-track' }, strip);
     knob = el('div', { class: 'hd-knob' }, strip);
-    el('div', { class: 'hd-tag' }, strip).textContent = 'STEER';
     wireSteer(strip);
 
     // Action keys sit above the strip so they never fight the steering thumb.
     var act = el('div', { id: 'hd-act' }, ui);
-    tapBtn(act, 'E', function () { tap('e', 'KeyE'); });
-    holdBtn(act, 'HAND', ' ', 'Space');
-    holdBtn(act, 'NOS', 'Shift', 'ShiftLeft');
-    var fire = el('button', { type: 'button', class: 'hd-fire' }, act);
-    fire.textContent = 'FIRE';
+    tapBtn(act, 'enter', 'Enter or leave vehicle', function () { tap('e', 'KeyE'); });
+    holdBtn(act, 'hand', 'Handbrake', ' ', 'Space');
+    holdBtn(act, 'nos', 'Nitro / sprint', 'Shift', 'ShiftLeft');
+    var fire = el('button', { type: 'button', class: 'hd-fire', 'aria-label': 'Fire' }, act);
+    fire.innerHTML = svg('fire');
     bind(fire,
       function () { fire.classList.add('hd-on'); startFire(); },
       function () { fire.classList.remove('hd-on'); stopFire(); });
@@ -274,28 +323,28 @@
     // Utility row + drawer.
     var top = el('div', { id: 'hd-top' }, ui);
     var more = el('div', { id: 'hd-more' }, ui);
-    tapBtn(top, '\u26F6', toggleFullscreen);
-    tapBtn(top, '\u22EF', function () { more.classList.toggle('hd-open'); });
-    tapBtn(top, 'II', function () { tap('Escape', 'Escape'); });
+    tapBtn(top, 'full', 'Fullscreen', toggleFullscreen);
+    tapBtn(top, 'more', 'More controls', function () { more.classList.toggle('hd-open'); });
+    tapBtn(top, 'pause', 'Pause', function () { tap('Escape', 'Escape'); });
 
     var weapon = 0;
     [
-      ['MAP', openMap],
-      ['TRANSIT', function () { tap('t', 'KeyT'); }],
-      ['GUN', function () { weapon = (weapon % 6) + 1; tap(String(weapon), 'Digit' + weapon); }],
-      ['MARK', function () { tap('n', 'KeyN'); }],
-      ['MUSIC', function () { tap('m', 'KeyM'); }],
-      ['SKIP', function () { tap('b', 'KeyB'); }],
-      ['VIEW', function () { tap('v', 'KeyV'); }],
-      ['ZOOM+', function () { tap(']', 'BracketRight'); }],
-      ['ZOOM-', function () { tap('[', 'BracketLeft'); }],
-      ['RACE', function () { tap('r', 'KeyR'); }],
-      ['TIME', function () { tap('g', 'KeyG'); }],
-      ['PUNCH', function () { tap('q', 'KeyQ'); }]
-    ].forEach(function (pair) {
+      ['map', 'City map', openMap],
+      ['train', 'Transit map', function () { tap('t', 'KeyT'); }],
+      ['gun', 'Next weapon', function () { weapon = (weapon % 6) + 1; tap(String(weapon), 'Digit' + weapon); }],
+      ['pin', 'Next landmark', function () { tap('n', 'KeyN'); }],
+      ['music', 'Music on/off', function () { tap('m', 'KeyM'); }],
+      ['skip', 'Next track', function () { tap('b', 'KeyB'); }],
+      ['eye', 'Camera view', function () { tap('v', 'KeyV'); }],
+      ['zoomIn', 'Zoom in', function () { tap(']', 'BracketRight'); }],
+      ['zoomOut', 'Zoom out', function () { tap('[', 'BracketLeft'); }],
+      ['flag', 'Street race', function () { tap('r', 'KeyR'); }],
+      ['clock', 'Time of day', function () { tap('g', 'KeyG'); }],
+      ['punch', 'Punch', function () { tap('q', 'KeyQ'); }]
+    ].forEach(function (item) {
       // One-shot keys: fold the drawer again so it stops covering the pad.
-      tapBtn(more, pair[0], function () {
-        pair[1]();
+      tapBtn(more, item[0], item[1], function () {
+        item[2]();
         more.classList.remove('hd-open');
       });
     });
@@ -361,12 +410,12 @@
     }
   }
 
-  /** Fullscreen needs a user gesture, so offer it once instead of asking the
-   *  player to find the small key. */
+  /** Fullscreen needs a user gesture, so offer it once when play starts rather
+   *  than hoping the player finds the small key. */
   function offerFullscreen(ui) {
     if (!coarse || fullscreenActive()) return;
-    var b = el('button', { id: 'hd-fs', type: 'button' }, ui);
-    b.textContent = '\u26F6  Play fullscreen';
+    var b = el('button', { id: 'hd-fs', type: 'button', 'aria-label': 'Play fullscreen' }, ui);
+    b.innerHTML = svg('full');
     var dismiss = function () { if (b.parentNode) b.parentNode.removeChild(b); };
     b.addEventListener('pointerdown', function (e) {
       e.preventDefault();
@@ -413,9 +462,6 @@
       var menuUp = !!root.querySelector('.absolute.inset-0');
       if (menuUp) releaseAll();
       ui.classList.toggle('hd-hidden', menuUp);
-      // Offer fullscreen the moment play actually starts, not while the menu is
-      // still covering the screen (where the invitation would be hidden and
-      // would time out unseen).
       if (!menuUp && !offered) {
         offered = true;
         offerFullscreen(ui);

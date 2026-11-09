@@ -195,12 +195,21 @@
               Spawn District (Accurate Map View)
             </label>
             <select id="spawnDistrict" class="w-full bg-slate-900/90 border border-slate-700 focus:border-mumbai-taxi focus:ring-1 focus:ring-mumbai-taxi rounded-xl px-4 py-3 text-sm font-chakra text-slate-200 transition-colors outline-none cursor-pointer">
-              <option value="bkc">Bandra Kurla Complex</option>
-              <option value="airport">CSMIA Airport</option>
-              <option value="juhu">Juhu Beach</option>
-              <option value="bandra">Bandra West</option>
-              <option value="kurla">Kurla Station</option>
-              <option value="andheri">Andheri Metro</option>
+              <optgroup label="Suburbs">
+                <option value="bkc">Bandra Kurla Complex</option>
+                <option value="airport">CSMIA Airport</option>
+                <option value="juhu">Juhu Beach</option>
+                <option value="bandra">Bandra West</option>
+                <option value="kurla">Kurla Station</option>
+                <option value="andheri">Andheri Metro</option>
+              </optgroup>
+              <optgroup label="South Mumbai">
+                <option value="dadar">Dadar West</option>
+                <option value="worli">Worli Sea Face</option>
+                <option value="marine">Marine Drive</option>
+                <option value="fort">CSMT &amp; Fort</option>
+                <option value="colaba">Colaba Causeway</option>
+              </optgroup>
             </select>
           </div>
 
@@ -244,15 +253,20 @@
       juhu: { lat: 19.098, lng: 72.826, zoom: 14, name: "Juhu Beach" },
       bandra: { lat: 19.055, lng: 72.834, zoom: 14, name: "Bandra West" },
       kurla: { lat: 19.065, lng: 72.879, zoom: 14, name: "Kurla Station" },
-      andheri: { lat: 19.12, lng: 72.847, zoom: 14, name: "Andheri Metro" }
+      andheri: { lat: 19.12, lng: 72.847, zoom: 14, name: "Andheri Metro" },
+      dadar: { lat: 19.0239, lng: 72.8382, zoom: 14, name: "Dadar West" },
+      worli: { lat: 19.0117, lng: 72.8179, zoom: 14, name: "Worli Sea Face" },
+      marine: { lat: 18.9458, lng: 72.8237, zoom: 14, name: "Marine Drive" },
+      fort: { lat: 18.9405, lng: 72.8358, zoom: 14, name: "CSMT & Fort" },
+      colaba: { lat: 18.9151, lng: 72.826, zoom: 14, name: "Colaba Causeway" }
     };
 
     function initMumbaiMap() {
       // Centred on the slice of Mumbai the game actually bakes: Bandra, BKC,
       // Kurla, Juhu and the airport.
       map = L.map('mumbaiMap', {
-        center: [19.078, 72.855],
-        zoom: 12,
+        center: [19.01, 72.852],
+        zoom: 11,
         zoomControl: false,
         attributionControl: false
       });
