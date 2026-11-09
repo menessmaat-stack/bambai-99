@@ -469,14 +469,15 @@ const EDITS = [
     'bazooka in the weapon tables',
     'sr=["pistol","smg","shotgun","rifle","grenade","flamer"],' +
     'Uv={pistol:240,smg:600,shotgun:120,rifle:90,grenade:25,flamer:900}',
-    'sr=["pistol","smg","shotgun","rifle","grenade","flamer","bazooka"],' +
-    'Uv={pistol:240,smg:600,shotgun:120,rifle:90,grenade:25,flamer:900,bazooka:12}'
+    'sr=["pistol","smg","shotgun","rifle","grenade","flamer","bazooka","sniper"],' +
+    'Uv={pistol:240,smg:600,shotgun:120,rifle:90,grenade:25,flamer:900,bazooka:12,sniper:30}'
   ],
   [
     'bazooka stats',
     'flamer:{name:"FLAMER",cd:0.045,pellets:1,spread:0.22,speed:230,ttl:0.42,dmg:0,auto:!0,heat:0.6,kind:"stream"}}',
     'flamer:{name:"FLAMER",cd:0.045,pellets:1,spread:0.22,speed:230,ttl:0.42,dmg:0,auto:!0,heat:0.6,kind:"stream"},' +
-    'bazooka:{name:"BAZOOKA",cd:1.15,pellets:1,spread:0.012,speed:600,ttl:2.2,dmg:0,auto:!1,heat:1.8,kind:"rocket"}}'
+    'bazooka:{name:"BAZOOKA",cd:1.15,pellets:1,spread:0.012,speed:600,ttl:2.2,dmg:0,auto:!1,heat:1.8,kind:"rocket"},' +
+    'sniper:{name:"SNIPER RIFLE",cd:1.1,pellets:1,spread:0.002,speed:1400,ttl:1.2,dmg:450,auto:!1,heat:1.5,kind:"bullet"}}'
   ],
   [
     'bazooka ammo slot',
@@ -834,10 +835,11 @@ const EDITS = [
     'let hdImg=window.__hdGetCustomSprite?window.__hdGetCustomSprite(e,u):null;' +
     'let hasHd=!!(hdImg&&hdImg.complete&&hdImg.naturalWidth>0);' +
     'let asp=hasHd?(hdImg.naturalWidth/hdImg.naturalHeight):(u.l/u.w);' +
-    // Natural proportions: cars maintain natural width (never narrow); bikes stay compact (never elongated needles)
-    'let isBike=!!(u.bike||(u.w<=14&&u.l>=28));' +
-    'let drawL=isBike?Math.min(u.l,30):u.l;' +
-    'let drawW=hasHd?(drawL/asp):(isBike?Math.max(u.w,16):Math.max(u.w,drawL*0.48));' +
+    // Natural proportions: clamp buses/trucks <= 22px; bikes compact (never elongated)
+    'let isBike=!!(u.bike||(u.w<=14&&u.l>=28)),isTruck=!!(u.l>=60||u.kind==="truck");' +
+    'let drawL=isBike?26:u.l;' +
+    'let drawW=hasHd?(drawL/asp):(isBike?14:Math.max(u.w,drawL*0.48));' +
+    'if(isTruck&&drawW>22)drawW=22;' +
     'let E=8,Q=document.createElement("canvas");' +
     'Q.width=(drawL+E*2)*Di,Q.height=(drawW+E*2)*Di;' +
     'let V=Q.getContext("2d");V.scale(Di,Di),V.translate(E,E);' +
@@ -1178,20 +1180,50 @@ const EDITS = [
     'assassination start hit spawner',
     'let S9=window;return S9.__helmsdeep={',
     'let S9=window;window.__hdStartHit=function(id){' +
-    'const C={srk:{n:"SHAH RUKH KHAN",x:-55790,y:23185,h:0.8,bounty:75000,vip:84,esc:16},' +
-    'salman:{n:"SALMAN KHAN",x:-53466,y:19030,h:-0.4,bounty:80000,vip:87,esc:60},' +
-    'ambani:{n:"MUKESH AMBANI",x:-64800,y:86000,h:1.5,bounty:100000,vip:89,esc:88},' +
-    'amitabh:{n:"AMITABH BACHCHAN",x:-51600,y:-14800,h:-1.2,bounty:70000,vip:84,esc:30},' +
-    'cm:{n:"CHIEF MINISTER",x:-48000,y:106000,h:0.2,bounty:120000,vip:89,esc:78}};' +
+    'const C={' +
+    // 4 MUMBAI UNDERWORLD GANG LEADERS:
+    'dawood:{n:"DAWOOD IBRAHIM (D-COMPANY)",x:-44500,y:104000,h:-0.8,bounty:150000,cars:[{t:60,esc:1},{t:61,esc:1},{t:84,vip:1,n:"DAWOOD IBRAHIM",b:150000},{t:61,esc:1},{t:60,esc:1},{t:41,esc:1}]},' +
+    'manya:{n:"MANYA SURVE (DADAR OUTLAWS)",x:-33000,y:45000,h:0.5,bounty:85000,cars:[{t:60,esc:1},{t:87,vip:1,n:"MANYA SURVE",b:85000},{t:60,esc:1},{t:29,esc:1}]},' +
+    'maya:{n:"MAYA DOLAS (LOKHANDWALA)",x:-37171,y:-29573,h:1.1,bounty:90000,cars:[{t:86,esc:1},{t:65,vip:1,n:"MAYA DOLAS",b:90000},{t:85,esc:1},{t:64,esc:1}]},' +
+    'gawli:{n:"ARUN GAWLI (DAGDI CHAWL)",x:-44000,y:76000,h:-0.3,bounty:95000,cars:[{t:16,esc:1},{t:89,vip:1,n:"ARUN GAWLI",b:95000},{t:16,esc:1},{t:62,esc:1},{t:63,esc:1}]},' +
+    // POLITICIANS (EASY TO HARD):
+    'corporator:{n:"WARD CORPORATOR",x:-33000,y:45000,h:0.4,bounty:40000,cars:[{t:81,esc:1},{t:82,vip:1,n:"WARD CORPORATOR",b:40000}]},' +
+    'mla:{n:"OPPOSITION MLA",x:-21741,y:8872,h:1.2,bounty:65000,cars:[{t:77,esc:1},{t:16,esc:1},{t:89,vip:1,n:"OPPOSITION MLA",b:65000},{t:30,esc:1}]},' +
+    'minister:{n:"HOME MINISTER",x:-48000,y:106000,h:0.2,bounty:100000,cars:[{t:78,esc:1},{t:45,esc:1},{t:89,vip:1,n:"HOME MINISTER",b:100000},{t:76,esc:1},{t:30,esc:1},{t:78,esc:1}]},' +
+    // CELEBRITIES:
+    'srk:{n:"SHAH RUKH KHAN",x:-55790,y:23185,h:0.8,bounty:75000,cars:[{t:16,esc:1},{t:84,vip:1,n:"SHAH RUKH KHAN",b:75000},{t:16,esc:1},{t:16,esc:1}]},' +
+    'salman:{n:"SALMAN KHAN",x:-53466,y:19030,h:-0.4,bounty:80000,cars:[{t:60,esc:1},{t:87,vip:1,n:"SALMAN KHAN",b:80000},{t:60,esc:1},{t:61,esc:1}]},' +
+    'amitabh:{n:"AMITABH BACHCHAN",x:-51600,y:-14800,h:-1.2,bounty:70000,cars:[{t:30,esc:1},{t:84,vip:1,n:"AMITABH BACHCHAN",b:70000},{t:30,esc:1},{t:16,esc:1}]},' +
+    // MEGA BILLIONAIRE: MUKESH AMBANI (11-CAR ROLLING FORTRESS!)
+    'ambani:{n:"MUKESH AMBANI",x:-64800,y:86000,h:1.5,bounty:250000,cars:[' +
+    '{t:77,esc:1},{t:30,esc:1},{t:16,esc:1},{t:88,esc:1},' +
+    '{t:89,vip:1,n:"MUKESH AMBANI",b:250000},' +
+    '{t:89,esc:1},{t:16,esc:1},{t:43,esc:1},{t:88,esc:1},{t:30,esc:1},{t:78,esc:1}]}};' +
     'const c=C[id]||C.srk;' +
     'for(let i=s.cars.length-1;i>=0;i--){if(s.cars[i].hdHitTarget)s.cars.splice(i,1)}' +
     'let cos=Math.cos(c.h),sin=Math.sin(c.h);' +
-    's.cars.push({x:c.x+cos*45,y:c.y+sin*45,h:c.h,vx:cos*90,vy:sin*90,w:0,steer:0,type:c.esc,pal:0,seed:0.1,hp:1400,player:!1,ai:"traffic",speed:95,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:1,rider:null,hdEscort:1,hdHitTarget:1});' +
-    's.cars.push({x:c.x,y:c.y,h:c.h,vx:cos*85,vy:sin*85,w:0,steer:0,type:c.vip,pal:0,seed:0.2,hp:1800,player:!1,ai:"traffic",speed:90,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:c.vip===89?1:0,rider:null,hdVip:1,hdTargetName:c.n,hdBounty:c.bounty,hdHitTarget:1});' +
-    's.cars.push({x:c.x-cos*45,y:c.y-sin*45,h:c.h,vx:cos*90,vy:sin*90,w:0,steer:0,type:c.esc,pal:0,seed:0.3,hp:1400,player:!1,ai:"traffic",speed:95,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:1,rider:null,hdEscort:1,hdHitTarget:1});' +
+    'let carList=c.cars||[{t:16,esc:1},{t:84,vip:1,n:c.n,b:c.bounty},{t:16,esc:1}];' +
+    'carList.forEach((ci,idx)=>{let off=(carList.length-1-idx)*38-carList.length*19;' +
+    's.cars.push({x:c.x+cos*off,y:c.y+sin*off,h:c.h,vx:cos*88,vy:sin*88,w:0,steer:0,type:ci.t,pal:0,seed:0.1*idx,hp:ci.vip?2200:1500,player:!1,ai:"traffic",speed:88,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:ci.vip||ci.t===89||ci.t===30||ci.t===77||ci.t===78?1:0,rider:null,hdEscort:ci.esc?1:0,hdVip:ci.vip?1:0,hdTargetName:ci.n||"",hdBounty:ci.b||0,hdHitTarget:1});});' +
     's.waypoint={x:c.x,y:c.y,name:"TARGET: "+c.n};' +
     'le("ASSASSINATION CONTRACT: Eliminate "+c.n+" convoy! Bounty: ₹"+c.bounty.toLocaleString("en-IN"));};' +
     'return S9.__helmsdeep={'
+  ],
+  // ===== 23. Sniper Telescopic Crosshair Reticle & Aiming Line =====
+  [
+    'sniper telescopic crosshair reticle',
+    'else if(k.onFoot&&Q.current==="play")if(s.ride>=0)f.fillStyle="rgba(255,235,170,0.95)"',
+    'else if(k.onFoot&&Q.current==="play"){' +
+    'if(k.weapon==="sniper"){' +
+    'let aimD=Math.hypot(k.aimX,k.aimY)||1,nx=k.aimX/aimD,ny=k.aimY/aimD;' +
+    'let tx=k.x+nx*340,ty=k.y+ny*340;' +
+    'f.strokeStyle="rgba(239,68,68,0.5)",f.lineWidth=1.2,f.beginPath(),f.moveTo(k.x,k.y),f.lineTo(tx,ty),f.stroke();' +
+    'f.strokeStyle="#ef4444",f.lineWidth=2,f.beginPath(),f.arc(tx,ty,24,0,Math.PI*2),f.stroke();' +
+    'f.strokeStyle="rgba(239,68,68,0.7)",f.lineWidth=1,f.beginPath(),f.arc(tx,ty,10,0,Math.PI*2),f.stroke();' +
+    'f.beginPath(),f.moveTo(tx-30,ty),f.lineTo(tx-10,ty),f.moveTo(tx+10,ty),f.lineTo(tx+30,ty);' +
+    'f.moveTo(tx,ty-30),f.lineTo(tx,ty-10),f.moveTo(tx,ty+10),f.lineTo(tx,ty+30),f.stroke();' +
+    'f.fillStyle="#ff2222",f.beginPath(),f.arc(tx,ty,2.5,0,Math.PI*2),f.fill();}' +
+    '}else if(k.onFoot&&Q.current==="play")if(s.ride>=0)f.fillStyle="rgba(255,235,170,0.96)"'
   ],
 ];
 

@@ -110,6 +110,9 @@
 
   // Pre-load all sprites
   var carPreloads = [
+    'civ-sedan-red', 'civ-sedan-silver', 'civ-sedan-darkblue', 'civ-coupe-white',
+    'civ-4x4-green', 'civ-suv-black', 'civ-suv-white', 'civ-crossover-orange',
+    'civ-coupe-yellow', 'civ-sedan-grey', 'civ-sedan-oceanblue', 'civ-sedan-burgundy',
     'porsche-911-gt3', 'porsche', 'lamborghini-huracan', 'lambo',
     'ferrari', 'gtr', 'sedan-silver', 'sedan-blue', 'van-white',
     'pickup-black', 'pickup', 'van', 'garbage-truck',

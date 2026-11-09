@@ -93,11 +93,11 @@
             el.textContent += 'PROMISE: ' + ((e.reason && (e.reason.stack || e.reason.message)) || e.reason) + '\n';
         });
     </script>
-    <script src="/games/helmsdeep/custom-sprites.js?v=21"></script>
-    <script src="/games/helmsdeep/session-tracker.js?v=21"></script>
-    <script src="/games/helmsdeep/helmsdeep.js?v=21"></script>
-    <script src="/games/helmsdeep/touch-controls.js?v=21"></script>
-    <script src="/games/helmsdeep/spawn-select.js?v=21"></script>
+    <script src="/games/helmsdeep/custom-sprites.js?v=22"></script>
+    <script src="/games/helmsdeep/session-tracker.js?v=22"></script>
+    <script src="/games/helmsdeep/helmsdeep.js?v=22"></script>
+    <script src="/games/helmsdeep/touch-controls.js?v=22"></script>
+    <script src="/games/helmsdeep/spawn-select.js?v=22"></script>
 
     <!-- Assassination Contract Mission Selector Modal -->
     <div id="hdHitModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(6,8,12,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:16px;">
@@ -120,11 +120,22 @@
 
     <script>
     const HD_CONTRACTS = [
-        { id: 'srk', name: 'SHAH RUKH KHAN', convoy: 'Mannat Superstar Convoy', location: 'Bandra Bandstand (BJ Road)', bounty: 75000, desc: 'Bentley Continental GT escorted by armed Black SUVs along Bandstand Promenade.', car: 'Bentley GT' },
-        { id: 'salman', name: 'SALMAN KHAN', convoy: 'Galaxy Apartments Convoy', location: 'Bandra West (Hill Road)', bounty: 80000, desc: 'Dodge Charger RT escorted by Cartel GT muscle cars moving through Bandra.', car: 'Charger RT' },
-        { id: 'ambani', name: 'MUKESH AMBANI', convoy: 'Antilia Presidential Motorcade', location: 'Altamount Road (Kemps Corner)', bounty: 100000, desc: 'State Ambassador with flashing red beacon & heavy armored Gurkha 4x4 escort.', car: 'Ambassador (State)' },
-        { id: 'amitabh', name: 'AMITABH BACHCHAN', convoy: 'Jalsa VIP Convoy', location: 'Juhu Beach (JVPD Scheme)', bounty: 70000, desc: 'Luxury British Bentley GT escorted by Police Interceptors along Juhu Beach.', car: 'Bentley GT' },
-        { id: 'cm', name: 'CHIEF MINISTER', convoy: 'Mantralaya State Motorcade', location: 'Marine Drive / Nariman Point', bounty: 120000, desc: 'Official Maharashtra State motorcade with Highway Patrol & full police escort.', car: 'Ambassador (VIP)' }
+        // === CATEGORY 1: MUMBAI UNDERWORLD GANG LEADERS ===
+        { id: 'dawood', cat: 'GANG DON', name: 'DAWOOD IBRAHIM (D-COMPANY)', convoy: 'Dongri Syndicate Heavy Motorcade', location: 'Dongri / Bhendi Bazaar', bounty: 150000, desc: 'Supreme Underworld Kingpin escorted by heavily armored cartel sedans & gun trucks.', car: 'Armored Benz' },
+        { id: 'manya', cat: 'GANG DON', name: 'MANYA SURVE (DADAR GANG)', convoy: 'Dadar Outlaws Armed Convoy', location: 'Dadar West / Wadala', bounty: 85000, desc: 'Ruthless outlaw leader moving through Dadar with high-output Cartel muscle cars.', car: 'Muscle GT' },
+        { id: 'maya', cat: 'GANG DON', name: 'MAYA DOLAS (LOKHANDWALA)', convoy: 'Lokhandwala Syndicate Convoy', location: 'Lokhandwala / Andheri West', bounty: 90000, desc: 'Infamous shootout gang leader moving in high-speed tuned Japanese racers & cyber snakes.', car: 'Cyber Tuner' },
+        { id: 'gawli', cat: 'GANG DON', name: 'ARUN GAWLI (DADDY / DAGDI CHAWL)', convoy: 'Dagdi Chawl Heavy Convoy', location: 'Dagdi Chawl / Byculla', bounty: 95000, desc: 'Byculla godfather moving in an armored white Ambassador with armed security escorts.', car: 'White Ambassador' },
+
+        // === CATEGORY 2: MEGA BILLIONAIRES & CELEBRITIES ===
+        { id: 'ambani', cat: 'BILLIONAIRE', name: 'MUKESH AMBANI (11-CAR FORTRESS)', convoy: 'Antilia Presidential Motorcade (11 CARS)', location: 'Altamount Road / Kemps Corner', bounty: 250000, desc: 'Massive 11-car rolling fortress: Army CRPF truck, police outriders, armored Gurkha 4x4s, & State Ambassador.', car: '11-Car Motorcade' },
+        { id: 'srk', cat: 'SUPERSTAR', name: 'SHAH RUKH KHAN', convoy: 'Mannat Superstar Convoy', location: 'Bandra Bandstand (BJ Road)', bounty: 75000, desc: 'Bentley Continental GT escorted by armed Black SUVs along Bandstand Promenade.', car: 'Bentley GT' },
+        { id: 'salman', cat: 'SUPERSTAR', name: 'SALMAN KHAN', convoy: 'Galaxy Apartments Convoy', location: 'Bandra West (Hill Road)', bounty: 80000, desc: 'Dodge Charger RT escorted by Cartel GT muscle cars moving through Bandra.', car: 'Charger RT' },
+        { id: 'amitabh', cat: 'SUPERSTAR', name: 'AMITABH BACHCHAN', convoy: 'Jalsa VIP Convoy', location: 'Juhu Beach (JVPD Scheme)', bounty: 70000, desc: 'Luxury British Bentley GT escorted by Police Interceptors along Juhu Beach.', car: 'Bentley GT' },
+
+        // === CATEGORY 3: POLITICIANS (EASY TO HARD) ===
+        { id: 'corporator', cat: 'POLITICIAN', name: 'LOCAL WARD CORPORATOR (EASY)', convoy: 'Corrupt Politician Light Convoy (2 CARS)', location: 'Dadar / Shivaji Park', bounty: 40000, desc: 'Corrupt local politician in a white SUV with 1 light escort. Can be killed easily!', car: 'White SUV' },
+        { id: 'mla', cat: 'POLITICIAN', name: 'OPPOSITION MLA', convoy: 'MLA 4-Car Convoy', location: 'Bandra Kurla Complex (BKC)', bounty: 65000, desc: 'State MLA moving through BKC with police escort and private security.', car: 'White Ambassador' },
+        { id: 'minister', cat: 'POLITICIAN', name: 'STATE HOME MINISTER', convoy: 'Mantralaya State Motorcade (6 CARS)', location: 'Marine Drive / Nariman Point', bounty: 100000, desc: 'Official government motorcade with Highway Patrol, SWAT van, and police sirens.', car: 'State Ambassador' }
     ];
 
     function renderHitContracts() {
@@ -134,7 +145,7 @@
             <div style="background:#131c2e; border:1px solid #1e293b; border-radius:10px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; hover:border-red-500;">
                 <div style="flex:1;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="background:#ef4444; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; letter-spacing:0.5px;">TARGET</span>
+                        <span style="background:${c.cat==='GANG DON'?'#dc2626':c.cat==='BILLIONAIRE'?'#d97706':'#2563eb'}; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; letter-spacing:0.5px;">${c.cat}</span>
                         <h3 style="margin:0; color:#f8fafc; font-size:13px; font-weight:800;">${c.name}</h3>
                         <span style="color:#fcd34d; font-size:11px; font-weight:800; margin-left:auto;">₹${c.bounty.toLocaleString('en-IN')}</span>
                     </div>
