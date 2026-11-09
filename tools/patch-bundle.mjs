@@ -89,16 +89,16 @@ const EDITS = [
   // 0.42 straight to the speakers, so engine, skids and explosions were all
   // buried. Raise the bus, drop the music, and give the throttle real travel.
   ['master gain', ',se=0.17,L=null,ve=null,', ',se=0.62,L=null,ve=null,'],
-  ['music volume', '$.volume=0.42,$.preload="auto"', '$.volume=0.17,$.preload="auto"'],
+  ['music volume', '$.volume=0.42,$.preload="auto"', '$.volume=0.28,$.preload="auto"'],
   [
     'engine bus level',
     'let $e=0.16+(P?0.07:0)+He*0.07;ae.gain.setTargetAtTime($e,Ke,0.08)',
-    'let $e=0.1+(P?0.26:0)+He*0.3;ae.gain.setTargetAtTime($e,Ke,0.05)'
+    'let $e=0.08+(P?0.19:0)+He*0.22;ae.gain.setTargetAtTime($e,Ke,0.05)'
   ],
   [
     'engine top end',
     'if(Fe)Fe.gain.setTargetAtTime(P?0.075+He*0.06:0.018,Ke,0.09)',
-    'if(Fe)Fe.gain.setTargetAtTime(P?0.18+He*0.17:0.03,Ke,0.06)'
+    'if(Fe)Fe.gain.setTargetAtTime(P?0.13+He*0.12:0.024,Ke,0.06)'
   ],
   [
     'tyre screech',
