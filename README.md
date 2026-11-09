@@ -46,7 +46,8 @@ and `--check` to confirm a bundle is patched. It covers:
   and runways, brighter rain, vignette cut from 0.38 to 0.20.
 - **Audio** — the SFX bus ran at 0.17 while the music element played at 0.42, so
   everything was buried. Master is 0.62 behind a limiter, music 0.28, and the
-  engine bus now swings 0.08 → 0.30 with the throttle. Tyre screech and brake
+  engine bus swings 0.03 → 0.21 with the throttle (engine deliberately sits
+  under the music; skids, guns and blasts stay loud). Tyre screech and brake
   squeal existed but were capped at 0.42/0.28; they are 0.95/0.66 and trigger at
   lower slip.
 - **Collisions** — a flat 55/45 velocity blend became a mass-weighted normal

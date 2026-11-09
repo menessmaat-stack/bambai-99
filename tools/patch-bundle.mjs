@@ -93,12 +93,17 @@ const EDITS = [
   [
     'engine bus level',
     'let $e=0.16+(P?0.07:0)+He*0.07;ae.gain.setTargetAtTime($e,Ke,0.08)',
-    'let $e=0.08+(P?0.19:0)+He*0.22;ae.gain.setTargetAtTime($e,Ke,0.05)'
+    'let $e=0.032+(P?0.076:0)+He*0.088;ae.gain.setTargetAtTime($e,Ke,0.05)'
   ],
   [
     'engine top end',
     'if(Fe)Fe.gain.setTargetAtTime(P?0.075+He*0.06:0.018,Ke,0.09)',
-    'if(Fe)Fe.gain.setTargetAtTime(P?0.13+He*0.12:0.024,Ke,0.06)'
+    'if(Fe)Fe.gain.setTargetAtTime(P?0.052+He*0.048:0.01,Ke,0.06)'
+  ],
+  [
+    'engine intake hiss',
+    'Ge.gain.setTargetAtTime(P?0.014+He*0.03:0.004,Ke,0.1)',
+    'Ge.gain.setTargetAtTime(P?0.0056+He*0.012:0.0016,Ke,0.1)'
   ],
   [
     'tyre screech',
