@@ -25,7 +25,6 @@
   var coarse = (window.matchMedia && matchMedia('(pointer: coarse)').matches) ||
     navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
   if (forced === '0') return;
-  if (forced !== '1' && !coarse) return;
 
   var canvas = null;
   var root = null;
@@ -322,9 +321,23 @@
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
+  var booted = false;
+  function bootOnce() {
+    if (booted) return;
+    booted = true;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
+  }
+
+  if (forced === '1' || coarse) {
+    bootOnce();
   } else {
-    boot();
+    // Some browsers (and desktop-mode tabs on tablets) lie about the pointer.
+    // A real finger on the glass is the one signal that cannot be faked, so
+    // the pad also appears the first time the screen is actually touched.
+    window.addEventListener('touchstart', bootOnce, { once: true, passive: true });
   }
 })();

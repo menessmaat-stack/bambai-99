@@ -1,44 +1,432 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" class="h-full">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BAMBAI '99: Streets of Mumbai</title>
-    <meta name="description" content="A top-down retro action game set in a real, OpenStreetMap-baked Mumbai. Playable in the browser, on desktop and on mobile.">
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root { color-scheme: dark; }
-        html, body { margin: 0; min-height: 100%; background: #05070a; color: #e5e5e5;
-            font-family: Inter, system-ui, sans-serif; }
-        main { max-width: 760px; margin: 0 auto; padding: 18vh 24px 60px; }
-        h1 { font-family: Bangers, Impact, sans-serif; font-size: clamp(2.6rem, 11vw, 5rem);
-            letter-spacing: 3px; color: #fcd34d; margin: 0 0 10px; }
-        p { color: #94a3b8; line-height: 1.6; max-width: 48ch; }
-        .cta { display: inline-block; margin-top: 26px; padding: 16px 34px; border-radius: 14px;
-            background: #fcd34d; color: #0a0e14; font-weight: 900; letter-spacing: 2px;
-            text-transform: uppercase; text-decoration: none; }
-        .cta:active { background: #fde68a; }
-        .keys { margin-top: 34px; color: #5d6b80; font-size: .8rem; line-height: 1.8; }
-        code { color: #9ae6ff; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BAMBAI '99 | Streets of Mumbai</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            mumbai: {
+              taxi: '#F5B000',
+              neon: '#FF0055',
+              dark: '#080A0E',
+              card: '#10141D',
+              border: '#1F2738'
+            }
+          },
+          fontFamily: {
+            arcade: ['"Press Start 2P"', 'monospace'],
+            chakra: ['"Chakra Petch"', 'sans-serif'],
+            sans: ['"Space Grotesk"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* CRT Scanline overlay */
+    .crt-overlay::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+      z-index: 30;
+      background-size: 100% 3px, 6px 100%;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+    /* Radar sweep animation */
+    @keyframes radarSweep {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .radar-sweep {
+      animation: radarSweep 7s linear infinite;
+      transform-origin: center center;
+    }
+    /* Flash effect for GTA transition */
+    @keyframes gtaFlash {
+      0% { opacity: 0; }
+      40% { opacity: 0.95; }
+      100% { opacity: 0; }
+    }
+    .animate-gta-flash {
+      animation: gtaFlash 0.6s ease-out forwards;
+    }
+  </style>
 </head>
+<body class="bg-mumbai-dark text-slate-100 font-sans antialiased h-full overflow-hidden select-none">
 
-<body>
-    <main>
-        <h1>BAMBAI '99</h1>
-        <p>
-            Streets of Mumbai, baked from OpenStreetMap: drive it, steal from it, outrun the
-            khakis. Runs in the browser on a laptop or a phone.
-        </p>
-        <a class="cta" href="/play">Play now</a>
-        <div class="keys">
-            Desktop: <code>WASD</code> drive &middot; <code>E</code> steal &middot;
-            mouse aim, click to shoot &middot; <code>T</code> transit map &middot;
-            <code>M</code> music &middot; <code>Esc</code> pause.<br>
-            Phone: on-screen pad, touch the street to aim, FIRE to shoot. Landscape plays best.
+  <!-- Fullscreen Main Container -->
+  <div id="appContainer" class="crt-overlay relative w-full h-full flex flex-col bg-mumbai-dark">
+
+    <!-- Simple, Clean GTA Header -->
+    <header class="absolute top-0 inset-x-0 z-40 px-6 py-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+      <!-- Minimal Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded bg-mumbai-taxi flex items-center justify-center font-arcade text-black font-black text-xs shadow-lg shadow-mumbai-taxi/20">
+          GTA
         </div>
-    </main>
-</body>
+        <div>
+          <span class="font-chakra font-black text-xl tracking-wider text-white">BAMBAI</span>
+          <span class="text-mumbai-taxi font-arcade text-xs ml-1">'99</span>
+        </div>
+      </div>
 
+      <!-- Clean Status & Sound Toggle -->
+      <div class="flex items-center gap-3">
+        <button id="toggleAudioBtn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 border border-slate-800 hover:border-mumbai-taxi/40 text-xs font-chakra text-slate-300 transition-colors">
+          <span id="audioIcon">🔊</span>
+          <span id="audioLabel">AUDIO</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- FLASH OVERLAY FOR GTA TRANSITION -->
+    <div id="flashOverlay" class="pointer-events-none fixed inset-0 bg-white z-50 opacity-0 transition-opacity"></div>
+
+    <!-- VIEW 1: MUMBAI MAP & LOGIN PAGE -->
+    <div id="landingView" class="relative w-full h-full flex items-center justify-center transition-all duration-700 ease-out">
+      
+      <!-- Interactive Stylized Mumbai Map Background (Vector Top-Down View) -->
+      <div class="absolute inset-0 z-0 bg-[#07090e] overflow-hidden">
+        <svg id="mumbaiMapSvg" class="w-full h-full object-cover opacity-85" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="oceanGrad" cx="30%" cy="50%" r="70%">
+              <stop offset="0%" stop-color="#0a101d"/>
+              <stop offset="100%" stop-color="#05070a"/>
+            </radialGradient>
+            <linearGradient id="seaLinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8"/>
+              <stop offset="100%" stop-color="#f5b000"/>
+            </linearGradient>
+            <radialGradient id="radarPulse" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(245, 176, 0, 0.15)"/>
+              <stop offset="100%" stop-color="rgba(245, 176, 0, 0)"/>
+            </radialGradient>
+          </defs>
+
+          <!-- Arabian Sea Background -->
+          <rect width="1440" height="900" fill="url(#oceanGrad)" />
+
+          <!-- Stylized Mumbai Coastline Landmass (Salsette Island & South Mumbai Peninsula) -->
+          <path d="M 520,0 
+                   C 540,120 560,200 580,260 
+                   C 600,320 620,380 570,440 
+                   C 540,480 510,500 480,560 
+                   C 460,600 470,660 520,720 
+                   C 560,770 570,840 590,900 
+                   L 1440,900 L 1440,0 Z" 
+                fill="#101522" stroke="#1f2a40" stroke-width="2.5" />
+
+          <!-- Backbay & Colaba Extension (Iconic Southern Tip of Mumbai) -->
+          <path d="M 520,720 
+                   C 500,740 480,780 490,820 
+                   C 495,850 510,880 520,900 
+                   L 590,900 
+                   C 570,840 560,770 520,720 Z" 
+                fill="#141a2b" stroke="#f5b000" stroke-width="1.5" stroke-dasharray="4 2" />
+
+          <!-- Marine Drive "Queen's Necklace" Curved Coastline Arc -->
+          <path d="M 480,560 C 450,620 460,680 510,740" 
+                fill="none" stroke="#f5b000" stroke-width="3" opacity="0.85" filter="drop-shadow(0 0 8px #f5b000)" />
+
+          <!-- Bandra-Worli Sea Link Arc -->
+          <path d="M 570,440 C 510,460 490,510 480,560" 
+                fill="none" stroke="url(#seaLinkGrad)" stroke-width="3" stroke-dasharray="6 3" opacity="0.9" filter="drop-shadow(0 0 10px #38bdf8)" />
+
+          <!-- Mumbai Major Arteries & Highways (Western & Eastern Corridors) -->
+          <g stroke="#26354f" stroke-width="1.5" opacity="0.6">
+            <!-- Western Express Highway -->
+            <path d="M 680,0 C 670,180 650,340 590,460 C 560,530 550,650 530,780 L 525,900" fill="none" stroke="#3b82f6" stroke-width="2" opacity="0.5"/>
+            <!-- Eastern Freeway & Harbor Line -->
+            <path d="M 850,0 C 820,220 780,450 720,650 L 680,900" fill="none"/>
+            <!-- East-West Cross Connectors -->
+            <path d="M 560,260 L 980,240" fill="none"/>
+            <path d="M 570,440 L 920,410" fill="none"/>
+            <path d="M 520,620 L 760,620" fill="none"/>
+            <path d="M 500,740 L 660,740" fill="none"/>
+          </g>
+
+          <!-- Radar Grid Lines & Coordinates -->
+          <g stroke="#1a2233" stroke-width="1" opacity="0.4">
+            <line x1="0" y1="225" x2="1440" y2="225" />
+            <line x1="0" y1="450" x2="1440" y2="450" />
+            <line x1="0" y1="675" x2="1440" y2="675" />
+            <line x1="360" y1="0" x2="360" y2="900" />
+            <line x1="720" y1="0" x2="720" y2="900" />
+            <line x1="1080" y1="0" x2="1080" y2="900" />
+          </g>
+
+          <!-- Radar Sweep Circle at Center -->
+          <g transform="translate(620, 520)">
+            <circle r="220" fill="none" stroke="#f5b000" stroke-width="1" opacity="0.2"/>
+            <circle r="140" fill="none" stroke="#f5b000" stroke-width="1" opacity="0.15"/>
+            <circle r="60" fill="none" stroke="#f5b000" stroke-width="1" opacity="0.2"/>
+            <!-- Rotating Sweep Blade -->
+            <g class="radar-sweep">
+              <path d="M 0,0 L 220,0 A 220,220 0 0,0 155,-155 Z" fill="url(#radarPulse)"/>
+              <line x1="0" y1="0" x2="220" y2="0" stroke="#f5b000" stroke-width="1.5" opacity="0.7"/>
+            </g>
+          </g>
+
+          <!-- Animated Moving Taxi/Traffic GPS Dots -->
+          <g id="mapTrafficDots">
+            <!-- Marine Drive Cruiser -->
+            <circle cx="485" cy="620" r="3.5" fill="#f5b000" filter="drop-shadow(0 0 6px #f5b000)">
+              <animate attributeName="cy" values="570;660;720;660;570" dur="14s" repeatCount="indefinite" />
+              <animate attributeName="cx" values="470;475;510;475;470" dur="14s" repeatCount="indefinite" />
+            </circle>
+            <!-- Sea Link Racer -->
+            <circle cx="520" cy="480" r="3.5" fill="#38bdf8" filter="drop-shadow(0 0 6px #38bdf8)">
+              <animate attributeName="cx" values="570;510;480;510;570" dur="9s" repeatCount="indefinite" />
+              <animate attributeName="cy" values="440;480;560;480;440" dur="9s" repeatCount="indefinite" />
+            </circle>
+            <!-- Police Interceptor -->
+            <circle cx="620" cy="380" r="3" fill="#ef4444" filter="drop-shadow(0 0 6px #ef4444)">
+              <animate attributeName="cy" values="320;460;540;460;320" dur="12s" repeatCount="indefinite" />
+              <animate attributeName="cx" values="640;600;570;600;640" dur="12s" repeatCount="indefinite" />
+            </circle>
+          </g>
+
+          <!-- Key Landmark Map Badges -->
+          <g font-family="Chakra Petch" font-size="11" font-weight="700" letter-spacing="1">
+            <!-- South Mumbai / Colaba -->
+            <g transform="translate(525, 840)">
+              <circle r="4" fill="#f5b000" />
+              <text x="12" y="4" fill="#ffffff" opacity="0.9">GATEWAY / COLABA</text>
+            </g>
+            <!-- Marine Drive -->
+            <g transform="translate(370, 650)">
+              <circle r="4" fill="#f5b000" />
+              <text x="12" y="4" fill="#f5b000">MARINE DRIVE</text>
+            </g>
+            <!-- Bandra Sea Link -->
+            <g transform="translate(585, 435)">
+              <circle r="4" fill="#38bdf8" />
+              <text x="12" y="4" fill="#38bdf8">BANDRA SEA LINK</text>
+            </g>
+            <!-- Dharavi -->
+            <g transform="translate(660, 360)">
+              <circle r="4" fill="#22c55e" />
+              <text x="12" y="4" fill="#22c55e">DHARAVI</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Ambient Map Dark Vignette Overlay -->
+      <div class="absolute inset-0 bg-gradient-to-t from-mumbai-dark via-transparent to-mumbai-dark/60 pointer-events-none z-10"></div>
+
+      <!-- CENTER: GTA STYLE LOGIN CARD -->
+      <div id="loginCard" class="relative z-20 w-full max-w-md mx-4 p-7 sm:p-8 rounded-2xl bg-black/85 backdrop-blur-xl border border-mumbai-border shadow-2xl shadow-black/80 transition-all duration-500">
+        
+        <!-- GTA Badge & Title -->
+        <div class="text-center mb-6">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-mumbai-taxi/10 border border-mumbai-taxi/30 text-[11px] font-chakra text-mumbai-taxi font-bold uppercase tracking-widest mb-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-mumbai-taxi animate-pulse"></span>
+            MUMBAI UNDERWORLD DISPATCH
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-chakra font-black tracking-tight text-white uppercase">
+            Streets of Bambai
+          </h1>
+          <p class="text-slate-400 text-xs mt-1 font-chakra">
+            Enter your street alias to load your Kaali-Peeli and launch the game.
+          </p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="space-y-4">
+          <!-- Callsign / Name -->
+          <div>
+            <label for="playerAlias" class="block text-xs font-chakra font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              Driver Alias / Callsign
+            </label>
+            <div class="relative">
+              <input type="text" id="playerAlias" value="Munna_Bhai" required maxlength="16"
+                     class="w-full bg-slate-900/90 border border-slate-700 focus:border-mumbai-taxi focus:ring-1 focus:ring-mumbai-taxi rounded-xl px-4 py-3 text-sm font-chakra font-bold text-white placeholder-slate-500 transition-colors outline-none">
+              <div class="absolute right-3.5 top-3.5 text-xs font-arcade text-mumbai-taxi">
+                '99
+              </div>
+            </div>
+          </div>
+
+          <!-- District Spawn Selector -->
+          <div>
+            <label for="spawnLocation" class="block text-xs font-chakra font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              Initial Spawn Point
+            </label>
+            <select id="spawnLocation" class="w-full bg-slate-900/90 border border-slate-700 focus:border-mumbai-taxi focus:ring-1 focus:ring-mumbai-taxi rounded-xl px-4 py-3 text-sm font-chakra text-slate-200 transition-colors outline-none cursor-pointer">
+              <option value="colaba">Colaba Causeway (South Mumbai)</option>
+              <option value="marinedrive">Marine Drive Promenade</option>
+              <option value="dharavi">Dharavi Gully Network</option>
+              <option value="bandra">Bandra Sea Link Toll</option>
+            </select>
+          </div>
+
+          <!-- Start Game CTA Button -->
+          <button type="submit" id="startBtn"
+                  class="w-full mt-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-mumbai-taxi to-amber-500 hover:from-yellow-400 hover:to-mumbai-taxi text-black font-chakra font-black text-sm tracking-wider uppercase transition-all shadow-lg shadow-mumbai-taxi/30 hover:shadow-mumbai-taxi/50 hover:scale-[1.02] flex items-center justify-center gap-2">
+            <span>START GAME</span>
+            <span class="text-xs">▶</span>
+          </button>
+
+          <!-- Quick Guest Play Button -->
+          <button type="button" id="quickPlayBtn"
+                  class="w-full py-2.5 px-4 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs font-chakra font-bold text-slate-300 hover:text-white transition-all flex items-center justify-center gap-1.5">
+            <span>⚡ Quick Guest Start</span>
+          </button>
+        </form>
+
+        <!-- Wanted Stars Subtle Footer -->
+        <div class="mt-6 pt-4 border-t border-slate-900 flex items-center justify-between text-xs font-chakra text-slate-500">
+          <span>WANTED SYSTEM: ACTIVE</span>
+          <span class="text-yellow-400 text-sm tracking-widest">★ ★ ★ ☆ ☆</span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- AUDIO & TRANSITION SCRIPT -->
+  <script>
+    // --- 1. AUDIO SYNTHESIS ENGINE ---
+    let audioCtx = null;
+    let audioMuted = false;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Two-tone Indian vehicle horn
+    function playHornSound() {
+      if (audioMuted) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const notes = [392.00, 523.25, 659.25, 523.25];
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+        gain.gain.setValueAtTime(0.12, now + idx * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (idx + 1) * 0.07);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.07);
+        osc.stop(now + (idx + 1) * 0.07);
+      });
+    }
+
+    // GTA Transition Sound (Engine roar + bass drop)
+    function playStartTransitionSound() {
+      if (audioMuted) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      // Deep rumble engine synth
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(80, now);
+      osc.frequency.exponentialRampToValueAtTime(260, now + 0.35);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.6);
+
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.7);
+    }
+
+    // Audio Mute Toggle
+    const toggleAudioBtn = document.getElementById('toggleAudioBtn');
+    const audioIcon = document.getElementById('audioIcon');
+    const audioLabel = document.getElementById('audioLabel');
+
+    toggleAudioBtn.addEventListener('click', () => {
+      audioMuted = !audioMuted;
+      if (audioMuted) {
+        audioIcon.textContent = '🔇';
+        audioLabel.textContent = 'MUTED';
+        toggleAudioBtn.classList.add('text-slate-500');
+      } else {
+        audioIcon.textContent = '🔊';
+        audioLabel.textContent = 'AUDIO';
+        toggleAudioBtn.classList.remove('text-slate-500');
+        playHornSound();
+      }
+    });
+
+    // --- 2. TRANSITION EFFECT: MAP / LOGIN -> GAME ---
+    const flashOverlay = document.getElementById('flashOverlay');
+    const loginForm = document.getElementById('loginForm');
+    const quickPlayBtn = document.getElementById('quickPlayBtn');
+    const playerAliasInput = document.getElementById('playerAlias');
+
+    function triggerGameLaunch(alias) {
+      getAudioContext();
+      playStartTransitionSound();
+
+      // Trigger cinematic GTA flash
+      flashOverlay.classList.remove('opacity-0');
+      flashOverlay.classList.add('animate-gta-flash');
+
+      // Zoom out login card
+      const loginCard = document.getElementById('loginCard');
+      loginCard.style.transform = 'scale(0.85)';
+      loginCard.style.opacity = '0';
+
+      // Hand off to the real game. /play is the OpenStreetMap-baked Mumbai
+      // build; the alias and spawn picked here are kept for the HUD, and the
+      // game chooses its own start district from its own menu.
+      try {
+        localStorage.setItem('bambai99.alias', alias || 'Munna_Bhai');
+        localStorage.setItem('bambai99.spawn', document.getElementById('spawnLocation').value);
+      } catch (err) { /* private mode: not worth failing a launch over */ }
+
+      setTimeout(function () {
+        window.location.href = '/play';
+      }, 420);
+    }
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const alias = playerAliasInput.value.trim();
+      triggerGameLaunch(alias);
+    });
+
+    quickPlayBtn.addEventListener('click', () => {
+      triggerGameLaunch('Guest_Rider');
+    });
+
+  </script>
+</body>
 </html>
