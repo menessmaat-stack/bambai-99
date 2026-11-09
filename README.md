@@ -71,6 +71,21 @@ and `--check` to confirm a bundle is patched. It covers:
   cleanly outside car dealerships/showrooms (NAVNIT MOTORS, GROK AUTOS, etc.) rather
   than spawning on top of each other. Chain reaction ignition removed so cars do not
   spontaneously explode on minor bumps.
+- **Overhauled In-Game HUD** — wider player card (240 px) with zero text overlap:
+  Row 1: Health bar with percentage; Row 2: Indian Rupee cash (comma-formatted: ₹ 2,50,000)
+  and score; Row 3: Weapon badge with ammo count and vehicle name. Clean top-center
+  time/weather pill and alert badge.
+- **Iconic Mumbai Local Trains** — upgraded from muddy green to the world-famous
+  Central & Western Railway maroon and yellow livery with silver corrugated roofs.
+- **Pedestrian Street Diversity** — 12 vibrant outfit colors (saffron, royal blue,
+  emerald green, crimson, yellow, pink, purple, white) matching real Mumbai street crowds.
+- **School Buses, Garbage Trucks & Construction Cranes** — Tata school buses and BMC
+  garbage trucks added to traffic. Yellow lattice tower cranes with blinking red aviation
+  warning lights erected at active construction zones (Metro Line 3 BKC, Coastal Road Worli,
+  Lower Parel).
+- **Responsive Landing Page** — 100% viewport fit on mobile (compact 2-column ID/PIN,
+  zero-scroll START button), and full split-screen on desktop (interactive satellite map
+  taking the right half).
 - **Natural Clean Coastline & Deep Blue Sea** — all artificial wave lines and dashed
   foam strokes completely removed. The Arabian Sea is clean, serene, deep blue water
   with a natural 14-metre golden beach sand band along the shore.

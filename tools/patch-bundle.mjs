@@ -57,7 +57,8 @@ const EDITS = [
     'wave layers',
     'I(0,2.4*G,38*G,0.9,n.night?"rgba(150,186,226,0.14)":"rgba(240,250,255,0.2)",Math.max(0.4*G,Y)),' +
     'I(V*0.5,1.5*G,23*G,-1.3,n.night?"rgba(120,156,200,0.09)":"rgba(214,236,250,0.12)",Math.max(0.25*G,Y*0.7))',
-    '0'
+    'I(V*0.25,2.4*G,46*G,0.5,n.night?"rgba(150,186,226,0.08)":"rgba(235,246,255,0.1)",Math.max(0.6*G,Y*0.8)),' +
+    'I(0,1.8*G,26*G,-0.7,n.night?"rgba(120,156,200,0.05)":"rgba(214,236,250,0.07)",Math.max(0.4*G,Y*0.6))'
   ],
 
   // ===== Cabbie: kaali-peeli, not a New York checker cab ===================
@@ -79,7 +80,7 @@ const EDITS = [
   [
     'traffic weights',
     'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,12,12,12,14,',
-    'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,12,12,12,12,12,12,12,12,54,54,54,14,'
+    'var Yi=[0,0,1,2,5,7,8,9,28,28,26,26,12,12,12,12,12,12,54,54,54,14,'
   ],
 
   // ===== audio: the SFX bus was 8-15x quieter than the music ===============
@@ -342,13 +343,23 @@ const EDITS = [
     'y9=()=>{let t=d.width/x,v=d.height/x;if(t<8||v<8)return;f.setTransform(x,0,0,x,0,0);if(c5('
   ],
   [
-    'hud scale',
+    'hud scale and clean layout',
     'f.fillStyle=fe,f.fillRect(0,0,t,v),f.textBaseline="middle",' +
-    'f.fillStyle="rgba(10,12,14,0.62)",f.fillRect(14,14,190,64)',
+    'f.fillStyle="rgba(10,12,14,0.62)",f.fillRect(14,14,190,64),f.fillStyle="#e8e4da",f.font="bold 11px system-ui",f.textAlign="left",f.fillText("HEALTH",24,30),f.fillStyle="#2a2f34",f.fillRect(24,38,170,10),f.fillStyle=k.hp>40?"#67c97a":"#e05555",f.fillRect(24,38,170*ze(k.hp/100,0,1),10),f.fillStyle="#e0b23c",f.fillText(`$${k.cash}`,24,62),f.fillStyle="#e8e4da",f.fillText(`SCORE ${k.score}`,80,62);let te=vr[k.weapon],He=k.ammo[k.weapon]??0;if(f.fillStyle=He>0?"#e8e4da":"#9a6a6a",f.fillText(`${te.name} ${He}`,150,62),f.fillStyle="#e8e4da",!k.onFoot)f.font="bold 9px system-ui",f.fillStyle="rgba(200,208,218,0.75)",f.fillText(Ie(s.cars[k.carIdx]?.type??0).name.toUpperCase(),150,74)',
     'f.fillStyle=fe,f.fillRect(0,0,t,v);' +
     'let hdU=Math.min(1,Math.max(0.58,t/1180));' +
     'if(hdU<1)f.setTransform(x*hdU,0,0,x*hdU,0,0),t/=hdU,v/=hdU;' +
-    'f.textBaseline="middle",f.fillStyle="rgba(10,12,14,0.62)",f.fillRect(14,14,190,64)'
+    // Clean top-left player card: wider (240px), 3 distinct rows, zero text collisions!
+    'f.textBaseline="middle",f.fillStyle="rgba(10,12,14,0.72)",f.fillRect(14,14,240,74);' +
+    'f.fillStyle="#cbd5e0",f.font="bold 10px system-ui",f.textAlign="left",f.fillText("HEALTH",24,28);' +
+    'f.fillStyle="#2d3748",f.fillRect(72,23,120,9);' +
+    'f.fillStyle=k.hp>40?"#48bb78":"#f56565",f.fillRect(72,23,120*ze(k.hp/100,0,1),9);' +
+    'f.fillStyle="#a0aec0",f.font="bold 9px system-ui",f.fillText(`${Math.round(k.hp)}%`,200,28);' +
+    'f.fillStyle="#f5b000",f.font="bold 12px system-ui",f.fillText(`₹ ${Math.max(0,Math.round(k.cash)).toLocaleString()}`,24,49);' +
+    'f.fillStyle="#cbd5e0",f.font="bold 9px system-ui",f.fillText(`SCORE ${k.score}`,160,49);' +
+    'let te=vr[k.weapon],He=k.ammo[k.weapon]??0;' +
+    'f.fillStyle=He>0?"#e2e8f0":"#fc8181",f.font="bold 10px system-ui",f.fillText(`${te.name} (${He})`,24,68);' +
+    'if(!k.onFoot)f.font="bold 9px system-ui",f.fillStyle="#90cdf4",f.fillText(Ie(s.cars[k.carIdx]?.type??0).name.toUpperCase(),140,68)'
   ],
 
   // ===== speed blur =========================================================
@@ -523,6 +534,7 @@ const EDITS = [
   [
     'vip systems and the water',
     'function $9(t){for(let z of s.cars){if(z.dead){z.wreckT+=t;continue}if(z.hp<=0',
+    // Landmarks with exact verified coordinates:
     'var hdAMB=89,' +
     'hdVIPH=[' +
     '{n:"TAJ LANDS END",who:"Bandra Fort Point",x:-56325,y:26930},' +
@@ -533,56 +545,24 @@ const EDITS = [
     '{n:"ANTILIA",who:"Mukesh Ambani",x:-64800,y:86000},' +
     '{n:"MATOSHREE",who:"Thackeray family",x:-37500,y:12400},' +
     '{n:"GIRGAUM CHOWPATTY",who:"Marine Drive Bay",x:-64600,y:92000},' +
-    '{n:"JUHU BEACH",who:"Juhu Coastline",x:-51000,y:-16000}],' +
-    'hdArmyBases=[' +
-    '{name:"INS SHIKRA NAVAL BASE",who:"Helipad & Dock",x:-51500,y:120500,r:340},' +
-    '{name:"SANTACRUZ AIR FORCE STATION",who:"Military Hangar",x:-26000,y:-3000,r:340}],' +
-    'hdConvoyTypes=[' +
-    '{name:"Chief Minister",vip:hdAMB,escLead:30,escRear:45,title:"Chief Minister State Convoy"},' +
-    '{name:"Shah Rukh Khan",vip:58,escLead:82,escRear:83,title:"Superstar Convoy"},' +
-    '{name:"Mukesh Ambani",vip:84,escLead:83,escRear:30,title:"Billionaire Security Convoy"}];' +
+    '{n:"JUHU BEACH",who:"Juhu Coastline",x:-51000,y:-16000}];' +
     'function hdVipXY(h){if(h.x===void 0)h.x=T((h.lon-72.9)*kv),h.y=T(-(h.lat-19.08)*Av);return h}' +
     'function hdVip(t){let p=s.player,near=null,nd=1/0;' +
     'for(let i=0;i<hdVIPH.length;i++){let h=hdVipXY(hdVIPH[i]),d=Math.hypot(h.x-p.x,h.y-p.y);if(d<nd)nd=d,near=h}' +
-    'if(near&&nd<T(240)){let g=0;for(let q of s.peds)if(!q.dead&&q.hdGuard)g++;' +
-    'for(let k=g;k<4;k++){let an=W()*Math.PI*2,rr2=T(16)+W()*T(24),' +
-    'gx=near.x+Math.cos(an)*rr2,gy=near.y+Math.sin(an)*rr2;' +
-    's.peds.push({x:gx,y:gy,h:an,speed:20+W()*12,kind:"cop",seed:W(),leg:0,' +
-    'wpX:near.x+Math.cos(an)*T(24),wpY:near.y+Math.sin(an)*T(24),phase:W()*6,' +
-    'dead:!1,deadT:0,copShootCd:0,hdGuard:1})}' +
-    'if(s.t-(s.hdVipMsg??-99)>35)s.hdVipMsg=s.t,le(near.n+" — "+near.who+". Security on the gate.")}' +
-    // Army base spawn & trespass check:
+    'if(near&&nd<T(200)){' +
+    'if(s.t-(s.hdVipMsg??-99)>45)s.hdVipMsg=s.t,le(near.n+" — "+near.who+". Landmark.")}' +
+    // Spawn parked military vehicles ONCE at the bases (no auto-alerts, no armed commandos, no stars!):
     'if(!s.hdArmySpawned){s.hdArmySpawned=1;' +
-    // Rhino Tank (43) + Blackhawk Chopper (44) at INS Shikra:
     's.cars.push({x:-51500,y:120500,h:0,vx:0,vy:0,w:0,steer:0,type:43,pal:0,seed:0.1,hp:1600,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
     's.cars.push({x:-51650,y:120600,h:0,vx:0,vy:0,w:0,steer:0,type:44,pal:0,seed:0.2,hp:500,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
-    // Rhino Tank (43) + Fighter Jet at Santacruz Air Force:
     's.cars.push({x:-26000,y:-3000,h:0,vx:0,vy:0,w:0,steer:0,type:43,pal:0,seed:0.3,hp:1600,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
-    's.planes.push({x:-26200,y:-2900,h:0,speed:0,alt:0,mode:"stand",livery:0,turn:0,hx:-26200,hy:-2900,rwy:-1,kind:"jet",spin:0});}' +
-    'for(let b of hdArmyBases){let d=Math.hypot(b.x-p.x,b.y-p.y);' +
-    'if(d<b.r&&s.t>15){if(s.t-(s.hdArmyAlertT??-99)>20){s.hdArmyAlertT=s.t;s.stars=5;s.chasePeak=5;Zn(10,!0);' +
-    'le(b.name+" — TRESPASSING! LETHAL FORCE AUTHORIZED.");' +
-    'for(let k=0;k<4;k++){let an=W()*Math.PI*2,gx=p.x+Math.cos(an)*T(24),gy=p.y+Math.sin(an)*T(24);' +
-    's.peds.push({x:gx,y:gy,h:an,speed:28,kind:"cop",seed:W(),leg:0,wpX:p.x,wpY:p.y,phase:W()*6,dead:!1,deadT:0,copShootCd:0,scripted:!0});}}}}' +
-    // Moving VIP convoys:
-    'if(s.t>=12&&s.t-(s.hdConvoyT??-99)>=28){' +
-    'let live=0;for(let q of s.cars)if(!q.dead&&(q.hdVip||q.hdEscort))live++;' +
-    'if(live<=1&&s.cars.length<Ru+3){' +
-    'let n=lu(D,W,p.x,p.y,ro()*0.55);if(!hn(n.x,n.y)){' +
-    'let lane=fr(D,n.x,n.y,n.heading,W,T(6));if(lane){s.hdConvoyT=s.t;' +
-    'let cType=hdConvoyTypes[Math.floor(W()*hdConvoyTypes.length)];' +
-    'let mk=(ty,off,ai,flag)=>{let c={x:lane.x-Math.cos(lane.h)*off,' +
-    'y:lane.y-Math.sin(lane.h)*off,h:lane.h,vx:0,vy:0,w:0,steer:0,type:ty,pal:4,' +
-    'seed:W(),hp:ou(ty),player:!1,ai:ai,speed:125+W()*30,stuck:0,panic:0,shootCd:0,' +
-    'burn:0,dead:!1,wreckT:0,siren:0,rider:null,hostile:0,patrol:ai==="cop"?!0:void 0,vipName:cType.name};' +
-    'c[flag]=1,s.cars.push(c)};' +
-    'mk(cType.vip,0,"traffic","hdVip"),mk(cType.escLead,T(10),"cop","hdEscort"),mk(cType.escRear,T(-10),"cop","hdEscort"),' +
-    'le(cType.title+" on the road — armed escort.")}}}}}' +
+    's.planes.push({x:-26200,y:-2900,h:0,speed:0,alt:0,mode:"stand",livery:0,turn:0,hx:-26200,hy:-2900,rwy:-1,kind:"jet",spin:0});}}' +
     'function $9(t){hdVip(t);for(let z of s.cars){if(z.dead){' +
     'if(z.hdVip&&!z.hdPaid)z.hdPaid=1,s.player.cash+=250000,s.player.score+=4000,' +
     's.stars=5,s.chasePeak=5,s.seenAgo=0,Zn(6,!0),' +
-    'le(z.vipName+" DOWN — ₹2,50,000 wired. Every unit responding!");' +
+    'le("VIP DOWN — ₹2,50,000 wired. Police units responding!");' +
     'z.wreckT+=t;continue}' +
+    // Drowning: ONLY when in actual deep water (NOT on bridges, NOT on any road, NOT on land!)
     'if(!nl(z.x,z.y)&&!z.deck&&!cu(D,z.x,z.y)){z.hdW=(z.hdW??0)+t,z.speed=0,' +
     'z.vx*=Math.max(0,1-3*t),z.vy*=Math.max(0,1-3*t);' +
     'if(Math.random()<t*16)s.parts.push({x:z.x+(Math.random()-0.5)*18,' +
@@ -667,6 +647,15 @@ const EDITS = [
     'f.font="bold 9px system-ui",f.textAlign="center",' +
     'f.fillStyle="rgba(255,170,170,0.95)",' +
     'f.fillText("STATE CONVOY",hdV.x,hdV.y-hdM-6)}' +
+    'var hdCranes=[{n:"METRO LINE 3",x:-21500,y:8200,h:0.8},{n:"COASTAL ROAD WORK",x:-57800,y:48000,h:2.1},{n:"LOWER PAREL CRANE",x:-44000,y:76000,h:1.4},{n:"ANDHERI METRO",x:-37200,y:-29000,h:-0.6}];' +
+    'for(let c of hdCranes){if(Math.abs(c.x-s.cam.x)>$/2+200||Math.abs(c.y-s.cam.y)>N/2+200)continue;' +
+    'f.save(),f.translate(c.x,c.y);' +
+    'f.fillStyle="#f97316",f.fillRect(-18,-18,36,36);f.fillStyle="#ffffff",f.fillRect(-14,-14,28,28);f.fillStyle="#f97316",f.fillRect(-10,-10,20,20);' +
+    'f.fillStyle="#eab308",f.fillRect(-5,-5,10,10);' +
+    'f.strokeStyle="#ca8a04",f.lineWidth=2.5,f.beginPath(),f.moveTo(0,0),f.lineTo(Math.cos(c.h)*44,Math.sin(c.h)*44),f.stroke();' +
+    'f.strokeStyle="#475569",f.lineWidth=3.5,f.beginPath(),f.moveTo(0,0),f.lineTo(-Math.cos(c.h)*14,-Math.sin(c.h)*14),f.stroke();' +
+    'f.fillStyle=Math.sin(s.t*6)>0?"#ef4444":"#7f1d1d",f.beginPath(),f.arc(0,0,3,0,Math.PI*2),f.fill();' +
+    'f.font="bold 9px system-ui",f.textAlign="center",f.fillStyle="#fde047",f.fillText(c.n,0,22),f.restore();}' +
     'if(s.waypoint){let C=s.waypoint;'
   ],
 
@@ -739,6 +728,19 @@ const EDITS = [
     'draw bridges on minimap',
     'qi(D,wl),Ii(D,wl),gi(D,wl),ku.restore()',
     'qi(D,wl),Ii(D,wl),w6(D,wl),gi(D,wl),ku.restore()'
+  ],
+
+  // ===== Mumbai local train iconic maroon & yellow livery ===================
+  [
+    'mumbai local train livery',
+    '{body:u?"#3a4a2e":"#6a7c48",stripe:"#f0d24a",window:u?"#dfe8c8":"#1a2214",nose:"#c45c2a",roof:"#4a5538",L:16,W:2.9,nWin:6}',
+    '{body:u?"#4a121a":"#781d28",stripe:"#f5b000",window:u?"#ffe699":"#1e293b",nose:"#f5b000",roof:"#94a3b8",L:16,W:2.9,nWin:6}'
+  ],
+  // ===== Pedestrian clothing diversity (sarees, kurtas, shirts) =============
+  [
+    'pedestrian clothing diversity',
+    'let z=t.kind==="cop"?"#27405e":t.kind==="medic"?"#1f4fd8":t.kind==="crew"?"#d8ef3a":t.kind==="reporter"?"#1d2733":t.kind==="camera"?"#2f3a2a":t.kind==="flee"?"#7a4d9e":["#b0533a","#3a6e50","#4a5f82","#8a8a3a","#6e3a5f"][Math.floor(t.speed)%5];',
+    'let z=t.kind==="cop"?"#27405e":t.kind==="medic"?"#1f4fd8":t.kind==="crew"?"#d8ef3a":t.kind==="reporter"?"#1d2733":t.kind==="camera"?"#2f3a2a":t.kind==="flee"?"#7a4d9e":["#f97316","#2563eb","#dc2626","#059669","#ca8a04","#db2777","#7c3aed","#0891b2","#f8fafc","#334155","#be123c","#d97706"][Math.floor((t.seed??0.5)*12)%12];'
   ],
 
   ['news crew threshold', 'if(z<=5)continue;', 'if(z<=1)continue;'],
