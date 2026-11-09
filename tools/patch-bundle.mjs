@@ -824,13 +824,31 @@ const EDITS = [
     'if(e.kind==="religious")return"temple";if(/taj.*palace|taj.*hotel/.test(n))return"taj";if(/csmt|cst|chhatrapati shivaji/.test(n))return"csmt";if(/bse|stock exchange/.test(n))return"bse";if(/one bkc/.test(n))return"onebkc";if(/air india/.test(n))return"airindia";if(/express tower/.test(n))return"express";if(/mantralaya/.test(n))return"mantralaya";if(/asiatic|town hall/.test(n))return"asiatic";return""}'
   ],
   // ===== Custom PNG Image Sprite Hook (supports dropping PNGs into /sprites/cars/) =====
+  // ===== Natural Proportions Custom Sprite Hook (No Narrow Cars, No Long Bikes!) =====
   [
     'custom png sprite hook',
-    'return u.sprite(V,u.l,u.w,_),V5.set(o,Q),Q}',
+    'function S$(e,n){let u=Ie(e),r=u.fixedPal,l=Math.max(0,Math.floor(Number.isFinite(r??n)?r??n:0)),o=`${e},${l}`,i=V5.get(o);if(i)return i;let E=8,Q=document.createElement("canvas");Q.width=(u.l+E*2)*Di,Q.height=(u.w+E*2)*Di;let V=Q.getContext("2d");V.scale(Di,Di),V.translate(E,E);let _=zr[l%zr.length]??zr[0];return u.sprite(V,u.l,u.w,_),V5.set(o,Q),Q}',
+    'function S$(e,n){let u=Ie(e),r=u.fixedPal,l=Math.max(0,Math.floor(Number.isFinite(r??n)?r??n:0)),o=`${e},${l}`,i=V5.get(o);if(i)return i;' +
     'let hdImg=window.__hdGetCustomSprite?window.__hdGetCustomSprite(e,u):null;' +
-    'if(hdImg&&hdImg.complete&&hdImg.naturalWidth>0){V.drawImage(hdImg,0,0,u.l,u.w)}' +
-    'else{u.sprite(V,u.l,u.w,_)}' +
+    'let hasHd=!!(hdImg&&hdImg.complete&&hdImg.naturalWidth>0);' +
+    'let asp=hasHd?(hdImg.naturalWidth/hdImg.naturalHeight):(u.l/u.w);' +
+    // Natural proportions: cars maintain natural width (never narrow); bikes stay compact (never elongated needles)
+    'let isBike=!!(u.bike||(u.w<=14&&u.l>=28));' +
+    'let drawL=isBike?Math.min(u.l,30):u.l;' +
+    'let drawW=hasHd?(drawL/asp):(isBike?Math.max(u.w,16):Math.max(u.w,drawL*0.48));' +
+    'let E=8,Q=document.createElement("canvas");' +
+    'Q.width=(drawL+E*2)*Di,Q.height=(drawW+E*2)*Di;' +
+    'let V=Q.getContext("2d");V.scale(Di,Di),V.translate(E,E);' +
+    'let _=zr[l%zr.length]??zr[0];' +
+    'if(hasHd){V.drawImage(hdImg,0,0,drawL,drawW)}else{u.sprite(V,drawL,drawW,_)}' +
     'return V5.set(o,Q),Q}'
+  ],
+
+  // ===== Dynamic Canvas Draw Size Matching Natural Proportions =====
+  [
+    'dynamic natural car draw size',
+    'let N=S$(t.type,t.pal),J=8,Z=v.l+J*2,K=v.w+J*2;if(t.dead)f.globalAlpha=0.55,f.drawImage(N,-Z/2,-K/2,Z,K)',
+    'let N=S$(t.type,t.pal),Z=N.width/Di,K=N.height/Di;if(t.dead)f.globalAlpha=0.55,f.drawImage(N,-Z/2,-K/2,Z,K)'
   ],
   // ===== Move Alert Badge to x=264 so it NEVER overlaps the player card =====
   [

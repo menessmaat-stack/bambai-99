@@ -2,3 +2,8 @@
 .vercel
 node_modules/
 *.log
+*.mov
+Screenshot*.png
+Screen Recording*.mov
+/*.png
+/*.html

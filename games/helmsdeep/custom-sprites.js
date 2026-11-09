@@ -27,10 +27,12 @@
     // Sedans & Executive
     1:  ['sedan-silver', 'primo', 'sedan'],
     13: ['sentinel', 'sedan-blue'],
+    64: ['ciaz', 'sedan-silver', 'sedan'],
+    67: ['octavia', 'sedan-silver', 'sedan'],
     84: ['bentley', 'continental-gt'],
     89: ['ambassador', 'ambassador-state', 'state-car'],
 
-    // Utility & Emergency (Image #2)
+    // Public Service & Municipal Trucks (Image #2)
     18: ['firetruck'],
     19: ['garbage-truck'],
     20: ['firetruck'],
@@ -46,24 +48,18 @@
     28: ['gangster-coupe'],
     29: ['muscle-orange'],
 
-    // 4 Gangs x 4 Vehicles (Image #7)
-    60: ['gang1-spiked-skull'],
-    61: ['gang1-gun-truck'],
-    62: ['gang2-dragon-sedan'],
-    63: ['gang2-dragon-suv'],
-    64: ['gang3-cyber-snake'],
-    65: ['gang3-cyber-suv'],
-    66: ['gang4-militia-sedan'],
-    67: ['gang4-militia-truck'],
+    // 4 Gang Fleets (Image #7) - ONLY CARS, NO PLANES ON ROADS!
+    41: ['gang2-dragon-suv'],    // Serrano (Gang SUV) -> Dragon Luxury SUV
+    42: ['gang3-cyber-suv'],     // Baller LX (Gang SUV) -> Cyber SUV
+    60: ['gang1-spiked-skull'],  // Cartel GT -> Spiked Skull Muscle Car
+    61: ['gang1-gun-truck'],     // Dockside -> Armored Gun Truck
+    62: ['gang2-dragon-sedan'],  // Byculla S -> Black Dragon Supercar
+    63: ['gang2-dragon-suv'],    // Reay Road -> Black Dragon SUV
+    65: ['gang3-cyber-snake'],   // Cyber Snake Supercar
+    66: ['gang4-militia-sedan'], // Militia Armored Sedan
+    68: ['gang4-militia-truck'], // Militia Safari Truck
 
-    // Aircraft & Air Force (Image #3)
-    41: ['fighter-jet'],
-    42: ['military-cargo'],
-    44: ['chinook', 'military-chopper', 'blackhawk'],
-    45: ['trainer-prop', 'prop-plane'],
-    48: ['fighter-jet'],
-
-    // Watercraft (Image #4)
+    // Watercraft (Image #4) - ONLY FOR WATER VEHICLES!
     90: ['yacht', 'fishing-boat'],
     91: ['jetski', 'speedboat'],
     92: ['rescue-boat', 'speedboat']
@@ -147,5 +143,5 @@
     return null;
   };
 
-  console.log('[Sprites] Complete Custom PNG sprite hook installed with All 26 Vehicles!');
+  console.log('[Sprites] Verified ALIASES: No planes or boats on roads!');
 })();
