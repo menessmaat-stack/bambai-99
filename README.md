@@ -4,7 +4,7 @@ Everything in this folder is a plain static site. No server, no build step: Verc
 just serves the files.
 
 ```
-index.html                     landing page (replace with your own)
+index.html                     landing page: alias + spawn card, hands off to /play
 play/index.html                the game shell
 games/helmsdeep/helmsdeep.js   game bundle (382 KB)
 games/helmsdeep/helmsdeep.css  shell styles
@@ -97,11 +97,13 @@ Vercel → project → **Settings → Domains → Add**. For a domain bought els
 point the apex `A` record at `76.76.21.21` and `CNAME www` at
 `cname.vercel-dns.com`, then wait for the certificate.
 
-## 5. Swapping in your own landing page
+## 5. Editing the landing page
 
-Overwrite `index.html` with your HTML. Keep one link pointing at `/play`, keep
-`vercel.json` as is, and keep any new assets in their own folder (`/assets/...`)
-so they cannot collide with the game's absolute paths.
+`index.html` is the BAMBAI '99 login card. `triggerGameLaunch()` plays the
+flash, stores the alias and spawn in `localStorage`, and then sends the browser
+to `/play`. If you regenerate the page, keep that hand-off (or any plain link to
+`/play`) or the real game becomes unreachable. Keep new assets in their own
+folder (`/assets/...`) so they cannot collide with the game's absolute paths.
 
 ## 6. Soundtrack
 
@@ -147,3 +149,44 @@ events the bundle already listens for, so touch and desktop run identical code.
 Landscape plays best. The pad hides itself whenever a menu is open so the menu
 buttons stay tappable. Append `?touch=1` to `/play` to force the pad on a
 desktop browser, `?touch=0` to turn it off on a phone.
+
+## 8. Deploying from the terminal with API tokens
+
+Both steps above have a scriptable equivalent, which is how the assistant can
+run the deploy for you. Keep the tokens out of this repo:
+
+```bash
+umask 077
+cat > ~/.bambai-deploy.env <<'EOF'
+GITHUB_USER=yourname
+GITHUB_TOKEN=ghp_...        # classic token, scope: repo
+VERCEL_TOKEN=...            # vercel.com/account/tokens
+EOF
+```
+
+GitHub — create the repo and push:
+
+```bash
+set -a; . ~/.bambai-deploy.env; set +a
+curl -sS -X POST https://api.github.com/user/repos \
+  -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  -d '{"name":"bambai-99","private":false,"description":"BAMBAI 99: Streets of Mumbai"}'
+git remote add origin "https://$GITHUB_USER:$GITHUB_TOKEN@github.com/$GITHUB_USER/bambai-99.git"
+git push -u origin main
+git remote set-url origin "https://github.com/$GITHUB_USER/bambai-99.git"   # drop the token from .git/config
+```
+
+Vercel — deploy the folder straight from here:
+
+```bash
+npx --yes vercel@latest deploy --prod --yes --name bambai-99 --token "$VERCEL_TOKEN"
+```
+
+That gives a live URL without touching the browser. The one thing no token can
+do is install the Vercel GitHub App, which is what makes `git push` trigger a
+deploy; for that, connect the repo once under **Settings → Git** in the Vercel
+dashboard. Until then, redeploy with the `vercel deploy` line above.
+
+Revoke both tokens when the project is done:
+<https://github.com/settings/tokens> and <https://vercel.com/account/tokens>.
