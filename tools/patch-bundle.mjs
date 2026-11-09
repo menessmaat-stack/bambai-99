@@ -707,7 +707,7 @@ const EDITS = [
     'f.arc(hdV.x,hdV.y,hdM,0,Math.PI*2),f.stroke(),' +
     'f.font="bold 9px system-ui",f.textAlign="center",' +
     'f.fillStyle="rgba(255,170,170,0.95)",' +
-    'f.fillText("STATE CONVOY",hdV.x,hdV.y-hdM-6)}' +
+    'f.beginPath(),f.moveTo(hdV.x-hdM-6,hdV.y),f.lineTo(hdV.x+hdM+6,hdV.y),f.moveTo(hdV.x,hdV.y-hdM-6),f.lineTo(hdV.x,hdV.y+hdM+6),f.stroke(),f.font="bold 10px system-ui",f.textAlign="center",f.fillStyle="#fee2e2",f.fillText("🎯 TARGET: "+(hdV.hdTargetName||"VIP CONVOY"),hdV.x,hdV.y-hdM-8)}' +
     'var hdCranes=[{n:"METRO LINE 3",x:-21500,y:8200,h:0.8},{n:"COASTAL ROAD WORK",x:-57800,y:48000,h:2.1},{n:"LOWER PAREL CRANE",x:-44000,y:76000,h:1.4},{n:"ANDHERI METRO",x:-37200,y:-29000,h:-0.6}];' +
     'for(let c of hdCranes){if(Math.abs(c.x-s.cam.x)>$/2+200||Math.abs(c.y-s.cam.y)>N/2+200)continue;' +
     'f.save(),f.translate(c.x,c.y);' +
@@ -970,7 +970,10 @@ const EDITS = [
     '{n:"DADAR",x:-33000,y:45000},{n:"BANDRA WEST / MANNAT",x:-55000,y:24000},' +
     '{n:"BKC",x:-21741,y:8872},{n:"KURLA",x:-14728,y:11096},' +
     '{n:"JUHU BEACH",x:-51899,y:-23144},{n:"ANDHERI",x:-37171,y:-29573},' +
-    '{n:"POWAI LAKE",x:-6797,y:-28637},{n:"GHATKOPAR",x:-2737,y:-10893},' +
+    '{n:"POWAI LAKE",x:0,y:-38000},{n:"THE WESTIN POWAI",x:878,y:-40278},' +
+    '{n:"POWAI HERITAGE PARK",x:-1000,y:-36500},{n:"LAKESIDE CHALET",x:-211,y:-39075},' +
+    '{n:"HIRANANDANI POWAI",x:6227,y:-29328},{n:"IIT BOMBAY",x:3500,y:-37000},' +
+    '{n:"VIHAR LAKE",x:-8000,y:-45000},{n:"GHATKOPAR",x:-2737,y:-10893},' +
     '{n:"MULUND",x:23319,y:-57664},{n:"THANE",x:53161,y:-78739}];' +
     'f.textAlign="center",f.textBaseline="middle";' +
     'for(let d of hdMapDistricts){' +
@@ -1145,6 +1148,50 @@ const EDITS = [
     'flying aircraft locked in frame',
     'f.rotate(t.h),$>0){f.translate(-$*0.35,-$*0.25);let g=1+$*0.007;if(f.scale(g,g),t.pitch)f.rotate(t.pitch)}',
     'f.rotate(t.h),$>0){let g=ze(1+$*0.002,1,1.38);if(f.scale(g,g),t.pitch)f.rotate(t.pitch)}'
+  ],
+  // ===== 19. School Bus & Coach Width Reduction (Sleek, Never Too Broad!) =====
+  [
+    'school bus sleek width',
+    '{name:"School Bus",l:96,w:28,',
+    '{name:"School Bus",l:96,w:22,'
+  ],
+  [
+    'coach bus sleek width',
+    '{name:"Coach",l:100,w:28,',
+    '{name:"Coach",l:100,w:23,'
+  ],
+  // ===== 20. Flo Mattress Truck Direct Product Delivery (Zero Person Pickup!) =====
+  [
+    'flo mattress direct delivery',
+    'function e9(t){let v=a5(),z=s.player,$=s.fare;if($){if(!v){hi("Fare walked — you left the vehicle.");return}if(v!==$.kind){hi("Fare walked — wrong vehicle.");return}if(s.stars>=3){hi("Fare bailed out — too much heat.");return}if($.t+=t,p5($),Math.hypot($.dx-z.x,$.dy-z.y)<T(26))b5();return}if(!v){if(s.fareOffer)At();return}let N=s.fareOffer;',
+    'function e9(t){let v=a5(),z=s.player,$=s.fare;if($){if(!v){hi("Fare walked — you left the vehicle.");return}if(v!==$.kind){hi("Fare walked — wrong vehicle.");return}if(s.stars>=3){hi("Fare bailed out — too much heat.");return}if($.t+=t,p5($),Math.hypot($.dx-z.x,$.dy-z.y)<T(26))b5();return}if(!v){if(s.fareOffer)At();return}' +
+    // Direct Flo product delivery to customer (NO passenger pickup!):
+    'if(v==="flo"){if(s.fareOffer)At();let N=W5(z.x,z.y);let J=Math.hypot(N.x-z.x,N.y-z.y);let K=Math.round(J/T(100)*60+160);let g=Math.round(J/75);' +
+    's.fare={stage:"ride",kind:"flo",px:z.x,py:z.y,dx:N.x,dy:N.y,dest:N.name,base:K,par:g,t:0,waitT:0,dist0:J,paid:0,ped:null};s.fareOffer=null;' +
+    'le("FLO DELIVERY: Deliver mattress order to "+N.name+"! ₹"+K+" payout.");return;}' +
+    'let N=s.fareOffer;'
+  ],
+
+
+  // ===== 22. Assassination Contract Convoy Spawner API =====
+  [
+    'assassination start hit spawner',
+    'let S9=window;return S9.__helmsdeep={',
+    'let S9=window;window.__hdStartHit=function(id){' +
+    'const C={srk:{n:"SHAH RUKH KHAN",x:-55790,y:23185,h:0.8,bounty:75000,vip:84,esc:16},' +
+    'salman:{n:"SALMAN KHAN",x:-53466,y:19030,h:-0.4,bounty:80000,vip:87,esc:60},' +
+    'ambani:{n:"MUKESH AMBANI",x:-64800,y:86000,h:1.5,bounty:100000,vip:89,esc:88},' +
+    'amitabh:{n:"AMITABH BACHCHAN",x:-51600,y:-14800,h:-1.2,bounty:70000,vip:84,esc:30},' +
+    'cm:{n:"CHIEF MINISTER",x:-48000,y:106000,h:0.2,bounty:120000,vip:89,esc:78}};' +
+    'const c=C[id]||C.srk;' +
+    'for(let i=s.cars.length-1;i>=0;i--){if(s.cars[i].hdHitTarget)s.cars.splice(i,1)}' +
+    'let cos=Math.cos(c.h),sin=Math.sin(c.h);' +
+    's.cars.push({x:c.x+cos*45,y:c.y+sin*45,h:c.h,vx:cos*90,vy:sin*90,w:0,steer:0,type:c.esc,pal:0,seed:0.1,hp:1400,player:!1,ai:"traffic",speed:95,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:1,rider:null,hdEscort:1,hdHitTarget:1});' +
+    's.cars.push({x:c.x,y:c.y,h:c.h,vx:cos*85,vy:sin*85,w:0,steer:0,type:c.vip,pal:0,seed:0.2,hp:1800,player:!1,ai:"traffic",speed:90,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:c.vip===89?1:0,rider:null,hdVip:1,hdTargetName:c.n,hdBounty:c.bounty,hdHitTarget:1});' +
+    's.cars.push({x:c.x-cos*45,y:c.y-sin*45,h:c.h,vx:cos*90,vy:sin*90,w:0,steer:0,type:c.esc,pal:0,seed:0.3,hp:1400,player:!1,ai:"traffic",speed:95,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:1,rider:null,hdEscort:1,hdHitTarget:1});' +
+    's.waypoint={x:c.x,y:c.y,name:"TARGET: "+c.n};' +
+    'le("ASSASSINATION CONTRACT: Eliminate "+c.n+" convoy! Bounty: ₹"+c.bounty.toLocaleString("en-IN"));};' +
+    'return S9.__helmsdeep={'
   ],
 ];
 
