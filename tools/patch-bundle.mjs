@@ -157,7 +157,7 @@ const EDITS = [
   [
     'wall impact damage',
     'if(t.x=Ze.x,t.y=Ze.y,Ee>220){let $n=(Ee-190)*0.028;',
-    'if(t.x=Ze.x,t.y=Ze.y,Ee>150){let $n=t.deck?0:(Ee-130)*0.05;'
+    'if(t.x=Ze.x,t.y=Ze.y,Ee>150){let $n=(t.deck||X9(t.x,t.y)!==null)?0:(Ee-130)*0.05;'
   ],
 
   // ===== fire: bigger blasts, hotter flames, faster chains =================
@@ -563,7 +563,7 @@ const EDITS = [
     'le("VIP DOWN — ₹2,50,000 wired. Police units responding!");' +
     'z.wreckT+=t;continue}' +
     // Drowning: ONLY when in actual deep water (NOT on bridges, NOT on any road, NOT on land!)
-    'if(!nl(z.x,z.y)&&!z.deck&&!cu(D,z.x,z.y)){z.hdW=(z.hdW??0)+t,z.speed=0,' +
+    'if(!nl(z.x,z.y)&&!z.deck&&X9(z.x,z.y)===null&&!cu(D,z.x,z.y)&&!(Du(D,z.x,z.y,T(22))?.dist<=T(22))){z.hdW=(z.hdW??0)+t,z.speed=0,' +
     'z.vx*=Math.max(0,1-3*t),z.vy*=Math.max(0,1-3*t);' +
     'if(Math.random()<t*16)s.parts.push({x:z.x+(Math.random()-0.5)*18,' +
     'y:z.y+(Math.random()-0.5)*14,vx:(Math.random()-0.5)*40,vy:-25-Math.random()*35,' +
@@ -741,6 +741,16 @@ const EDITS = [
     'pedestrian clothing diversity',
     'let z=t.kind==="cop"?"#27405e":t.kind==="medic"?"#1f4fd8":t.kind==="crew"?"#d8ef3a":t.kind==="reporter"?"#1d2733":t.kind==="camera"?"#2f3a2a":t.kind==="flee"?"#7a4d9e":["#b0533a","#3a6e50","#4a5f82","#8a8a3a","#6e3a5f"][Math.floor(t.speed)%5];',
     'let z=t.kind==="cop"?"#27405e":t.kind==="medic"?"#1f4fd8":t.kind==="crew"?"#d8ef3a":t.kind==="reporter"?"#1d2733":t.kind==="camera"?"#2f3a2a":t.kind==="flee"?"#7a4d9e":["#f97316","#2563eb","#dc2626","#059669","#ca8a04","#db2777","#7c3aed","#0891b2","#f8fafc","#334155","#be123c","#d97706"][Math.floor((t.seed??0.5)*12)%12];'
+  ],
+  // ===== Bridges & flyovers: zero water damage while on a bridge ============
+  // The original bundle only checked Ji(D, t.x, t.y), which failed if a car was
+  // more than 1.8m from the single-track centerline of a wide dual-carriageway
+  // bridge (e.g. Bandra Kurla Complex Road over Mithi River, or Rajiv Gandhi
+  // Sea Link). When that failed, the car took 170 HP/s water damage and blew up!
+  [
+    'bridges immune to water damage',
+    '!nl(t.x,t.y)&&!Ji(D,t.x,t.y)){if(t.hp-=170*v,t.vx*=1-2.2*v,t.vy*=1-2.2*v',
+    '!nl(t.x,t.y)&&!Ji(D,t.x,t.y)&&!cu(D,t.x,t.y)&&!(Du(D,t.x,t.y,T(35))?.dist<=T(35))){if(t.hp-=170*v,t.vx*=1-2.2*v,t.vy*=1-2.2*v'
   ],
 
   ['news crew threshold', 'if(z<=5)continue;', 'if(z<=1)continue;'],

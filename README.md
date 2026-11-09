@@ -90,9 +90,13 @@ and `--check` to confirm a bundle is patched. It covers:
   foam strokes completely removed. The Arabian Sea is clean, serene, deep blue water
   with a natural 14-metre golden beach sand band along the shore.
 - **Safe Bridges & Zero Water Damage on Roads** — vehicles only drown if they drive
-  off-road into the deep open water. Bridges, flyovers, roads (including the Bandra-Worli
-  Sea Link) are 100% immune to water drag, damage, and drowning. Guardrail scrapes on
-  bridge decks deal zero damage.
+  off-road into the deep open water. The original unpatched bundle in `kl` had a bug where
+  `Ji(D, t.x, t.y)` only checked if a car was within 1.8m of a bridge's centerline; on wide
+  dual-carriageway bridges (like Bandra Kurla Complex Road over Mithi River, or Rajiv Gandhi
+  Sea Link), drifting or driving in the outer lane caused the game to think the car fell into
+  the river, draining 170 HP/s and blowing it up. This is now fully patched across all bridges:
+  vehicles on bridges and within 35m of roads take 0 water damage, 0 drowning, and 0 guardrail
+  damage.
 - **True Landmark Geography** — landmarks now use exact world coordinates along
   real Mumbai roads rather than approximate centroids:
   - Taj Lands End & Bandra Fort: at the southern tip of BJ Road / Bandstand.
