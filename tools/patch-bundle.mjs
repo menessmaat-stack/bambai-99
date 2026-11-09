@@ -637,6 +637,53 @@ const EDITS = [
     'f.font="bold 12px system-ui",f.textAlign="center",f.fillStyle="#fcd34d",' +
     'f.fillText("GATEWAY OF INDIA",0,32),f.restore();}}' +
     // 2. ANTILIA (Altamount Road): 27-storey architectural skyscraper (88x80px) with cantilevers, hanging gardens & 3 helipads
+        // --- SAKI NAKA JUNCTION LANDMARKS ---
+    // 1. Saki Naka Metro Station (Accurate Junction Location on Line 1 elevated tracks!)
+    '{let snx=-11800,sny=-19800,snDist=Math.hypot(snx-s.cam.x,sny-s.cam.y);' +
+    'if(snDist<$/2+300){f.save(),f.translate(snx,sny);' +
+    'let sL=40*G,sW=16*G;' +
+    'f.fillStyle="rgba(0,0,0,0.5)",f.fillRect(-sL/2+4*G,-sW/2+6*G,sL,sW);' +
+    'let gr=f.createLinearGradient(0,-sW/2,0,sW/2);gr.addColorStop(0,"#0284c7"),gr.addColorStop(0.5,"#38bdf8"),gr.addColorStop(1,"#0369a1");' +
+    'f.fillStyle=gr,f.beginPath(),f.roundRect(-sL/2,-sW/2,sL,sW,4*G),f.fill();' +
+    'f.strokeStyle="#0f172a",f.lineWidth=1,f.stroke();' +
+    'f.fillStyle="#e0f2fe",f.beginPath(),f.roundRect(-sL*0.28,-sW*0.22,sL*0.56,sW*0.44,2*G),f.fill();' +
+    'f.font="bold 9px system-ui",f.fillStyle="#fde047",f.textAlign="center",f.textBaseline="middle",f.fillText("SAKI NAKA METRO",0,sW/2+8);' +
+    'f.restore();}}' +
+    // 2. McDonald's Saki Naka (Golden Arches)
+    '{let mx=-12150,my=-20750,mDist=Math.hypot(mx-s.cam.x,my-s.cam.y);' +
+    'if(mDist<$/2+250){f.save(),f.translate(mx,my);' +
+    'f.fillStyle="rgba(0,0,0,0.4)",f.fillRect(-22,-16,48,36);' +
+    'f.fillStyle="#dc2626",f.fillRect(-24,-18,48,36);' +
+    'f.strokeStyle="#facc15",f.lineWidth=1.5,f.strokeRect(-24,-18,48,36);' +
+    'f.font="900 16px Impact,sans-serif",f.fillStyle="#facc15",f.textAlign="center",f.textBaseline="middle",f.fillText("M",0,-2);' +
+    'f.font="bold 8px system-ui",f.fillStyle="#ffffff",f.fillText("McDONALDS",0,11);' +
+    'f.restore();}}' +
+    // 3. KFC Saki Naka
+    '{let kx=-11950,my=-20650,kDist=Math.hypot(kx-s.cam.x,my-s.cam.y);' +
+    'if(kDist<$/2+250){f.save(),f.translate(kx,my);' +
+    'f.fillStyle="rgba(0,0,0,0.4)",f.fillRect(-20,-16,44,34);' +
+    'f.fillStyle="#ffffff",f.fillRect(-22,-18,44,34);' +
+    'f.fillStyle="#dc2626";for(let xi=-22;xi<=16;xi+=8)f.fillRect(xi,-18,4,34);' +
+    'f.fillStyle="#1e293b",f.fillRect(-14,-8,28,16);' +
+    'f.font="900 11px system-ui",f.fillStyle="#ffffff",f.textAlign="center",f.textBaseline="middle",f.fillText("KFC",0,0);' +
+    'f.restore();}}' +
+    // 4. Shagun Restaurant Saki Naka (Landmark Multi-Cuisine)
+    '{let sx=-12050,sy=-20950,sDist=Math.hypot(sx-s.cam.x,sy-s.cam.y);' +
+    'if(sDist<$/2+250){f.save(),f.translate(sx,sy);' +
+    'f.fillStyle="rgba(0,0,0,0.4)",f.fillRect(-26,-18,56,40);' +
+    'f.fillStyle="#78350f",f.fillRect(-28,-20,56,40);' +
+    'f.strokeStyle="#d97706",f.lineWidth=1.5,f.strokeRect(-28,-20,56,40);' +
+    'f.font="bold 9px system-ui",f.fillStyle="#fef08a",f.textAlign="center",f.textBaseline="middle",f.fillText("SHAGUN RESTAURANT",0,0);' +
+    'f.restore();}}' +
+    // 5. Hush Mattress Showroom (Sakinaka)
+    '{let hx=-12400,hy=-20900,hDist=Math.hypot(hx-s.cam.x,hy-s.cam.y);' +
+    'if(hDist<$/2+250){f.save(),f.translate(hx,hy);' +
+    'f.fillStyle="rgba(0,0,0,0.4)",f.fillRect(-24,-16,52,36);' +
+    'f.fillStyle="#1e1b4b",f.fillRect(-26,-18,52,36);' +
+    'f.strokeStyle="#818cf8",f.lineWidth=1.5,f.strokeRect(-26,-18,52,36);' +
+    'f.font="900 10px system-ui",f.fillStyle="#c7d2fe",f.textAlign="center",f.textBaseline="middle",f.fillText("HUSH MATTRESS",0,-2);' +
+    'f.font="bold 7px system-ui",f.fillStyle="#94a3b8",f.fillText("SLEEP STUDIO",0,8);' +
+    'f.restore();}}' +
     // --- CRESCENT SOLITAIRE (Sakinaka Tele Exchange Lane - User Office Building) ---
     '{let csx=-13150,csy=-15300,csDist=Math.hypot(csx-s.cam.x,csy-s.cam.y);' +
     'if(csDist<$/2+300){f.save(),f.translate(csx,csy);' +
@@ -1249,37 +1296,44 @@ const EDITS = [
     'f.fillStyle="#ff2222",f.beginPath(),f.arc(tx,ty,2.5,0,Math.PI*2),f.fill();}' +
     '}else if(k.onFoot&&Q.current==="play")if(s.ride>=0)f.fillStyle="rgba(255,235,170,0.96)"'
   ],
-  // ===== 24. Elevated Metro Station Vaulted Barrel Canopy (Image #3) =====
+  // ===== 24. Elevated Metro Station Vaulted Barrel Canopy (// ===== 24. Elevated Metro Station Vaulted Barrel Canopy (Aligned to Track Heading! Sleek 28Gx10G!) =====
   [
     'elevated metro station canopy',
     'function Y6(e,n,u,r,l,o,i){if(!y(n)||!y(u))return;let E=(l?14:32)*G,Q=(l?14:10)*G;',
     'function Y6(e,n,u,r,l,o,i){if(!y(n)||!y(u))return;' +
     'if(l){' +
-    // Elevated Metro Station: 54G long vaulted barrel canopy matching Image #3
-    'let sL=54*G,sW=22*G;e.save(),e.translate(n,u);' +
+    // Compute track heading angle dynamically so station canopy aligns perfectly with the tracks!
+    'let trkAng=0;' +
+    'if(D&&D.rail){for(let rl of D.rail){if(!rl.pts||rl.pts.length<4)continue;' +
+    'for(let pi=0;pi<rl.pts.length-3;pi+=2){' +
+    'let mx=(rl.pts[pi]+rl.pts[pi+2])/2,my=(rl.pts[pi+1]+rl.pts[pi+3])/2;' +
+    'if(Math.hypot(mx-n,my-u)<T(50)){trkAng=Math.atan2(rl.pts[pi+3]-rl.pts[pi+1],rl.pts[pi+2]-rl.pts[pi]);break;}}' +
+    'if(trkAng!==0)break;}}' +
+    // Sleek, compact proportions: length 28G, width 10G (tightly hugging the twin tracks!)
+    'let sL=28*G,sW=10*G;e.save(),e.translate(n,u),e.rotate(trkAng);' +
     // 3D viaduct drop shadow
-    'e.fillStyle="rgba(0,0,0,0.5)",e.fillRect(-sL/2+6*G,-sW/2+10*G,sL,sW);' +
-    // Platform concourse deck & edge lights
-    'e.fillStyle="#475569",e.fillRect(-sL/2,-sW/2,sL,sW);' +
-    'e.fillStyle="#fde047",e.fillRect(-sL/2+2*G,-sW/2+1,sL-4*G,1.2),e.fillRect(-sL/2+2*G,sW/2-2.2,sL-4*G,1.2);' +
-    // Vaulted metallic curved barrel roof canopy (silver-grey gradient)
-    'let gr=e.createLinearGradient(0,-sW/2,0,sW/2);gr.addColorStop(0,"#cbd5e1"),gr.addColorStop(0.5,"#f1f5f9"),gr.addColorStop(1,"#94a3b8");' +
-    'e.fillStyle=gr,e.beginPath(),e.roundRect(-sL/2-2*G,-sW/2-1.5*G,sL+4*G,sW+3*G,5*G),e.fill();' +
-    'e.strokeStyle="#334155",e.lineWidth=Math.max(0.6*G,1.2*o),e.stroke();' +
-    // Arched segmental roof ribs
-    'e.strokeStyle="rgba(100,116,139,0.5)",e.lineWidth=Math.max(0.4*G,0.8*o);' +
-    'for(let rx=-sL/2+4*G;rx<sL/2;rx+=7*G){e.beginPath(),e.moveTo(rx,-sW/2-1.5*G),e.lineTo(rx,sW/2+1.5*G),e.stroke();}' +
-    // Central translucent cyan glass skylight strip
-    'let skyL=sL*0.52,skyW=sW*0.42;e.fillStyle="#38bdf8",e.beginPath(),e.roundRect(-skyL/2,-skyW/2,skyL,skyW,3*G),e.fill();' +
-    'e.strokeStyle="rgba(255,255,255,0.85)",e.lineWidth=Math.max(0.4*G,0.8*o),e.stroke();' +
-    'e.beginPath(),e.moveTo(-skyL/2+2,0),e.lineTo(skyL/2-2,0),e.stroke();' +
-    // Station Name Badge
+    'e.fillStyle="rgba(0,0,0,0.52)",e.fillRect(-sL/2+3*G,-sW/2+5*G,sL,sW);' +
+    // Viaduct support beam
+    'e.fillStyle="#334155",e.fillRect(-sL/2,-sW/2,sL,sW);' +
+    // Trackside platform edge lights
+    'e.fillStyle="#fde047",e.fillRect(-sL/2+1,-sW/2+0.8,sL-2,0.9),e.fillRect(-sL/2+1,sW/2-1.7,sL-2,0.9);' +
+    // BLUE METALLIC VAULTED ROOF CANOPY (Exact Reference Image #2)
+    'let gr=e.createLinearGradient(0,-sW/2,0,sW/2);gr.addColorStop(0,"#0284c7"),gr.addColorStop(0.5,"#38bdf8"),gr.addColorStop(1,"#0369a1");' +
+    'e.fillStyle=gr,e.beginPath(),e.roundRect(-sL/2-1*G,-sW/2-1*G,sL+2*G,sW+2*G,3*G),e.fill();' +
+    'e.strokeStyle="#0f172a",e.lineWidth=Math.max(0.4*G,Q),e.stroke();' +
+    // Transverse arched curved roof ribs
+    'e.strokeStyle="rgba(255,255,255,0.45)",e.lineWidth=Math.max(0.3*G,0.6*o);' +
+    'for(let rx=-sL/2+3*G;rx<sL/2;rx+=5*G){e.beginPath(),e.moveTo(rx,-sW/2-1*G),e.lineTo(rx,sW/2+1*G),e.stroke();}' +
+    // Central translucent cyan glass skylight (Exact Reference Image #2)
+    'let skyL=sL*0.56,skyW=sW*0.42;e.fillStyle="#e0f2fe",e.beginPath(),e.roundRect(-skyL/2,-skyW/2,skyL,skyW,1.5*G),e.fill();' +
+    'e.strokeStyle="rgba(255,255,255,0.9)",e.lineWidth=Math.max(0.35*G,0.6*o),e.stroke();' +
+    // Station Name Badge (Aligned cleanly outside the canopy)
     'if(i>=tn.stationLabels*0.5&&r){' +
-    'let txt=r.replace(/metro/i,"").trim()+" METRO";e.font=`bold ${Math.max(9*o,7.5*G)}px system-ui`;' +
+    'let txt=r.replace(/metro/i,"").trim()+" METRO";e.font=`bold ${Math.max(7.5*o,6*G)}px system-ui`;' +
     'let tw=e.measureText(txt).width;' +
-    'e.fillStyle="rgba(10,15,26,0.9)",e.fillRect(-tw/2-6,sW/2+4*G,tw+12,16);' +
-    'e.strokeStyle="#38bdf8",e.lineWidth=1,e.strokeRect(-tw/2-6,sW/2+4*G,tw+12,16);' +
-    'e.fillStyle="#f8fafc",e.textAlign="center",e.textBaseline="middle",e.fillText(txt,0,sW/2+4*G+8);}' +
+    'e.fillStyle="rgba(10,15,26,0.92)",e.fillRect(-tw/2-3,sW/2+2*G,tw+6,12);' +
+    'e.strokeStyle="#38bdf8",e.lineWidth=0.7,e.strokeRect(-tw/2-3,sW/2+2*G,tw+6,12);' +
+    'e.fillStyle="#f8fafc",e.textAlign="center",e.textBaseline="middle",e.fillText(txt,0,sW/2+2.5*G+6);}' +
     'e.restore();return;}' +
     'let E=(l?14:32)*G,Q=(l?14:10)*G;'
   ],
