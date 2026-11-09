@@ -65,10 +65,25 @@ and `--check` to confirm a bundle is patched. It covers:
 - **Aircraft** — up to three "planes" per apron were scenery that `nearestPlane`
   could never return, which is why they could not be boarded. Scenery is off,
   the real parked-plane cap is 14, and boarding reach is 95 m.
-- **Sea** — the open water keeps a faint swell and the drama moved to the
-  coastline: every landmass is stroked with two animated dashed foam lines, so
-  surf breaks along the shore. Anything that drives into the water loses drive,
-  throws spray and sinks after 1.6 s, police cruisers included.
+- **Real Beaches & Crashing Surf** — every coastline across Mumbai (Bandstand,
+  Marine Drive, Worli, Colaba, Juhu) now features a 16-metre golden beach sand
+  band (#e5d59c) extending into the water, a 6-metre wet sand tide line (#baa572),
+  and multi-layered animated white surf waves breaking and receding on the sand.
+  Dedicated beach areas (Juhu Beach, Girgaum Chowpatty) render rich golden sand
+  with umbrellas and tide breaks. The artificial horizontal sine stripes across
+  the open ocean were completely removed, leaving deep clean blue Arabian Sea.
+  Vehicles driving into water lose drive, spray, and sink after 1.6 s.
+- **True Landmark Geography** — landmarks now use exact world coordinates along
+  real Mumbai roads rather than approximate centroids:
+  - Taj Lands End & Bandra Fort: at the southern tip of BJ Road / Bandstand.
+  - Mannat (Shah Rukh Khan): on Byramji Jeejeebhoy Road, exactly 560 metres north
+    of Lands End along the promenade, facing the sea.
+  - Bandra Bandstand: the coastal promenade stretch between Mannat and Galaxy.
+  - Galaxy Apartments (Salman Khan): at the northern entrance of Bandstand.
+  - Jalsa (Amitabh Bachchan): at 10th Road, JVPD Scheme, Juhu.
+  - Antilia (Mukesh Ambani): at Altamount Road / Kemps Corner.
+  - Matoshree: at Kalanagar, Bandra East.
+  - Girgaum Chowpatty & Juhu Beach: correctly positioned and marked.
 - **Bazooka** — seventh weapon slot, 12 rockets, reusing the tank's missile
   system from on foot or at the wheel, with a flame-and-smoke exhaust trail.
 - **Collisions** — completely silent. Every impact cue (car-on-car, AI-on-AI,

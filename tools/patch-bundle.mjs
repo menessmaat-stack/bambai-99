@@ -57,9 +57,7 @@ const EDITS = [
     'wave layers',
     'I(0,2.4*G,38*G,0.9,n.night?"rgba(150,186,226,0.14)":"rgba(240,250,255,0.2)",Math.max(0.4*G,Y)),' +
     'I(V*0.5,1.5*G,23*G,-1.3,n.night?"rgba(120,156,200,0.09)":"rgba(214,236,250,0.12)",Math.max(0.25*G,Y*0.7))',
-    'I(V*0.25,6.4*G,96*G,0.3,n.night?"rgba(96,136,178,0.1)":"rgba(255,255,255,0.08)",Math.max(1.4*G,Y*1.2)),' +
-    'I(0,4.2*G,54*G,0.55,n.night?"rgba(150,186,226,0.11)":"rgba(240,250,255,0.13)",Math.max(0.9*G,Y)),' +
-    'I(V*0.5,2.6*G,31*G,-0.8,n.night?"rgba(120,156,200,0.07)":"rgba(214,236,250,0.09)",Math.max(0.6*G,Y*0.7))'
+    '0'
   ],
 
   // ===== Cabbie: kaali-peeli, not a New York checker cab ===================
@@ -295,6 +293,21 @@ const EDITS = [
     'return hdD.hire??(hdD.flo?"flo":hdD.cop?"cop":null)}'
   ],
 
+  // ===== real beaches: golden sand, wet tide lines, umbrellas ==============
+  [
+    'rich beach rendering',
+    'case"beach":case"sand":{if(!Pn(r,V.pts))break;if(r.fillStyle=l.sand,r.fill(),i)dE(r,V);break}',
+    'case"beach":case"sand":{if(!Pn(r,V.pts))break;' +
+    'r.fillStyle=n.night?"#7a6e4d":"#ebd79b",r.fill();' +
+    'r.strokeStyle=n.night?"rgba(90,80,56,0.7)":"rgba(196,172,118,0.85)",' +
+    'r.lineWidth=Math.max(3*G,4*E),r.stroke();' +
+    'let hdT=y(n.t)?n.t:0,hdW=0.5+0.5*Math.sin(hdT*1.8);' +
+    'r.strokeStyle=n.night?`rgba(190,214,240,${0.2+hdW*0.3})`:`rgba(255,255,255,${0.35+hdW*0.45})`;' +
+    'r.lineWidth=Math.max(2*G,2.8*E);' +
+    'r.setLineDash([12*G,8*G]),r.lineDashOffset=-hdT*18*G,r.stroke(),r.setLineDash([]);' +
+    'if(i)dE(r,V);break}'
+  ],
+
   // ===== South Mumbai ======================================================
   // The baked map already covers the whole metropolitan region — Colaba,
   // Nariman Point, CSMT, Worli and Dadar are all in mumbai-map.json with their
@@ -442,27 +455,31 @@ const EDITS = [
   ['gang car cap', 'if(t>=4)return;let v=s.player,z=oo();', 'if(t>=7)return;let v=s.player,z=oo();'],
   ['gang spawn attempts', 'for(let $=0;$<6&&t<4;$++)', 'for(let $=0;$<8&&t<7;$++)'],
 
-  // ===== surf: the sea has to break on the shore, not stripe the bay =======
-  // Every coastal landmass is stroked with two animated dashed lines whose
-  // phase and width pulse, so the waterline froths and the open water keeps
-  // only a faint swell.
+  // ===== surf: golden beaches and crashing surf along every coastline ======
   [
     'shore surf',
     'case"land":{if(!Pn(r,V.pts))break;if(r.fillStyle=l.land,r.fill("evenodd"),i)' +
     'r.strokeStyle=l.shore,r.lineWidth=Math.max(0.9*G,1.4*E),r.stroke();break}',
-    'case"land":{if(!Pn(r,V.pts))break;if(r.fillStyle=l.land,r.fill("evenodd"),i){' +
-    'r.strokeStyle=l.shore,r.lineWidth=Math.max(0.9*G,1.4*E),r.stroke();' +
-    'let hdT=y(n.t)?n.t:0,hdPh=0.5+0.5*Math.sin(hdT*1.5+(V.pts[0]||0)*0.0006);' +
-    'r.save(),r.lineCap="round",' +
-    'r.strokeStyle=n.night?`rgba(196,220,240,${0.12+hdPh*0.22})`:`rgba(255,255,255,${0.2+hdPh*0.38})`,' +
-    'r.lineWidth=Math.max(1.5*G,2.4*E),' +
-    'r.setLineDash([(7+hdPh*9)*G,(9-hdPh*3)*G]),r.lineDashOffset=-hdT*24*G,r.stroke(),' +
-    'r.strokeStyle=n.night?`rgba(150,186,226,${0.08+(1-hdPh)*0.14})`:`rgba(226,244,255,${0.12+(1-hdPh)*0.24})`,' +
-    'r.lineWidth=Math.max(0.9*G,1.5*E),' +
-    'r.setLineDash([4*G,(12+hdPh*6)*G]),r.lineDashOffset=hdT*16*G,r.stroke(),' +
-    'r.setLineDash([]),r.restore()}break}'
+    'case"land":{if(!Pn(r,V.pts))break;' +
+    // Golden sand beach band extending 16 metres into the water from the land edge!
+    'r.strokeStyle=n.night?"#544a36":"#e5d59c",' +
+    'r.lineWidth=Math.max(16*G,20*E),r.stroke();' +
+    // Wet sand band right at the tide line (6 metres wide)!
+    'r.strokeStyle=n.night?"#3c3426":"#baa572",' +
+    'r.lineWidth=Math.max(6*G,8*E),r.stroke();' +
+    // Land fill covers the inside half of the strokes
+    'r.fillStyle=l.land,r.fill("evenodd");' +
+    // Crashing surf foam that rolls and breaks right onto the sand!
+    'let hdT=y(n.t)?n.t:0,hdW=0.5+0.5*Math.sin(hdT*1.6+(V.pts[0]||0)*0.0004);' +
+    'r.save(),r.lineCap="round";' +
+    'r.strokeStyle=n.night?`rgba(180,210,235,${0.2+hdW*0.25})`:`rgba(255,255,255,${0.4+hdW*0.5})`,' +
+    'r.lineWidth=Math.max(2.4*G,3.2*E);' +
+    'r.setLineDash([(8+hdW*10)*G,(10-hdW*4)*G]),r.lineDashOffset=-hdT*22*G,r.stroke();' +
+    'r.strokeStyle=n.night?`rgba(140,175,210,${0.1+(1-hdW)*0.18})`:`rgba(235,246,255,${0.18+(1-hdW)*0.3})`,' +
+    'r.lineWidth=Math.max(1.1*G,1.6*E);' +
+    'r.setLineDash([5*G,(14+hdW*8)*G]),r.lineDashOffset=hdT*14*G,r.stroke();' +
+    'r.setLineDash([]),r.restore();break}'
   ],
-
   // ===== bazooka ===========================================================
   // The missile system already existed for the tank; this exposes it as a
   // carried weapon, on foot or at the wheel, with a brighter exhaust trail.
@@ -554,15 +571,18 @@ const EDITS = [
   [
     'vip systems and the water',
     'function $9(t){for(let z of s.cars){if(z.dead){z.wreckT+=t;continue}if(z.hp<=0',
-    // The addresses are the public ones every Mumbai cabbie knows.
+    // Landmarks with exact verified coordinates in game-world units:
+    // Mannat and Taj Lands End are separated by 560 metres along BJ Road!
     'var hdAMB=89,hdVIPH=[' +
-    '{n:"MANNAT",who:"Shah Rukh Khan",lon:72.8196,lat:19.0433},' +
-    '{n:"GALAXY",who:"Salman Khan",lon:72.8266,lat:19.0557},' +
-    '{n:"JALSA",who:"Amitabh Bachchan",lon:72.825,lat:19.073},' +
-    '{n:"ANTILIA",who:"Mukesh Ambani",lon:72.8097,lat:18.9676},' +
-    '{n:"MATOSHREE",who:"Thackeray family",lon:72.839,lat:19.0548},' +
-    '{n:"VARSHA",who:"Chief Minister",lon:72.8118,lat:18.9256},' +
-    '{n:"SAHYADRI",who:"State guest house",lon:72.8204,lat:18.929}];' +
+    '{n:"TAJ LANDS END",who:"Bandra Fort Point",x:-56325,y:26930},' +
+    '{n:"MANNAT",who:"Shah Rukh Khan",x:-55790,y:23185},' +
+    '{n:"BANDSTAND",who:"Coastal Promenade",x:-54800,y:21840},' +
+    '{n:"GALAXY",who:"Salman Khan",x:-53466,y:19030},' +
+    '{n:"JALSA",who:"Amitabh Bachchan",x:-51600,y:-14800},' +
+    '{n:"ANTILIA",who:"Mukesh Ambani",x:-64800,y:86000},' +
+    '{n:"MATOSHREE",who:"Thackeray family",x:-37500,y:12400},' +
+    '{n:"GIRGAUM CHOWPATTY",who:"Marine Drive Bay",x:-64600,y:92000},' +
+    '{n:"JUHU BEACH",who:"Juhu Coastline",x:-51000,y:-16000}];' +
     'function hdVipXY(h){if(h.x===void 0)h.x=T((h.lon-72.9)*kv),h.y=T(-(h.lat-19.08)*Av);return h}' +
     'function hdVip(t){let p=s.player,near=null,nd=1/0;' +
     'for(let i=0;i<hdVIPH.length;i++){let h=hdVipXY(hdVIPH[i]),' +
