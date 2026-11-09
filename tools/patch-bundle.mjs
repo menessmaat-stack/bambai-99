@@ -848,11 +848,13 @@ const EDITS = [
     'return V5.set(o,Q),Q}'
   ],
 
-  // ===== Dynamic Canvas Draw Size Matching Natural Proportions =====
+  // ===== Dynamic Canvas Draw Size Matching Natural Proportions + Flyover Ground Shadow =====
   [
     'dynamic natural car draw size',
     'let N=S$(t.type,t.pal),J=8,Z=v.l+J*2,K=v.w+J*2;if(t.dead)f.globalAlpha=0.55,f.drawImage(N,-Z/2,-K/2,Z,K)',
-    'let N=S$(t.type,t.pal),Z=N.width/Di,K=N.height/Di;if(t.dead)f.globalAlpha=0.55,f.drawImage(N,-Z/2,-K/2,Z,K)'
+    'let N=S$(t.type,t.pal),Z=N.width/Di,K=N.height/Di;' +
+    'if(t.deck&&!v.heli){f.save(),f.rotate(t.h),f.fillStyle="rgba(0,0,0,0.45)",f.beginPath(),f.ellipse(6,12,v.l*0.52,v.w*0.52,0,0,Math.PI*2),f.fill(),f.restore();}' +
+    'if(t.dead)f.globalAlpha=0.55,f.drawImage(N,-Z/2,-K/2,Z,K)'
   ],
   // ===== Move Alert Badge to x=264 so it NEVER overlaps the player card =====
   [
@@ -885,7 +887,7 @@ const EDITS = [
   [
     'bridge drop shadow',
     'if(r.strokeStyle="rgba(0,0,0,0.42)",r.lineWidth=_+2.4*G,an(r,V.pts,Y*0.12,F*0.12))r.stroke();',
-    'if(r.strokeStyle="rgba(0,0,0,0.52)",r.lineWidth=_+Math.max(4*G,8*i),an(r,V.pts,Y+6*G,F+10*G))r.stroke();'
+    'if(r.strokeStyle="rgba(0,0,0,0.68)",r.lineWidth=_+Math.max(8*G,14*i),an(r,V.pts,Y+10*G,F+16*G))r.stroke();'
   ],
 
   // ===== 2. Bridge Guardrails, Concrete Barriers & Lane Markings (Always Visible at Any Zoom!) =====
@@ -904,15 +906,16 @@ const EDITS = [
     'r.strokeStyle="rgba(255,255,255,0.75)",r.lineWidth=Math.max(0.8*G,i),r.setLineDash([8*G,12*G]);if(an(r,V.pts,Y,F))r.stroke();r.setLineDash([])'
   ],
 
-  // ===== 3. Bridge Vehicle Fall & Height Physics =====
+  // ===== 3. Bridge Vehicle Fall & Height Physics (Works 100% on Flyover Edges!) =====
   [
     'bridge vehicle fall and height',
     'function ai(t){let v=X9(t.x,t.y);if(v===null){t.deck=!1,t.under=!1;return}if(t.deck){t.under=!1;return}let z=Math.abs(Yn(t.h,v)),$=z<Q2||z>Math.PI-Q2;t.deck=$,t.under=!$}',
     'function ai(t){let v=X9(t.x,t.y);' +
-    'if(v===null){if(t.deck){t.deck=!1;t.z=18;t.vz=-40;if(t.player)le("PLUNGED OFF BRIDGE!");}' +
+    'if(v===null){if(t.deck){t.deck=!1;t.z=18;t.vz=-45;if(t.player)le("PLUNGED OFF FLYOVER!");}' +
     'else{t.deck=!1}t.under=!1;return}' +
-    'if(t.deck){t.under=!1;return}' +
-    'let z=Math.abs(Yn(t.h,v)),$=z<Q2||z>Math.PI-Q2;t.deck=$,t.under=!$}'
+    'let z=Math.abs(Yn(t.h,v)),$=z<Q2||z>Math.PI-Q2;' +
+    'if(t.deck&&!$){t.deck=!1;t.z=18;t.vz=-45;if(t.player)le("PLUNGED OFF FLYOVER!");return;}' +
+    't.deck=$,t.under=!$}'
   ],
 
   // ===== 4. Ambassador Flashing Red VIP Beacon =====
@@ -1044,20 +1047,19 @@ const EDITS = [
     'te=t.player?K.steer*(1-M*0.12)/(1+Math.pow(Math.abs(k)/580,1.25)*0.38):K.steer*(1-M*0.18)/(1+Math.pow(Math.abs(k)/300,1.7)*1.05);'
   ],
 
-  // ===== 11. Top Speed Boosted for Player Only (Normal people stay at normal speed!) =====
+  // ===== 11. Top Speed Boosted for Play  // ===== 11. Vehicle Speed (Reduced by another 20% across the board!) =====
   [
     'top speed of all vehicles boosted',
     'k=ze(k,-170,K.top*(1-M*0.45)*(t.nosOn?1.22:1));',
-    'k=ze(k,-170,(t.player?K.top*1.85:K.top)*(1-M*0.45)*(t.nosOn?1.35:1));'
+    'k=ze(k,-140,(t.player?K.top*0.92:K.top*0.80)*(1-M*0.45)*(t.nosOn?1.15:1));'
   ],
 
-  // ===== 12. Acceleration Boosted for Player Only (Normal people stay at normal speed!) =====
+  // ===== 12. Acceleration (Smooth, controllable 20% reduced acceleration) =====
   [
     'acceleration of all vehicles boosted',
     'let Je=fe*K.power*(1-M*0.4)/K.mass*(k<0?1.6:1);',
-    'let Je=fe*(t.player?K.power*1.6:K.power)*(1-M*0.4)/K.mass*(k<0?1.6:1);'
+    'let Je=fe*(t.player?K.power*0.88:K.power*0.80)*(1-M*0.4)/K.mass*(k<0?1.5:1);'
   ],
-
   // ===== 13. Speed Blur with Blurry Streaking Red Tail Lights =====
   [
     'speed blur blurry tail lights',
