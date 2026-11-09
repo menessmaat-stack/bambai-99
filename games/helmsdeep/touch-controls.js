@@ -490,8 +490,25 @@
     });
     window.addEventListener('blur', releaseAll);
     // Stop the page itself from panning or pinch-zooming under the game.
+    var touchDist0 = 0;
+    var scale0 = 1;
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2 && window.__helmsdeep && window.__helmsdeep.S.mapOpen) {
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        touchDist0 = Math.hypot(dx, dy);
+        scale0 = window.__helmsdeep.S.mapScale || 1;
+      }
+    }, { passive: true });
     document.addEventListener('touchmove', function (e) {
-      if (e.touches.length > 1) e.preventDefault();
+      if (e.touches.length === 2 && window.__helmsdeep && window.__helmsdeep.S.mapOpen && touchDist0 > 10) {
+        e.preventDefault();
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        var dist = Math.hypot(dx, dy);
+        var ratio = touchDist0 / dist;
+        window.__helmsdeep.S.mapScale = Math.max(0.45, Math.min(9.8, scale0 * ratio));
+      } else if (e.touches.length > 1) e.preventDefault();
     }, { passive: false });
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
   }

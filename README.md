@@ -91,13 +91,27 @@ and `--check` to confirm a bundle is patched. It covers:
   Physics still applies (damage, knockback, displacement), but there is zero
   audio playback. Pedestrians below 110 closing speed are knocked down,
   displaced and sent fleeing (three hits kill) without any hit noise.
-- **VIP Mumbai & State Convoy** — seven iconic residences marked on the map with
-  gold rings and security details on the gates: Mannat (SRK), Galaxy (Salman Khan),
-  Jalsa (Amitabh Bachchan), Antilia (Ambani), Matoshree (Thackeray), Varsha (CM)
-  and Sahyadri. A state convoy periodically rolls through the city: a white
-  Ambassador (State) sedan with a flashing red beacon, flanked by a police
-  Cruiser and a SWAT van. Taking down the VIP car pays out a ₹2,50,000 bounty
-  and slaps on 5 wanted stars.
+- **Big Map Zoom Out (Entire Mumbai Peninsula)** — when the map is open (via
+  minimap disc or MAP key), mouse wheel, `[` / `]` keys, or mobile pinch-to-zoom
+  zooms the map from 0.5x up to 9.8x (over 45 km view — the entire metropolitan
+  region from Colaba and Marine Drive all the way to Thane, Powai, and Borivali).
+- **Military & Naval Bases** — high-security restricted bases with stealable heavy
+  armor:
+  - INS Shikra Naval Base (Colaba Point): stealable Rhino Tank (1600 HP) and
+    Blackhawk Combat Helicopter parked on the parade ground.
+  - Santacruz Air Force Station: stealable Rhino Tank and Fighter Jet.
+  - Trespassing triggers an immediate 5-star wanted level ("TRESPASSING! LETHAL
+    FORCE AUTHORIZED") and armed military commandos engage on sight.
+- **Porsches, Lambos & Ambassadors in Live Traffic** — ambient traffic now features
+  Porsche 911 GT3s, Lamborghini Huracans, Lamborghini Aventadors, Porsche Taycans,
+  Bentley Continental GTs, Fortuners, and official white Ambassadors with red
+  flashing beacons roaring through Mumbai streets.
+- **Multiple Moving Celebrity & VIP Convoys** — three distinct 3-car convoys
+  actively drive through the city on real roads:
+  - Chief Minister State Convoy (beacon Ambassador, Police Cruiser, SWAT van)
+  - Bollywood Superstar Convoy (Shah Rukh Khan in a Lamborghini with security SUVs)
+  - Billionaire Security Convoy (Mukesh Ambani in a Bentley with Defender escort)
+  Assassinating any VIP vehicle pays out a ₹2,50,000 bounty and triggers a 5-star chase.
 - **Jobs** — the Flo trucks and police cars join the existing hire loop as kinds
   `flo` and `cop`: consignment runs (₹260 + ₹1.9/m, failed if you spill the
   load) and dispatch call-outs (₹180 + ₹1.3/m), both with pins, par-time bonus

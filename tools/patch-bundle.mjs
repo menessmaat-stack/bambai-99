@@ -79,7 +79,7 @@ const EDITS = [
   [
     'traffic weights',
     'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,12,12,12,14,',
-    'var Yi=[0,0,0,1,1,2,3,5,6,7,7,8,8,8,9,40,41,42,56,57,12,12,12,12,12,12,12,12,12,12,12,54,54,54,14,'
+    'var Yi=[89,89,89,89,56,56,56,57,57,57,58,58,59,59,84,84,82,83,0,1,2,5,7,8,9,40,41,42,12,12,12,12,12,12,12,12,54,54,14,'
   ],
 
   // ===== audio: the SFX bus was 8-15x quieter than the music ===============
@@ -571,9 +571,8 @@ const EDITS = [
   [
     'vip systems and the water',
     'function $9(t){for(let z of s.cars){if(z.dead){z.wreckT+=t;continue}if(z.hp<=0',
-    // Landmarks with exact verified coordinates in game-world units:
-    // Mannat and Taj Lands End are separated by 560 metres along BJ Road!
-    'var hdAMB=89,hdVIPH=[' +
+    'var hdAMB=89,' +
+    'hdVIPH=[' +
     '{n:"TAJ LANDS END",who:"Bandra Fort Point",x:-56325,y:26930},' +
     '{n:"MANNAT",who:"Shah Rukh Khan",x:-55790,y:23185},' +
     '{n:"BANDSTAND",who:"Coastal Promenade",x:-54800,y:21840},' +
@@ -582,36 +581,55 @@ const EDITS = [
     '{n:"ANTILIA",who:"Mukesh Ambani",x:-64800,y:86000},' +
     '{n:"MATOSHREE",who:"Thackeray family",x:-37500,y:12400},' +
     '{n:"GIRGAUM CHOWPATTY",who:"Marine Drive Bay",x:-64600,y:92000},' +
-    '{n:"JUHU BEACH",who:"Juhu Coastline",x:-51000,y:-16000}];' +
+    '{n:"JUHU BEACH",who:"Juhu Coastline",x:-51000,y:-16000}],' +
+    'hdArmyBases=[' +
+    '{name:"INS SHIKRA NAVAL BASE",who:"Colaba Military Point",x:-51500,y:120500,r:3400},' +
+    '{name:"SANTACRUZ AIR FORCE STATION",who:"Military Hangar",x:-26000,y:-3000,r:3000}],' +
+    'hdConvoyTypes=[' +
+    '{name:"Chief Minister",vip:hdAMB,escLead:30,escRear:45,title:"Chief Minister State Convoy"},' +
+    '{name:"Shah Rukh Khan",vip:58,escLead:82,escRear:83,title:"Superstar Convoy"},' +
+    '{name:"Mukesh Ambani",vip:84,escLead:83,escRear:30,title:"Billionaire Security Convoy"}];' +
     'function hdVipXY(h){if(h.x===void 0)h.x=T((h.lon-72.9)*kv),h.y=T(-(h.lat-19.08)*Av);return h}' +
     'function hdVip(t){let p=s.player,near=null,nd=1/0;' +
-    'for(let i=0;i<hdVIPH.length;i++){let h=hdVipXY(hdVIPH[i]),' +
-    'd=Math.hypot(h.x-p.x,h.y-p.y);if(d<nd)nd=d,near=h}' +
+    'for(let i=0;i<hdVIPH.length;i++){let h=hdVipXY(hdVIPH[i]),d=Math.hypot(h.x-p.x,h.y-p.y);if(d<nd)nd=d,near=h}' +
     'if(near&&nd<T(240)){let g=0;for(let q of s.peds)if(!q.dead&&q.hdGuard)g++;' +
     'for(let k=g;k<4;k++){let an=W()*Math.PI*2,rr2=T(16)+W()*T(24),' +
     'gx=near.x+Math.cos(an)*rr2,gy=near.y+Math.sin(an)*rr2;' +
     's.peds.push({x:gx,y:gy,h:an,speed:20+W()*12,kind:"cop",seed:W(),leg:0,' +
     'wpX:near.x+Math.cos(an)*T(24),wpY:near.y+Math.sin(an)*T(24),phase:W()*6,' +
     'dead:!1,deadT:0,copShootCd:0,hdGuard:1})}' +
-    'if(s.t-(s.hdVipMsg??-99)>35)s.hdVipMsg=s.t,' +
-    'le(near.n+" — "+near.who+". Security on the gate.")}' +
-    'if(s.t<12||s.t-(s.hdConvoyT??-99)<45)return;' +
+    'if(s.t-(s.hdVipMsg??-99)>35)s.hdVipMsg=s.t,le(near.n+" — "+near.who+". Security on the gate.")}' +
+    // Army base spawn & trespass check:
+    'if(!s.hdArmySpawned){s.hdArmySpawned=1;' +
+    // Rhino Tank (43) + Blackhawk Chopper (44) at INS Shikra:
+    's.cars.push({x:-51500,y:120500,h:0,vx:0,vy:0,w:0,steer:0,type:43,pal:0,seed:0.1,hp:1600,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
+    's.cars.push({x:-51650,y:120600,h:0,vx:0,vy:0,w:0,steer:0,type:44,pal:0,seed:0.2,hp:500,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
+    // Rhino Tank (43) + Fighter Jet at Santacruz Air Force:
+    's.cars.push({x:-26000,y:-3000,h:0,vx:0,vy:0,w:0,steer:0,type:43,pal:0,seed:0.3,hp:1600,player:!1,ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,siren:0,rider:null,hdMilitary:1});' +
+    's.planes.push({x:-26200,y:-2900,h:0,speed:0,alt:0,mode:"stand",livery:0,turn:0,hx:-26200,hy:-2900,rwy:-1,kind:"jet",spin:0});}' +
+    'for(let b of hdArmyBases){let d=Math.hypot(b.x-p.x,b.y-p.y);' +
+    'if(d<b.r){if(s.t-(s.hdArmyAlertT??-99)>20){s.hdArmyAlertT=s.t;s.stars=5;s.chasePeak=5;Zn(10,!0);' +
+    'le(b.name+" — TRESPASSING! LETHAL FORCE AUTHORIZED.");' +
+    'for(let k=0;k<4;k++){let an=W()*Math.PI*2,gx=p.x+Math.cos(an)*T(24),gy=p.y+Math.sin(an)*T(24);' +
+    's.peds.push({x:gx,y:gy,h:an,speed:28,kind:"cop",seed:W(),leg:0,wpX:p.x,wpY:p.y,phase:W()*6,dead:!1,deadT:0,copShootCd:0,scripted:!0});}}}}' +
+    // Moving VIP convoys:
+    'if(s.t>=12&&s.t-(s.hdConvoyT??-99)>=28){' +
     'let live=0;for(let q of s.cars)if(!q.dead&&(q.hdVip||q.hdEscort))live++;' +
-    'if(live>0||s.cars.length>=Ru)return;' +
-    'let n=lu(D,W,p.x,p.y,ro()*0.6);if(hn(n.x,n.y))return;' +
-    'let lane=fr(D,n.x,n.y,n.heading,W,T(6));if(!lane)return;s.hdConvoyT=s.t;' +
+    'if(live<=1&&s.cars.length<Ru+3){' +
+    'let n=lu(D,W,p.x,p.y,ro()*0.55);if(!hn(n.x,n.y)){' +
+    'let lane=fr(D,n.x,n.y,n.heading,W,T(6));if(lane){s.hdConvoyT=s.t;' +
+    'let cType=hdConvoyTypes[Math.floor(W()*hdConvoyTypes.length)];' +
     'let mk=(ty,off,ai,flag)=>{let c={x:lane.x-Math.cos(lane.h)*off,' +
     'y:lane.y-Math.sin(lane.h)*off,h:lane.h,vx:0,vy:0,w:0,steer:0,type:ty,pal:4,' +
-    'seed:W(),hp:ou(ty),player:!1,ai:ai,speed:115+W()*35,stuck:0,panic:0,shootCd:0,' +
-    'burn:0,dead:!1,wreckT:0,siren:0,rider:lane,hostile:0,patrol:ai==="cop"?!0:void 0};' +
+    'seed:W(),hp:ou(ty),player:!1,ai:ai,speed:125+W()*30,stuck:0,panic:0,shootCd:0,' +
+    'burn:0,dead:!1,wreckT:0,siren:0,rider:null,hostile:0,patrol:ai==="cop"?!0:void 0,vipName:cType.name};' +
     'c[flag]=1,s.cars.push(c)};' +
-    'mk(hdAMB,0,"traffic","hdVip"),mk(30,T(10),"cop","hdEscort"),mk(45,T(-10),"cop","hdEscort"),' +
-    'le("State convoy on the road — red beacon, full escort.")}' +
-    // $9 now also pays the contract and drowns anything that leaves the kerb
+    'mk(cType.vip,0,"traffic","hdVip"),mk(cType.escLead,T(10),"cop","hdEscort"),mk(cType.escRear,T(-10),"cop","hdEscort"),' +
+    'le(cType.title+" on the road — armed escort.")}}}}}' +
     'function $9(t){hdVip(t);for(let z of s.cars){if(z.dead){' +
     'if(z.hdVip&&!z.hdPaid)z.hdPaid=1,s.player.cash+=250000,s.player.score+=4000,' +
     's.stars=5,s.chasePeak=5,s.seenAgo=0,Zn(6,!0),' +
-    'le("VIP DOWN — ₹2,50,000 wired. Every unit in the city is coming.");' +
+    'le(z.vipName+" DOWN — ₹2,50,000 wired. Every unit responding!");' +
     'z.wreckT+=t;continue}' +
     'if(!nl(z.x,z.y)){z.hdW=(z.hdW??0)+t,z.speed=0,' +
     'z.vx*=Math.max(0,1-3*t),z.vy*=Math.max(0,1-3*t);' +
@@ -679,7 +697,7 @@ const EDITS = [
     'convoy survives the culler',
     'N=Math.hypot($.x-s.player.x,$.y-s.player.y),J=N>v;if($.dead&&$.wreckT>25&&J',
     'N=Math.hypot($.x-s.player.x,$.y-s.player.y),J=N>v;' +
-    'if(($.hdVip||$.hdEscort)&&!$.dead)continue;' +
+    'if(($.hdVip||$.hdEscort||$.hdMilitary)&&!$.dead)continue;' +
     'if($.dead&&$.wreckT>25&&J'
   ],
 
@@ -688,7 +706,29 @@ const EDITS = [
   [
     'fo never despawns convoy',
     'if(v===s.player.carIdx){t.rider=null;return}',
-    'if(v===s.player.carIdx||t.hdVip||t.hdEscort){t.rider=null;return}'
+    'if(v===s.player.carIdx||t.hdVip||t.hdEscort||t.hdMilitary){t.rider=null;return}'
+  ],
+
+  // ===== big map zooming + mouse wheel / bracket keys ======================
+  [
+    'big map zoom renderer',
+    'function h9(t,v){let z=Au.width/2*Nr;wu.setTransform(1,0,0,1,0,0),wu.fillStyle="#16191c",wu.fillRect(0,0,Au.width,Au.height),wu.save(),wu.translate(Au.width/2,Au.height/2),wu.scale(1/Nr,1/Nr),wu.translate(-t,-v),Ml.x0=t-z,Ml.y0=v-z,Ml.x1=t+z,Ml.y1=v+z,qi(D,Ml),Ii(D,Ml),gi(D,Ml),wu.restore()}',
+    'function h9(t,v){let hdZ=s.mapScale??1,currNr=Nr*hdZ,z=Au.width/2*currNr;wu.setTransform(1,0,0,1,0,0),wu.fillStyle="#16191c",wu.fillRect(0,0,Au.width,Au.height),wu.save(),wu.translate(Au.width/2,Au.height/2),wu.scale(1/currNr,1/currNr),wu.translate(-t,-v),Ml.x0=t-z,Ml.y0=v-z,Ml.x1=t+z,Ml.y1=v+z,Ml.zoom=1/currNr,qi(D,Ml),Ii(D,Ml),gi(D,Ml),wu.restore()}'
+  ],
+  [
+    'big map S scale',
+    'let S=(oe,Ze)=>[R+C/2+(oe-k.x)/Nr,h+C/2+(Ze-k.y)/Nr];',
+    'let hdZ=s.mapScale??1,currNr=Nr*hdZ,S=(oe,Ze)=>[R+C/2+(oe-k.x)/currNr,h+C/2+(Ze-k.y)/currNr];'
+  ],
+  [
+    'big map wheel zoom',
+    'U9=(t)=>{if(Q.current!=="play")return;t.preventDefault();let v=Math.sign(t.deltaY)*-0.08;s.zoomBias=ze(s.zoomBias*(1+v),0.45,2.6),s.zoomMsgT=s.t};',
+    'U9=(t)=>{if(Q.current!=="play")return;t.preventDefault();if(s.mapOpen){let v=Math.sign(t.deltaY)*0.32;s.mapScale=ze((s.mapScale??1)*(1+v),0.45,9.8);return}let v=Math.sign(t.deltaY)*-0.08;s.zoomBias=ze(s.zoomBias*(1+v),0.45,2.6),s.zoomMsgT=s.t};'
+  ],
+  [
+    'big map key zoom',
+    'if((v==="["||v==="]")&&Q.current==="play")s.zoomBias=ze(s.zoomBias*(v==="]"?1.12:0.89),0.45,2.6),s.zoomMsgT=s.t;',
+    'if((v==="["||v==="]")&&Q.current==="play"){if(s.mapOpen){s.mapScale=ze((s.mapScale??1)*(v==="]"?0.72:1.38),0.45,9.8);return}s.zoomBias=ze(s.zoomBias*(v==="]"?1.12:0.89),0.45,2.6),s.zoomMsgT=s.t;}'
   ],
 
   ['news crew threshold', 'if(z<=5)continue;', 'if(z<=1)continue;'],
