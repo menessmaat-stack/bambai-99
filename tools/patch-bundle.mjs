@@ -1417,14 +1417,20 @@ const EDITS = [
     'function Y6(e,n,u,r,l,o,i){if(!y(n)||!y(u))return;' +
     'if(l){' +
     // Compute track heading angle dynamically so station canopy aligns perfectly with the tracks!
-    'let trkAng=0;' +
-    'let hdM=window.__hdMap;if(hdM&&hdM.rail){for(let rl of hdM.rail){if(!rl.pts||rl.pts.length<4)continue;' +
+    'let trkAng=0,sx=n,sy=u;' +
+    'let hdM=window.__hdMap;let bestD=T(700)*T(700);' +
+    'if(hdM&&hdM.rail){for(let rl of hdM.rail){if(!rl.pts||rl.pts.length<4)continue;' +
     'for(let pi=0;pi<rl.pts.length-3;pi+=2){' +
     'let mx=(rl.pts[pi]+rl.pts[pi+2])/2,my=(rl.pts[pi+1]+rl.pts[pi+3])/2;' +
-    'if(Math.hypot(mx-n,my-u)<T(50)){trkAng=Math.atan2(rl.pts[pi+3]-rl.pts[pi+1],rl.pts[pi+2]-rl.pts[pi]);break;}}' +
-    'if(trkAng!==0)break;}}' +
+    'let dx=mx-n,dy=my-u,d2=dx*dx+dy*dy;' +
+    'if(d2<bestD){bestD=d2,sx=mx,sy=my,' +
+    'trkAng=Math.atan2(rl.pts[pi+3]-rl.pts[pi+1],rl.pts[pi+2]-rl.pts[pi]);}}}}' +
+    'if(trkAng===0&&hdM){let nr=Du(hdM,n,u,T(40));' +
+    'if(nr&&Ce(nr.heading)){trkAng=nr.heading;' +
+    'let push=(nr.width?nr.width*0.5:T(9))+T(11);' +
+    'sx=n+Math.cos(trkAng+Math.PI/2)*push,sy=u+Math.sin(trkAng+Math.PI/2)*push;}}' +
     // Sleek, compact proportions: length 28G, width 10G (tightly hugging the twin tracks!)
-    'let sL=28*G,sW=10*G;e.save(),e.translate(n,u),e.rotate(trkAng);' +
+    'let sL=28*G,sW=10*G;e.save(),e.translate(sx,sy),e.rotate(trkAng);' +
     // 3D viaduct drop shadow
     'e.fillStyle="rgba(0,0,0,0.52)",e.fillRect(-sL/2+3*G,-sW/2+5*G,sL,sW);' +
     // Viaduct support beam
@@ -1443,7 +1449,7 @@ const EDITS = [
     'e.strokeStyle="rgba(255,255,255,0.9)",e.lineWidth=Math.max(0.35*G,0.6*o),e.stroke();' +
     // Station Name Badge (Aligned cleanly outside the canopy)
     'if(i>=tn.stationLabels*0.5&&r){' +
-    'let txt=r.replace(/metro/i,"").trim()+" METRO";e.font=`bold ${Math.max(7.5*o,6*G)}px system-ui`;' +
+    'let txt=r.replace(/metro/i,"").trim()+" METRO";e.font=`bold ${Math.max(8*o,7)}px system-ui`;' +
     'let tw=e.measureText(txt).width;' +
     'e.fillStyle="rgba(10,15,26,0.92)",e.fillRect(-tw/2-3,sW/2+2*G,tw+6,12);' +
     'e.strokeStyle="#38bdf8",e.lineWidth=0.7,e.strokeRect(-tw/2-3,sW/2+2*G,tw+6,12);' +

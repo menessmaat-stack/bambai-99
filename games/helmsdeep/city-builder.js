@@ -17,6 +17,9 @@
 
   var K_ITEMS = 'helmsdeep.build.v1';
   var K_OVER = 'helmsdeep.overrides.v1';
+  var K_HIST = 'helmsdeep.build.history.v1';
+  var K_WHO = 'helmsdeep.build.author';
+  var HIST_MAX = 5;                      // admin can roll back this far
   var M = 6.6667;                        // world units per metre
 
   var state = {
@@ -29,6 +32,50 @@
     marquee: null,     // {x0,y0,x1,y1} in world units while dragging
     drag: null         // {mode:'move'|'resize'|'rotate', ...}
   };
+
+  // Who is editing. Falls back to the signed-in game account, then to a
+  // stable per-browser id, so an exported patch always carries an author.
+  function author() {
+    var who = null;
+    try { who = localStorage.getItem(K_WHO); } catch (e) { /* private mode */ }
+    if (who) return who;
+    try {
+      var auth = JSON.parse(localStorage.getItem('helmsdeep.auth') || 'null');
+      if (auth && auth.id) who = auth.id;
+    } catch (e) { /* ignore */ }
+    if (!who) who = 'guest-' + Math.random().toString(36).slice(2, 7);
+    try { localStorage.setItem(K_WHO, who); } catch (e) { /* ignore */ }
+    return who;
+  }
+
+  function history() {
+    try { return JSON.parse(localStorage.getItem(K_HIST)) || []; } catch (e) { return []; }
+  }
+
+  // One snapshot per edit, newest first, capped at five. Snapshots are whole
+  // states rather than diffs: the data is small and a restore must never
+  // depend on replaying every edit that came before it.
+  function snapshot(note, who) {
+    var h = history();
+    h.unshift({
+      ts: Date.now(),
+      by: who || author(),
+      note: note || 'edit',
+      items: JSON.parse(JSON.stringify(state.items)),
+      overrides: JSON.parse(JSON.stringify(window.__hdOverrides || {}))
+    });
+    if (h.length > HIST_MAX) h.length = HIST_MAX;
+    try { localStorage.setItem(K_HIST, JSON.stringify(h)); } catch (e) { /* quota */ }
+    renderHistory();
+  }
+
+  function ago(ts) {
+    var d = Math.max(0, Date.now() - ts) / 1000;
+    if (d < 60) return Math.round(d) + 's ago';
+    if (d < 3600) return Math.round(d / 60) + 'm ago';
+    if (d < 86400) return Math.round(d / 3600) + 'h ago';
+    return Math.round(d / 86400) + 'd ago';
+  }
 
   function load() {
     try { state.items = JSON.parse(localStorage.getItem(K_ITEMS)) || []; } catch (e) { state.items = []; }
@@ -261,6 +308,10 @@
     el.grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px';
     w.appendChild(el.grid);
 
+    el.hist = document.createElement('div');
+    el.hist.style.cssText = 'margin-top:10px;border-top:1px solid #1d2630;padding-top:8px';
+    w.appendChild(el.hist);
+
     var tools = document.createElement('div');
     tools.style.cssText = 'display:flex;gap:6px;margin-top:10px;flex-wrap:wrap';
     tools.appendChild(mkBtn('Duplicate', function () { duplicate(); }));
@@ -277,6 +328,63 @@
 
     document.body.appendChild(w);
     el.panel = w;
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (!el.hist) return;
+    var h = history();
+    el.hist.innerHTML = '';
+
+    var who = document.createElement('div');
+    who.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:11px';
+    who.innerHTML = '<span style="color:#7c8aa0">editing as</span>';
+    var input = document.createElement('input');
+    input.value = author();
+    input.style.cssText = 'flex:1;min-width:0;background:#0e141c;border:1px solid #243040;' +
+      'color:#4adeff;border-radius:4px;padding:3px 6px;font:600 11px Inter,system-ui,sans-serif';
+    input.onchange = function () {
+      var v = (input.value || '').trim().slice(0, 24);
+      if (v) { try { localStorage.setItem(K_WHO, v); } catch (e) { /* ignore */ } }
+      renderHistory();
+    };
+    who.appendChild(input);
+    el.hist.appendChild(who);
+
+    var head = document.createElement('div');
+    head.style.cssText = 'color:#7c8aa0;font-size:11px;margin-bottom:4px';
+    head.textContent = h.length ? 'Last update: ' + h[0].by + ' \u00b7 ' + ago(h[0].ts) +
+                                  ' \u00b7 ' + h[0].note
+                                : 'No edits yet';
+    el.hist.appendChild(head);
+
+    h.forEach(function (rev, i) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:10px;' +
+        'color:#9aa7b8;padding:2px 0';
+      var label = document.createElement('span');
+      label.style.cssText = 'flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      label.textContent = (i === 0 ? '\u25cf ' : '\u25cb ') + rev.by + ' \u00b7 ' +
+                          rev.note + ' \u00b7 ' + ago(rev.ts);
+      var btn = document.createElement('button');
+      btn.textContent = 'Restore';
+      btn.style.cssText = 'background:#162030;border:1px solid #2b3a4d;color:#c9d4e2;' +
+        'border-radius:4px;padding:2px 6px;cursor:pointer;font-size:10px';
+      btn.onclick = function () {
+        if (!confirm('Restore the city to ' + rev.by + '\u2019s version from ' + ago(rev.ts) + '?')) return;
+        // Restoring is itself an edit, so the state being replaced is kept.
+        snapshot('before restore');
+        state.items = JSON.parse(JSON.stringify(rev.items || []));
+        window.__hdOverrides = JSON.parse(JSON.stringify(rev.overrides || {}));
+        state.sel = null; state.multi = [];
+        saveItems(); saveOver();
+        status('restored ' + rev.by + '\u2019s version');
+        renderHistory();
+      };
+      row.appendChild(label);
+      row.appendChild(btn);
+      el.hist.appendChild(row);
+    });
   }
 
   function renderTabs() {
@@ -339,7 +447,8 @@
   }
 
   function exportJson() {
-    var payload = { items: state.items, overrides: window.__hdOverrides };
+    var payload = { by: author(), ts: Date.now(),
+                    items: state.items, overrides: window.__hdOverrides };
     var text = JSON.stringify(payload);
     if (navigator.clipboard) navigator.clipboard.writeText(text);
     var a = document.createElement('a');
@@ -367,7 +476,11 @@
       });
       Object.keys(ovs).forEach(function (k) { window.__hdOverrides[k] = ovs[k]; n++; });
       saveItems(); saveOver();
-      status('imported ' + n + ' changes');
+      // Credit the patch author, not whoever pasted it, so the log shows who
+      // actually made the change.
+      var by = (!Array.isArray(p) && p.by) ? p.by : 'imported';
+      snapshot('imported ' + n + ' changes', by);
+      status('imported ' + n + ' changes from ' + by);
     } catch (e) { status('import failed: ' + e.message); }
   }
 
@@ -460,7 +573,7 @@
     if (state.snap) { x = Math.round(x / 40) * 40; y = Math.round(y / 40) * 40; }
     state.items.push({ slug: state.brush.slug, x: x, y: y, w: base, h: base * ar, rot: 0 });
     state.sel = { kind: 'item', i: state.items.length - 1 };
-    saveItems();
+    commit('placed ' + state.brush.slug);
     status('placed ' + state.brush.slug + ' at ' + metres + ' m');
   }
 
@@ -526,6 +639,10 @@
     }
   }
 
+  // Commits that deserve a revision entry. Drags fire once on release, not
+  // per mouse-move, so the five slots stay meaningful.
+  function commit(note) { saveItems(); saveOver(); snapshot(note); }
+
   function onUp() {
     if (state.drag && state.drag.mode === 'marquee') {
       var m = state.marquee;
@@ -551,7 +668,7 @@
       o.baseScale = o.scale || 1;             // next drag starts from here
     }
     state.drag = null;
-    saveItems(); saveOver();
+    commit('moved');
   }
 
   // Duplicate keeps the angle and size you just dialled in and drops the copy
@@ -608,7 +725,7 @@
     });
     state.multi = fresh;
     state.sel = null;
-    saveItems();
+    commit('duplicated ' + fresh.length);
     status('duplicated ' + fresh.length + ' buildings');
   }
 
@@ -617,6 +734,7 @@
     if (state.sel.kind === 'item') { state.items.splice(state.sel.i, 1); saveItems(); }
     else { over(state.sel.key).hidden = true; saveOver(); }
     state.sel = null;
+    commit('deleted');
     status('deleted');
   }
 
@@ -679,6 +797,7 @@
     if (cv) cv.style.cursor = on ? 'crosshair' : '';
     if (on) {
       renderTabs();
+      renderHistory();
       status(state.items.length + ' placed, ' +
              Object.keys(window.__hdOverrides).length + ' edits loaded');
     } else { state.sel = null; state.drag = null; }
