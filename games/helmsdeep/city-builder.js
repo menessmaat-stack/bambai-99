@@ -25,6 +25,8 @@
     brush: null,
     snap: false,
     sel: null,         // {kind:'item', i} | {kind:'gen', key}
+    multi: [],         // marquee selection, same shape as `sel`
+    marquee: null,     // {x0,y0,x1,y1} in world units while dragging
     drag: null         // {mode:'move'|'resize'|'rotate', ...}
   };
 
@@ -74,6 +76,17 @@
       out.push({ kind: 'item', i: j, x: it.x, y: it.y, w: it.w, h: it.h, rot: it.rot || 0 });
     }
     return out;
+  }
+
+  function boxFor(ref) {
+    if (!ref) return null;
+    var all = boxes();
+    for (var i = 0; i < all.length; i++) {
+      var b = all[i];
+      if (ref.kind === 'item' && b.kind === 'item' && b.i === ref.i) return b;
+      if (ref.kind === 'gen' && b.kind === 'gen' && b.key === ref.key) return b;
+    }
+    return null;
   }
 
   function selBox() {
@@ -137,6 +150,36 @@
     if (!state.on) return;
 
     var z = zoom();
+
+    if (state.multi.length) {
+      ctx.save();
+      ctx.strokeStyle = '#4adeff';
+      ctx.lineWidth = 1.5 / z;
+      for (var mi = 0; mi < state.multi.length; mi++) {
+        var mb = boxFor(state.multi[mi]);
+        if (!mb) continue;
+        ctx.save();
+        ctx.translate(mb.x, mb.y);
+        ctx.rotate(mb.rot);
+        ctx.strokeRect(-mb.w / 2, -mb.h / 2, mb.w, mb.h);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    if (state.marquee) {
+      var m = state.marquee;
+      ctx.save();
+      ctx.strokeStyle = '#4adeff';
+      ctx.fillStyle = 'rgba(74,222,255,0.10)';
+      ctx.lineWidth = 1.5 / z;
+      ctx.setLineDash([7 / z, 5 / z]);
+      var rx = Math.min(m.x0, m.x1), ry = Math.min(m.y0, m.y1);
+      ctx.fillRect(rx, ry, Math.abs(m.x1 - m.x0), Math.abs(m.y1 - m.y0));
+      ctx.strokeRect(rx, ry, Math.abs(m.x1 - m.x0), Math.abs(m.y1 - m.y0));
+      ctx.restore();
+    }
+
     var b = selBox();
     if (!b) return;
     ctx.save();
@@ -202,6 +245,7 @@
       'drag <span style="color:#fde047">\u25cf</span> nub to rotate.<br>' +
       'Pick a tile then click a building to re-skin it, or click empty ground to place.<br>' +
       '<b>D</b> or <b>Alt+drag</b> duplicate (keeps angle + size)<br>' +
+      '<b>Drag empty ground</b> to marquee-select a group, then D / drag / Del<br>' +
       '<b>Del</b> delete \u00b7 <b>Esc</b> deselect \u00b7 <b>G</b> snap \u00b7 <b>Shift+B</b> close';
     w.appendChild(help);
 
@@ -367,6 +411,18 @@
     }
 
     var hitB = pick(w.x, w.y);
+    if (hitB && state.multi.length) {
+      var inGroup = state.multi.some(function (r) {
+        return (r.kind === 'item' && hitB.kind === 'item' && r.i === hitB.i) ||
+               (r.kind === 'gen' && hitB.kind === 'gen' && r.key === hitB.key);
+      });
+      if (inGroup) {
+        state.drag = { mode: 'group', dx: 0, dy: 0, bx: w.x, by: w.y };
+        status('moving ' + state.multi.length + ' buildings');
+        return;
+      }
+      state.multi = [];
+    }
     if (hitB) {
       state.sel = hitB.kind === 'item' ? { kind: 'item', i: hitB.i } : { kind: 'gen', key: hitB.key };
       if (ev.altKey) {
@@ -382,7 +438,16 @@
       return;
     }
 
-    if (!state.brush) { state.sel = null; status('nothing there \u2014 pick a tile to place'); return; }
+    if (!state.brush) {
+      // Empty ground with no brush starts a rubber band: drag a box over a
+      // street and everything inside becomes the working group.
+      state.sel = null;
+      state.multi = [];
+      state.marquee = { x0: w.x, y0: w.y, x1: w.x, y1: w.y };
+      state.drag = { mode: 'marquee' };
+      status('drag to select a group');
+      return;
+    }
 
     var img = window.__hdGetBuildingSprite(state.brush.slug);
     var ar = img && img.naturalWidth ? img.naturalHeight / img.naturalWidth : 1;
@@ -403,9 +468,22 @@
     if (!state.on || !state.drag) return;
     var w = worldAt(ev);
     if (!w) return;
+    var d = state.drag;
+
+    if (d.mode === 'marquee') {
+      state.marquee.x1 = w.x;
+      state.marquee.y1 = w.y;
+      return;
+    }
+    if (d.mode === 'group') {
+      var gdx = w.x + d.dx - d.bx, gdy = w.y + d.dy - d.by;
+      d.bx += gdx; d.by += gdy;
+      for (var gi = 0; gi < state.multi.length; gi++) nudge(state.multi[gi], gdx, gdy);
+      return;
+    }
+
     var b = selBox();
     if (!b) return;
-    var d = state.drag;
 
     if (d.mode === 'move') {
       var nx = w.x + d.dx, ny = w.y + d.dy;
@@ -437,7 +515,36 @@
     }
   }
 
+  function nudge(ref, dx, dy) {
+    if (ref.kind === 'item') {
+      state.items[ref.i].x += dx;
+      state.items[ref.i].y += dy;
+    } else {
+      var o = over(ref.key);
+      o.dx = (o.dx || 0) + dx;
+      o.dy = (o.dy || 0) + dy;
+    }
+  }
+
   function onUp() {
+    if (state.drag && state.drag.mode === 'marquee') {
+      var m = state.marquee;
+      var x0 = Math.min(m.x0, m.x1), x1 = Math.max(m.x0, m.x1);
+      var y0 = Math.min(m.y0, m.y1), y1 = Math.max(m.y0, m.y1);
+      state.multi = [];
+      if (x1 - x0 > 8 && y1 - y0 > 8) {
+        var all = boxes();
+        for (var i = 0; i < all.length; i++) {
+          var b = all[i];
+          if (b.x < x0 || b.x > x1 || b.y < y0 || b.y > y1) continue;
+          state.multi.push(b.kind === 'item' ? { kind: 'item', i: b.i } : { kind: 'gen', key: b.key });
+        }
+      }
+      state.marquee = null;
+      state.drag = null;
+      status(state.multi.length + ' selected \u2014 D duplicates, drag moves, Del removes');
+      return;
+    }
     if (!state.drag) return;
     if (state.drag.mode === 'resize' && state.sel && state.sel.kind === 'gen') {
       var o = over(state.sel.key);
@@ -470,6 +577,41 @@
            Math.round(b.w / M) + ' m');
   }
 
+  // Copies the whole marquee as one block, preserving the relative layout and
+  // every angle, and offsets it clear of the original along its widest axis.
+  function duplicateGroup() {
+    if (!state.multi.length) return;
+    var bs = [];
+    for (var i = 0; i < state.multi.length; i++) {
+      var b = boxFor(state.multi[i]);
+      if (!b) continue;
+      var slug = b.kind === 'item' ? state.items[b.i].slug
+                                   : ((window.__hdOverrides[b.key] || {}).slug ||
+                                      ((window.__hdVisible || []).find(function (v) { return v.key === b.key; }) || {}).slug);
+      if (!slug) continue;
+      bs.push({ slug: slug, x: b.x, y: b.y, w: b.w, h: b.h, rot: b.rot });
+    }
+    if (!bs.length) { status('nothing in the group has art to copy'); return; }
+    var minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+    bs.forEach(function (b) {
+      if (b.x - b.w / 2 < minx) minx = b.x - b.w / 2;
+      if (b.x + b.w / 2 > maxx) maxx = b.x + b.w / 2;
+      if (b.y - b.h / 2 < miny) miny = b.y - b.h / 2;
+      if (b.y + b.h / 2 > maxy) maxy = b.y + b.h / 2;
+    });
+    var w = maxx - minx, h = maxy - miny;
+    var ox = w >= h ? w * 1.05 : 0, oy = w >= h ? 0 : h * 1.05;
+    var fresh = [];
+    bs.forEach(function (b) {
+      state.items.push({ slug: b.slug, x: b.x + ox, y: b.y + oy, w: b.w, h: b.h, rot: b.rot });
+      fresh.push({ kind: 'item', i: state.items.length - 1 });
+    });
+    state.multi = fresh;
+    state.sel = null;
+    saveItems();
+    status('duplicated ' + fresh.length + ' buildings');
+  }
+
   function remove() {
     if (!state.sel) return;
     if (state.sel.kind === 'item') { state.items.splice(state.sel.i, 1); saveItems(); }
@@ -486,10 +628,29 @@
     }
     if (!state.on) return;
     var k = ev.key;
-    if (k === 'Escape') { state.sel = null; state.brush = null; renderGrid(); status('deselected'); }
+    if (k === 'Escape') { state.sel = null; state.multi = []; state.marquee = null;
+      state.brush = null; renderGrid(); status('deselected'); }
     else if (k === 'g' || k === 'G') { state.snap = !state.snap; status('grid snap ' + (state.snap ? 'on' : 'off')); }
-    else if (k === 'Delete' || k === 'Backspace') remove();
-    else if (state.sel && (k === 'd' || k === 'D')) duplicate();
+    else if (k === 'Delete' || k === 'Backspace') {
+      if (state.multi.length) {
+        // Delete generated footprints first, then placed items from the end,
+        // so splicing never shifts an index we have not used yet.
+        var idxs = [];
+        state.multi.forEach(function (r) {
+          if (r.kind === 'gen') { over(r.key).hidden = true; } else idxs.push(r.i);
+        });
+        idxs.sort(function (a, b) { return b - a; })
+            .forEach(function (i) { state.items.splice(i, 1); });
+        var n = state.multi.length;
+        state.multi = []; state.sel = null;
+        saveItems(); saveOver();
+        status('removed ' + n);
+      } else remove();
+    }
+    else if (k === 'd' || k === 'D') {
+      if (state.multi.length) duplicateGroup();
+      else if (state.sel) duplicate();
+    }
     else if (state.sel && (k === '[' || k === ']')) {
       var f = k === ']' ? 1.12 : 1 / 1.12;
       if (state.sel.kind === 'item') {
@@ -526,6 +687,8 @@
   }
 
   window.__hdToggleBuild = function () { toggle(!state.on); };
+  // Exposed for debugging and for scripted checks of the editor.
+  window.__hdBuildState = state;
 
   load();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildPanel);

@@ -333,28 +333,95 @@
 
   // Neighbourhood zoning.
   //
-  // Picking a pool per building made a shanty sit between two gated towers.
-  // Real cities are zoned in patches, so the character is decided per ~180 m
-  // cell and every plot inside that cell draws from the same family. The
-  // building's own footprint still decides which size tier it gets, so a
-  // genuinely large plot inside a low-rise pocket still reads as a block.
-  var ZONE = 1200;                       // cell size in world units (~180 m)
+  // Mumbai is not randomly mixed, and hashing a cell produced a shanty between
+  // two towers. These are the real districts, projected with the same
+  // transform as the map bake, and a plot takes the character of whichever
+  // district contains it. Outside them the city falls back to a latitude
+  // gradient - the island south is dense and built-up, the far north
+  // suburbs are low-rise - with a coarse hash only for texture, never enough
+  // to drop one slum into a posh block.
+  //
+  // [x, y, radius, character]
+  var DISTRICTS = [
+    [-32964,28012,10000,"slum"],
+    [-15430,7372,10000,"slum"],
+    [-4910,11057,9333,"slum"],
+    [16131,19166,12000,"slum"],
+    [14027,17692,10000,"slum"],
+    [22444,24326,10000,"slum"],
+    [5611,34647,6667,"slum"],
+    [-37172,13269,4667,"slum"],
+    [-32263,2949,6000,"slum"],
+    [23846,-47916,8667,"slum"],
+    [24548,-22115,8000,"slum"],
+    [-60318,-81088,10667,"slum"],
+    [-64526,-88460,6000,"slum"],
+    [18236,21378,5333,"slum"],
+    [-30860,-42755,7333,"slum"],
+    [-26652,-69293,6667,"slum"],
+    [-57512,125318,12000,"posh"],
+    [-54707,113523,9333,"posh"],
+    [-54005,100254,10000,"posh"],
+    [-71539,92145,10667,"posh"],
+    [-66630,82562,8000,"posh"],
+    [-60318,51601,11333,"posh"],
+    [-49797,61185,10667,"posh"],
+    [-51200,45704,7333,"posh"],
+    [-51901,19903,12667,"posh"],
+    [-50498,7372,8000,"posh"],
+    [-51901,-14006,12000,"posh"],
+    [-61720,-39807,8667,"posh"],
+    [-23846,10320,10000,"posh"],
+    [4208,-28749,11333,"posh"],
+    [-45589,107626,8000,"posh"],
+    [-77150,-117946,13333,"house"],
+    [-73643,-44230,10667,"house"],
+    [-14027,-58973,14667,"house"],
+    [42082,-66345,10000,"house"],
+    [52602,-81088,12000,"house"],
+    [-701,19903,9333,"house"],
+    [-38575,-14743,8000,"house"],
+    [-33666,38333,7333,"house"],
+    [-26652,29487,6000,"house"]
+  ];
+
+  var ZONE = 1200;                       // fallback cell size (~180 m)
   var zoneCache = new Map();
+
+  function districtAt(x, y) {
+    var best = null, bestD = Infinity;
+    for (var i = 0; i < DISTRICTS.length; i++) {
+      var d = DISTRICTS[i];
+      var dx = x - d[0], dy = y - d[1];
+      var dist = dx * dx + dy * dy;
+      if (dist > d[2] * d[2]) continue;
+      if (dist < bestD) { bestD = dist; best = d[3]; }
+    }
+    return best;
+  }
+
   function zoneAt(x, y) {
     var cx = Math.floor(x / ZONE), cy = Math.floor(y / ZONE);
     var key = cx * 46337 + cy;
     var z = zoneCache.get(key);
     if (z !== undefined) return z;
-    var r = hash2(cx, cy);
-    // Blend the cell with its neighbours so zones form patches rather than a
-    // checkerboard: a cell surrounded by slum is far more likely to be slum.
-    var n = (hash2(cx - 1, cy) + hash2(cx + 1, cy) + hash2(cx, cy - 1) + hash2(cx, cy + 1)) / 4;
-    var v = r * 0.55 + n * 0.45;
-    z = v < 0.17 ? 'slum' : v < 0.52 ? 'house' : v < 0.86 ? 'flat' : 'mixed';
+
+    z = districtAt(x, y);
+    if (!z) {
+      // y grows southwards from the 19.08 origin, so large positive y is the
+      // island proper and large negative y is the far northern suburbs.
+      var r = hash2(cx, cy);
+      var n = (hash2(cx - 1, cy) + hash2(cx + 1, cy) +
+               hash2(cx, cy - 1) + hash2(cx, cy + 1)) / 4;
+      var v = r * 0.5 + n * 0.5;
+      if (y > 70000) z = v < 0.78 ? 'flat' : 'house';            // island south
+      else if (y > 20000) z = v < 0.58 ? 'flat' : (v < 0.9 ? 'house' : 'slum');
+      else if (y > -30000) z = v < 0.5 ? 'flat' : (v < 0.88 ? 'house' : 'slum');
+      else z = v < 0.34 ? 'flat' : (v < 0.92 ? 'house' : 'slum'); // far suburbs
+    }
     zoneCache.set(key, z);
     return z;
   }
-
 
   // Called from both building renderers for every visible footprint.
   // Returns true when it painted, so the stock grey box is skipped.
@@ -384,10 +451,15 @@
     if (kind === 'slum' || (zone === 'slum' && !big)) pool = CATALOG.slums;
     else if (kind === 'retail') pool = longSide < 16 ? CATALOG.stalls : CATALOG.chains;
     else if (kind === 'apartment') pool = CATALOG.flats;
-    else if (kind === 'house') pool = CATALOG.houses;
+    else if (kind === 'house' && zone !== 'posh') pool = CATALOG.houses;
+    // A posh district is towers and gated complexes even on a modest plot:
+    // Nariman Point has no bungalows. A plotted suburb is the reverse.
+    else if (zone === 'posh') pool = longSide < 14 ? CATALOG.houses : CATALOG.flats;
+    else if (zone === 'house') pool = big && longSide > 40 ? CATALOG.flats : CATALOG.houses;
     else pool = big ? CATALOG.flats : CATALOG.houses;
 
-    var img = spriteFor(pick(pool, q.cx | 0, q.cy | 0));
+    var chosen = pick(pool, q.cx | 0, q.cy | 0);
+    var img = spriteFor(chosen);
     if (!img) return false;
 
     var nominal = 18, lo = 14, hi = 26, over = 1.0, dens = 1;
@@ -426,7 +498,7 @@
 
     if (window.__hdFrameBuildings) {
       window.__hdFrameBuildings.push({ key: key, x: ox, y: oy, w: dw, h: dh, rot: rot,
-                                       slug: ov && ov.slug ? ov.slug : null,
+                                       slug: (ov && ov.slug) || chosen,
                                        kind: kind, police: kind === 'civic' });
     }
 
