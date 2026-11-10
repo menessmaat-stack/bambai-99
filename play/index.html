@@ -53,7 +53,16 @@
 
         .hd-bar a:hover { border-color: #4adeff; }
         .hd-bar .hd-note { color: #5d6b80; font-size: .72rem; margin-left: auto; }
-        .hd-wrap { padding: 12px 18px 20px; }
+        .hd-wrap { padding: 6px 10px 8px; }
+
+        /* The bundle sizes the canvas to 100vh-118px with a 640px floor, which
+           left a dead band under the viewport on short desktop windows. The
+           chrome is 38px of bar plus 14px of padding, so hand the rest back
+           to the canvas and drop the floor that forced overflow. */
+        html, body { overflow: hidden; }
+        .hd-bar { padding-top: 4px; padding-bottom: 4px; }
+        .h-\[calc\(100vh-118px\)\] { height: calc(100vh - 56px); height: calc(100dvh - 56px); }
+        .min-h-\[640px\] { min-height: 0; }
 
         /* Phones and tablets: the game takes the whole viewport, the chrome goes
            away, and nothing may scroll or rubber-band under a thumb. */
@@ -73,7 +82,8 @@
         <h1>HELM'S DEEP</h1>
         <a href="/">← Home</a>
         <span class="hd-note">Real Mumbai, baked from OpenStreetMap. WASD drive · E steal · T transit map · M music · B next track · Esc pause</span>
-        <button id="btnHitModal" onclick="window.__hdToggleHitModal()" style="margin-left:auto; background:linear-gradient(135deg, #ef4444, #991b1b); color:#fff; font-family:Inter,system-ui,sans-serif; font-weight:800; font-size:11px; padding:6px 14px; border-radius:6px; border:1px solid #f87171; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 12px rgba(239,68,68,0.4);">🎯 ASSASSINATE</button>
+        <button id="btnBuild" onclick="window.__hdToggleBuild()" style="margin-left:auto; background:linear-gradient(135deg,#0ea5e9,#0369a1); color:#fff; font-family:Inter,system-ui,sans-serif; font-weight:800; font-size:11px; padding:6px 14px; border-radius:6px; border:1px solid #38bdf8; cursor:pointer;">🏗 BUILD</button>
+        <button id="btnHitModal" onclick="window.__hdToggleHitModal()" style=" background:linear-gradient(135deg, #ef4444, #991b1b); color:#fff; font-family:Inter,system-ui,sans-serif; font-weight:800; font-size:11px; padding:6px 14px; border-radius:6px; border:1px solid #f87171; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 12px rgba(239,68,68,0.4);">🎯 ASSASSINATE</button>
     </div>
     <div class="hd-wrap">
         <div id="helmsdeep-root"></div>
@@ -93,11 +103,12 @@
             el.textContent += 'PROMISE: ' + ((e.reason && (e.reason.stack || e.reason.message)) || e.reason) + '\n';
         });
     </script>
-    <script src="/games/helmsdeep/custom-sprites.js?v=32"></script>
-    <script src="/games/helmsdeep/session-tracker.js?v=32"></script>
-    <script src="/games/helmsdeep/helmsdeep.js?v=32"></script>
-    <script src="/games/helmsdeep/touch-controls.js?v=32"></script>
-    <script src="/games/helmsdeep/spawn-select.js?v=32"></script>
+    <script src="/games/helmsdeep/custom-sprites.js?v=33"></script>
+    <script src="/games/helmsdeep/session-tracker.js?v=33"></script>
+    <script src="/games/helmsdeep/helmsdeep.js?v=33"></script>
+    <script src="/games/helmsdeep/touch-controls.js?v=33"></script>
+    <script src="/games/helmsdeep/spawn-select.js?v=33"></script>
+    <script src="/games/helmsdeep/city-builder.js?v=33"></script>
 
     <!-- Assassination Contract Mission Selector Modal -->
     <div id="hdHitModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(6,8,12,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:16px;">

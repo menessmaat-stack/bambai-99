@@ -209,6 +209,9 @@
     return (img && img.complete && img.naturalWidth > 0) ? img : null;
   }
   window.__hdGetBuildingSprite = spriteFor;
+  // The build editor needs the full catalog to draw its palette and the
+  // night variant so placements match the rest of the city after dark.
+  window.__hdCatalog = CATALOG;
 
   // Deterministic per-footprint hash so a plot keeps the same art forever.
   function hash2(x, y) {
@@ -243,6 +246,7 @@
     nightCache.set(img, cv);
     return cv;
   }
+  window.__hdNightSprite = nightVariant;
 
   var glowTile = null;
   function glow() {
@@ -292,6 +296,31 @@
 
   var M = 6.6667;  // world units per metre
 
+  // Neighbourhood zoning.
+  //
+  // Picking a pool per building made a shanty sit between two gated towers.
+  // Real cities are zoned in patches, so the character is decided per ~180 m
+  // cell and every plot inside that cell draws from the same family. The
+  // building's own footprint still decides which size tier it gets, so a
+  // genuinely large plot inside a low-rise pocket still reads as a block.
+  var ZONE = 1200;                       // cell size in world units (~180 m)
+  var zoneCache = new Map();
+  function zoneAt(x, y) {
+    var cx = Math.floor(x / ZONE), cy = Math.floor(y / ZONE);
+    var key = cx * 46337 + cy;
+    var z = zoneCache.get(key);
+    if (z !== undefined) return z;
+    var r = hash2(cx, cy);
+    // Blend the cell with its neighbours so zones form patches rather than a
+    // checkerboard: a cell surrounded by slum is far more likely to be slum.
+    var n = (hash2(cx - 1, cy) + hash2(cx + 1, cy) + hash2(cx, cy - 1) + hash2(cx, cy + 1)) / 4;
+    var v = r * 0.55 + n * 0.45;
+    z = v < 0.17 ? 'slum' : v < 0.52 ? 'house' : v < 0.86 ? 'flat' : 'mixed';
+    zoneCache.set(key, z);
+    return z;
+  }
+
+
   // Called from both building renderers for every visible footprint.
   // Returns true when it painted, so the stock grey box is skipped.
   window.__hdBSpr = function (ctx, q, view) {
@@ -311,37 +340,42 @@
     // the signal instead: a 300 m2 plot is a house, a 900 m2 one is a block.
     var area = (w / M) * (h / M);                      // square metres
     var kind = q.kind, pool;
-    if (kind === 'slum') pool = CATALOG.slums;
+    var zone = zoneAt(q.cx || minx, q.cy || miny);
+    var big = hgt > 14 || area > 520;
+
+    if (kind === 'slum' || (zone === 'slum' && !big)) pool = CATALOG.slums;
     else if (kind === 'retail') pool = longSide < 16 ? CATALOG.stalls : CATALOG.chains;
+    else if (kind === 'apartment' || big) pool = CATALOG.flats;
     else if (kind === 'house') pool = CATALOG.houses;
-    else if (kind === 'apartment') pool = CATALOG.flats;
-    else if (hgt > 14 || area > 520) pool = CATALOG.flats;
-    else if (longSide < 26) pool = CATALOG.houses;
-    else pool = CATALOG.flats;
+    else if (zone === 'flat') pool = CATALOG.flats;
+    else if (zone === 'house') pool = CATALOG.houses;
+    else pool = longSide < 22 ? CATALOG.houses : CATALOG.flats;
 
     var img = spriteFor(pick(pool, q.cx | 0, q.cy | 0));
     if (!img) return false;
 
-    // Each reference drawing carries its own plot - lawn, driveway, setback -
-    // so fitting the artwork to the footprint leaves the building itself
-    // noticeably smaller than its plot and the city reads as a scatter of
-    // islands. Overscaling pushes that margin past the footprint edge so
-    // neighbours meet, and the per-pool factor restores the size hierarchy
-    // that cover-fitting flattens: a tower block must not read as a bungalow.
-    var over = 1.25, dens = 1;
-    if (pool === CATALOG.houses) over = 1.12;
-    else if (pool === CATALOG.flats) over = 1.45;
-    else if (pool === CATALOG.slums) { over = 1.18; dens = 0.5; }
-    else if (pool === CATALOG.chains) over = 1.2;
-    else if (pool === CATALOG.stalls) {
-      // Street stalls are 3-6 m objects. Scaling one to fill a 16 m retail
-      // footprint turns a tea cart into a warehouse, so cap them instead.
-      var cap = 7 * M;
-      if (w > cap) w = cap;
-      if (h > cap) h = cap;
-      over = 1;
-    }
-    drawSprite(ctx, img, (minx + maxx) / 2, (miny + maxy) / 2, w * over, h * over,
+    // Every reference drawing depicts a building of a known real size: a
+    // bungalow plot is ~20 m across, a block of flats ~42 m, a shanty ~14 m.
+    // Stretching whichever art to whichever footprint is what made the city
+    // read as disproportionate - a bungalow blown up to 45 m next to a tower
+    // squeezed down to 15 m. The drawn size is therefore clamped to a window
+    // around the pool's real scale, and the footprint only decides where in
+    // that window it lands. Keeping it at or under the footprint is also what
+    // stops art spilling across the kerb.
+    var nominal = 18, lo = 14, hi = 26, over = 1.0, dens = 1;
+    if (pool === CATALOG.flats) { nominal = 55; lo = 38; hi = 74; over = 1.1; }
+    else if (pool === CATALOG.slums) { nominal = 12; lo = 8; hi = 17; over = 1.1; dens = 0.5; }
+    else if (pool === CATALOG.chains) { nominal = 28; lo = 21; hi = 36; }
+    else if (pool === CATALOG.stalls) { nominal = 6; lo = 4; hi = 8; }
+
+    lo *= M; hi *= M;
+    var long = w > h ? w : h;
+    var want = long * over;
+    if (want < lo) want = lo; else if (want > hi) want = hi;
+    var scale = want / long;
+    var dw = w * scale, dh = h * scale;
+
+    drawSprite(ctx, img, (minx + maxx) / 2, (miny + maxy) / 2, dw, dh,
                !!(view && view.night), (q.cx | 0) * 31 + (q.cy | 0), dens);
     return true;
   };
@@ -432,6 +466,12 @@
   ];
 
   window.__hdDrawLandmarks = function (ctx, camX, camY, viewW, viewH, night) {
+    // Published for the build editor: inverting this is the only exact way to
+    // turn a click into world units once zoom, DPR and camera shake are in.
+    if (ctx.getTransform) {
+      var tf = ctx.getTransform();
+      window.__hdViewTf = { a: tf.a, b: tf.b, c: tf.c, d: tf.d, e: tf.e, f: tf.f };
+    }
     var zoom = viewW > 0 ? ctx.canvas.width / viewW : 1;
     var inv = 1 / (zoom > 0.0001 ? zoom : 0.0001);
     for (var i = 0; i < LANDMARKS.length; i++) {
@@ -458,6 +498,7 @@
       ctx.fillText(L[2], 0, 0);
       ctx.restore();
     }
+    if (window.__hdDrawBuild) window.__hdDrawBuild(ctx, camX, camY, viewW, viewH, night);
   };
 
   // Procedural sea edge. Walks the water polygon, works out which side is
