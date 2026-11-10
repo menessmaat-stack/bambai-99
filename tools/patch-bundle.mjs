@@ -684,26 +684,52 @@ const EDITS = [
     'f.font="900 10px system-ui",f.fillStyle="#c7d2fe",f.textAlign="center",f.textBaseline="middle",f.fillText("HUSH MATTRESS",0,-2);' +
     'f.font="bold 7px system-ui",f.fillStyle="#94a3b8",f.fillText("SLEEP STUDIO",0,8);' +
     'f.restore();}}' +
-    // --- CRESCENT SOLITAIRE (Sakinaka Tele Exchange Lane - User Office Building) ---
-    '{let csx=-13150,csy=-15300,csDist=Math.hypot(csx-s.cam.x,csy-s.cam.y);' +
-    'if(csDist<$/2+300){f.save(),f.translate(csx,csy);' +
+    // --- SAKINAKA TELE EXCHANGE LANE & CRESCENT SOLITAIRE COMPLEX (Matching Google Maps) ---
+    // 1. Crescent Solitaire (User Office Building, x=-11920, y=-14700 directly north of U-shaped driveway)
+    '{let csx=-11920,csy=-14700,csDist=Math.hypot(csx-s.cam.x,csy-s.cam.y);' +
+    'if(csDist<$/2+350){f.save(),f.translate(csx,csy);' +
     // 3D Drop Shadow
-    'f.fillStyle="rgba(0,0,0,0.45)",f.fillRect(-44,-30,94,70);' +
-    // Ground podium & parking plaza
-    'f.fillStyle="#1e293b",f.fillRect(-48,-34,96,68);' +
-    // Commercial glass facade with cyan windows
-    'f.fillStyle="#0284c7",f.fillRect(-44,-30,88,60);' +
-    'f.fillStyle="#38bdf8",f.fillRect(-40,-26,80,24);' +
+    'f.fillStyle="rgba(0,0,0,0.48)",f.fillRect(-46,-32,96,72);' +
+    // Ground podium & parking courtyard
+    'f.fillStyle="#1e293b",f.fillRect(-50,-36,100,70);' +
+    // Multi-wing Commercial Glass Facade
+    'f.fillStyle="#0284c7",f.fillRect(-46,-32,92,62);' +
+    'f.fillStyle="#38bdf8",f.fillRect(-42,-28,84,26);' +
     // White architectural window mullion grid
-    'f.strokeStyle="rgba(255,255,255,0.7)",f.lineWidth=1;' +
-    'for(let wx=-36;wx<=36;wx+=12)f.strokeRect(wx,-26,8,24);' +
+    'f.strokeStyle="rgba(255,255,255,0.8)",f.lineWidth=1;' +
+    'for(let wx=-38;wx<=38;wx+=11)f.strokeRect(wx,-28,7,26);' +
     // Executive rooftop terrace & solar array
-    'f.fillStyle="#1e3a8a",f.fillRect(-36,4,32,18);' +
-    'f.fillStyle="#15803d",f.fillRect(6,4,30,18);' +
-    // Crescent Solitaire Signage
-    'f.fillStyle="rgba(10,15,26,0.92)",f.fillRect(-54,38,108,20);' +
-    'f.strokeStyle="#38bdf8",f.lineWidth=1,f.strokeRect(-54,38,108,20);' +
-    'f.font="bold 10px system-ui",f.fillStyle="#fde047",f.textAlign="center",f.textBaseline="middle",f.fillText("CRESCENT SOLITAIRE",0,48);' +
+    'f.fillStyle="#1e3a8a",f.fillRect(-38,6,34,18);' +
+    'f.fillStyle="#15803d",f.fillRect(4,6,34,18);' +
+    // Gold & Cyan Crescent Solitaire Signage
+    'f.fillStyle="rgba(10,15,26,0.95)",f.fillRect(-58,40,116,22);' +
+    'f.strokeStyle="#38bdf8",f.lineWidth=1.2,f.strokeRect(-58,40,116,22);' +
+    'f.font="bold 10px system-ui",f.fillStyle="#fde047",f.textAlign="center",f.textBaseline="middle",f.fillText("CRESCENT SOLITAIRE",0,51);' +
+    'f.restore();}}' +
+    // 2. Ultraviolette Experience Center (Sakinaka Tele Exchange Lane)
+    '{let uvx=-12040,uvy=-14880,uvDist=Math.hypot(uvx-s.cam.x,uvy-s.cam.y);' +
+    'if(uvDist<$/2+250){f.save(),f.translate(uvx,uvy);' +
+    'f.fillStyle="rgba(0,0,0,0.4)",f.fillRect(-22,-14,46,30);' +
+    'f.fillStyle="#0f172a",f.fillRect(-24,-16,48,32);' +
+    'f.strokeStyle="#a855f7",f.lineWidth=1.5,f.strokeRect(-24,-16,48,32);' +
+    'f.font="900 8px system-ui",f.fillStyle="#c084fc",f.textAlign="center",f.textBaseline="middle",f.fillText("ULTRAVIOLETTE",0,-2);' +
+    'f.font="bold 6px system-ui",f.fillStyle="#94a3b8",f.fillText("EV MOTORCYCLES",0,7);' +
+    'f.restore();}}' +
+    // 3. Falah Sports & Turf, Sakinaka (Green artificial soccer turf north of Crescent Solitaire)
+    '{let tfx=-11920,tfy=-14420,tfDist=Math.hypot(tfx-s.cam.x,tfy-s.cam.y);' +
+    'if(tfDist<$/2+300){f.save(),f.translate(tfx,tfy);' +
+    'f.fillStyle="#15803d",f.fillRect(-42,-28,84,56);' +
+    'f.strokeStyle="rgba(255,255,255,0.85)",f.lineWidth=1.5,f.strokeRect(-38,-24,76,48);' +
+    'f.beginPath(),f.moveTo(0,-24),f.lineTo(0,24),f.arc(0,0,10,0,Math.PI*2),f.stroke();' +
+    'f.font="bold 8px system-ui",f.fillStyle="#fef08a",f.textAlign="center",f.textBaseline="middle",f.fillText("FALAH SPORTS & TURF",0,-33);' +
+    'f.restore();}}' +
+    // 4. Galaxy Banquet (Mehra Compound Road)
+    '{let gbx=-11600,gby=-14750,gbDist=Math.hypot(gbx-s.cam.x,gby-s.cam.y);' +
+    'if(gbDist<$/2+250){f.save(),f.translate(gbx,gby);' +
+    'f.fillStyle="rgba(0,0,0,0.4)",f.fillRect(-26,-18,54,38);' +
+    'f.fillStyle="#7c2d12",f.fillRect(-28,-20,56,40);' +
+    'f.strokeStyle="#f59e0b",f.lineWidth=1.2,f.strokeRect(-28,-20,56,40);' +
+    'f.font="bold 8px system-ui",f.fillStyle="#fde047",f.textAlign="center",f.textBaseline="middle",f.fillText("GALAXY BANQUET",0,0);' +
     'f.restore();}}' +
     '{let ax=-64800,ay=86000,aDist=Math.hypot(ax-s.cam.x,ay-s.cam.y);' +
     'if(aDist<$/2+400){f.save(),f.translate(ax,ay);' +
