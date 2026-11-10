@@ -182,7 +182,13 @@ const EDITS = [
     // State Ambassador with Working Flashing Red VIP Beacon
     '89,89,' +
     // 4 Gang Combat Vehicles (Spiked Skull Muscle, Gun Truck, Dragon Supercar, Dragon SUV)
-    '60,61,62,63,'
+    '60,61,62,63,' +
+    // Heavy fleet. These chassis existed but were never in the civilian mix,
+    // so the BEST buses, coaches, tippers and tankers that now have artwork
+    // never appeared on the road. Weighted low: one in roughly fifteen.
+    // 24 Mule, 25 Linerunner, 27 Coach, 28 School Bus, 51 Catering Hi-Lift
+    // (the ramp truck), 52 Fuel Bowser, 71 Tipper, 72 Tanker, 75 Water Truck
+    '24,27,28,28,51,52,71,72,75,'
   ],
 
   // ===== audio: the SFX bus was 8-15x quieter than the music ===============
