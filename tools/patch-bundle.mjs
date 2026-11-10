@@ -13,13 +13,58 @@ const FILE = 'games/helmsdeep/helmsdeep.js';
 
 /** [description, find, replace] — `find` must be unique in the bundle. */
 const EDITS = [
+  // ===== parked, stealable vehicles ======================================
+  // Societies and police compounds had empty forecourts. The renderer already
+  // publishes every footprint it drew this frame (__hdVisible, with the pool
+  // it chose), so parking is placed against real buildings rather than guessed
+  // coordinates. Parked cars use the engine's existing `parked` ai, which the
+  // despawn pass already understands, and `E` steals them like any other.
+  [
+    'parked vehicles at societies and police compounds',
+    'function Bi(){if(s.cars.length>=Ru)return;let t=s.player,v=0,z=0;',
+    'function hdParked(){' +
+      'let t=s.player,vis=window.__hdVisible||[],n=0;' +
+      'for(let c of s.cars)if(!c.dead&&c.hdp)n++;' +
+      'if(n>=14||s.cars.length>=Ru)return;' +
+      'for(let b of vis){' +
+        'if(n>=14||s.cars.length>=Ru)break;' +
+        // only compounds worth parking in: blocks of flats, civic landmarks
+        'if(!(b.w>=46&&b.h>=46))continue;' +
+        'let d=Math.hypot(b.x-t.x,b.y-t.y);' +
+        'if(d<T(45)||d>T(240))continue;' +
+        // deterministic slots along the compound edge, so cars do not respawn
+        // in a different place every time you look away
+        'let seed=Math.abs((b.x|0)*31+(b.y|0))%97;' +
+        'let slots=1+seed%3;' +
+        'for(let i=0;i<slots;i++){' +
+          'if(n>=14||s.cars.length>=Ru)break;' +
+          'let u=((seed+i*37)%100)/100;' +
+          'let sx=b.x-b.w*0.5+b.w*(0.12+u*0.76);' +
+          'let sy=b.y+b.h*0.5+T(5)+((seed+i)%2?T(3):0);' +
+          'let occupied=!1;' +
+          'for(let c of s.cars)if(!c.dead&&Math.abs(c.x-sx)<T(14)&&Math.abs(c.y-sy)<T(14)){occupied=!0;break}' +
+          'if(occupied)continue;' +
+          'let cop=b.police===!0;' +
+          'let pool=cop?no:(((seed+i)%7===0)?w$:Yi);' +
+          'let ty=pool[(seed+i*13)%pool.length];' +
+          's.cars.push({x:sx,y:sy,h:Math.PI/2,vx:0,vy:0,w:0,steer:0,type:ty,' +
+            'pal:(seed+i)%zr.length,seed:((seed+i)%100)/100,hp:ou(ty),player:!1,' +
+            'ai:"parked",speed:0,stuck:0,panic:0,shootCd:0,burn:0,dead:!1,wreckT:0,' +
+            'siren:0,patrol:!1,rider:null,hdp:1});' +
+          'n++;' +
+        '}' +
+      '}' +
+    '}' +
+    'function Bi(){hdParked();if(s.cars.length>=Ru)return;let t=s.player,v=0,z=0;'
+  ],
+
   // `D` is the baked map data and `A` the view descriptor; the real canvas
   // context is `A.ctx`. Drawing here puts landmark art directly on top of the
   // building layer and underneath traffic.
   [
     'landmark art in the world layer',
     'T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y);let X=[];',
-    'window.__hdMap=D,T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y),' +
+    'window.__hdMap=D,window.__hdTime=s.t,T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y),' +
       'window.__hdDrawLandmarks&&window.__hdDrawLandmarks(A.ctx,s.cam.x,s.cam.y,$,N,A.night);let X=[];'
   ],
   // ===== reference art over the baked OSM geometry =======================

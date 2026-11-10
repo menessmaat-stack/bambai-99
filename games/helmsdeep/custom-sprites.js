@@ -48,6 +48,20 @@
     26: ['garbage-truck'], // Trashmaster (Heavy Municipal Truck)
     47: ['ambulance'],
 
+    // === Heavy fleet, matched to chassis by length/width, never by guess ===
+    // Chassis dimensions read from the engine table, e.g. Coach l=100 w=28,
+    // Catering Hi-Lift l=66 w=26 (a ramp/lift body), Tipper l=84 w=29.
+    24: ['flatbed-lorry'],   // Mule           l=76  w=28
+    25: ['car-carrier'],     // Linerunner     l=110 w=28
+    27: ['coach-bus'],       // Coach          l=100 w=28
+    28: ['city-bus'],        // School Bus     l=96  w=28
+    51: ['ramp-truck'],      // Catering Hi-Lift l=66 w=26
+    52: ['utility-tanker'],  // Fuel Bowser    l=72  w=27
+    71: ['tipper-truck'],    // Tipper         l=84  w=29
+    72: ['tanker-truck'],    // Tanker         l=96  w=29
+    73: ['army-truck'],      // Container      l=118 w=29
+    75: ['gas-tanker'],      // Water Truck    l=88  w=28
+
     // === 16 Vintage Cars (Mapped ONLY to Real Car Chassis l=46-50, w=21-22!) ===
     2:  ['classic-finned-cadillac'],     // Esperanto (Classic 1950s Finned Cruiser)
     4:  ['vintage-maroon-coupe'],        // Idaho (Classic Vintage Coupe)
@@ -412,7 +426,8 @@
 
     if (window.__hdFrameBuildings) {
       window.__hdFrameBuildings.push({ key: key, x: ox, y: oy, w: dw, h: dh, rot: rot,
-                                       slug: ov && ov.slug ? ov.slug : null });
+                                       slug: ov && ov.slug ? ov.slug : null,
+                                       kind: kind, police: kind === 'civic' });
     }
 
     if (rot) {
@@ -537,6 +552,12 @@
       // 2am is dark grass, not a lit facade.
       var dens = L[0] === 'parks' ? 0 : (L[0] === 'transit' ? 0.7 : 1.1);
       var dh = drawSprite(ctx, img, x, y, w, h, night, x * 31 + y, dens);
+      if (L[0] !== 'parks' && window.__hdFrameBuildings) {
+        // Landmarks are editable and parkable like any other footprint.
+        window.__hdFrameBuildings.push({ key: 'lm:' + L[1], x: x, y: y, w: w, h: dh,
+                                         rot: 0, slug: L[1], kind: L[0],
+                                         police: L[1] === 'police-hq' || L[1] === 'best-depot' });
+      }
       if (zoom < 0.18) continue;                       // labels turn to mush zoomed out
       ctx.save();
       ctx.translate(x, y + dh / 2 + 10 * inv);
@@ -551,6 +572,7 @@
       ctx.fillText(L[2], 0, 0);
       ctx.restore();
     }
+    if (window.__hdSignals) window.__hdSignals(ctx, camX, camY, viewW, viewH, night, window.__hdTime || 0);
     if (window.__hdDrawBuild) window.__hdDrawBuild(ctx, camX, camY, viewW, viewH, night);
   };
 
@@ -657,6 +679,174 @@
       }
     }
     ctx.restore();
+  };
+
+  // ---------------------------------------------------------------------
+  // Traffic signals.
+  //
+  // The engine has no signal system at all - the dark posts near crossings
+  // are generic street furniture, which is why junctions read oddly. These
+  // are real heads: one per approach, set back on the left kerb at the stop
+  // line, rotated to face oncoming traffic, with the usual three aspects.
+  // Opposing approaches share a phase, cross traffic runs on the opposite
+  // phase, and the offset is hashed per junction so the whole city does not
+  // blink in unison.
+  // ---------------------------------------------------------------------
+  var SIG_CELL = 4000;
+  var sigGrid = null;
+
+  function buildSignals() {
+    sigGrid = new Map();
+    var map = window.__hdMap;
+    if (!map || !map.graph) return;
+    var g = map.graph, nodes = g.nodes, ne = g.nodeEdges, edges = g.edges;
+    if (!nodes || !ne || !edges) return;
+    var count = ne.length;
+    var seen = new Map();
+    for (var i = 0; i < count; i++) {
+      var list = ne[i];
+      if (!list || list.length < 3) continue;          // not a junction
+      var nx = nodes[i * 2], ny = nodes[i * 2 + 1];
+      if (!isFinite(nx) || !isFinite(ny)) continue;
+      // Only signal roads wide enough to warrant one; lanes and service
+      // alleys meeting a street do not get a head.
+      var wide = 0, arms = [];
+      for (var k = 0; k < list.length; k++) {
+        var e = edges[list[k]];
+        if (!e || !e.pts || e.pts.length < 4) continue;
+        var w = e.width || 10;
+        if (w >= 12) wide++;
+        // heading of this arm, measured leaving the junction
+        var ax = e.pts[0], ay = e.pts[1];
+        var far = Math.hypot(ax - nx, ay - ny) < 1;
+        var bx = far ? e.pts[2] : e.pts[e.pts.length - 4];
+        var by = far ? e.pts[3] : e.pts[e.pts.length - 3];
+        arms.push({ h: Math.atan2(by - ny, bx - nx), w: w });
+      }
+      if (wide < 3 || arms.length < 3) continue;
+      // A roundabout is a ring of three-way nodes, and a dual carriageway
+      // crossing is four nodes a few metres apart. Signalling each one gives
+      // the forest of heads this is meant to avoid, so collapse anything
+      // inside a 70-unit cell down to the busiest node.
+      var ck = Math.floor(nx / 70) * 73856093 ^ Math.floor(ny / 70);
+      var prev = seen.get(ck);
+      if (prev && prev.arms.length >= arms.length) continue;
+      var cand = { x: nx, y: ny, arms: arms, ph: hash2(nx | 0, ny | 0), ck: ck };
+      seen.set(ck, cand);
+    }
+    // Second pass: cluster what survived. A roundabout is a ring of junction
+    // nodes and a grade-separated interchange is a knot of them; both are
+    // unsignalled in reality, and signalling each node is what produced a
+    // forest of heads. Clusters of three or more are dropped outright, and a
+    // pair collapses to its busiest node.
+    var cands = [];
+    seen.forEach(function (j) { cands.push(j); });
+    var near = new Map();
+    for (var ci = 0; ci < cands.length; ci++) {
+      var c = cands[ci];
+      var gx = Math.floor(c.x / 150), gy = Math.floor(c.y / 150);
+      for (var ox = -1; ox <= 1; ox++) {
+        for (var oy = -1; oy <= 1; oy++) {
+          var gk = (gx + ox) * 73856093 ^ (gy + oy);
+          var l = near.get(gk);
+          if (!l) near.set(gk, l = []);
+          if (ox === 0 && oy === 0) l.push(c);
+        }
+      }
+    }
+    for (var cj = 0; cj < cands.length; cj++) {
+      var d = cands[cj];
+      var gx2 = Math.floor(d.x / 150), gy2 = Math.floor(d.y / 150);
+      var peers = 0, best = d;
+      for (var px = -1; px <= 1; px++) {
+        for (var py = -1; py <= 1; py++) {
+          var pl = near.get((gx2 + px) * 73856093 ^ (gy2 + py));
+          if (!pl) continue;
+          for (var pi = 0; pi < pl.length; pi++) {
+            var q = pl[pi];
+            if (q === d) continue;
+            if (Math.hypot(q.x - d.x, q.y - d.y) > 150) continue;
+            peers++;
+            if (q.arms.length > best.arms.length) best = q;
+          }
+        }
+      }
+      if (peers >= 2) continue;                 // roundabout / interchange knot
+      if (best !== d) continue;                 // a pair: only the busier node
+      // Four heads is a crossroads; anything more is a slip road artefact.
+      var arms = d.arms.slice().sort(function (a, b) { return b.w - a.w; }).slice(0, 4);
+      var key = Math.floor(d.x / SIG_CELL) * 46337 + Math.floor(d.y / SIG_CELL);
+      var bucket = sigGrid.get(key);
+      if (!bucket) sigGrid.set(key, bucket = []);
+      bucket.push({ x: d.x, y: d.y, arms: arms, ph: d.ph });
+    }
+  }
+
+  window.__hdSignals = function (ctx, camX, camY, viewW, viewH, night, time) {
+    var zoom = viewW > 0 ? ctx.canvas.width / viewW : 1;
+    if (zoom < 0.45) return;                            // unreadable zoomed out
+    if (!sigGrid) buildSignals();
+    if (!sigGrid || !sigGrid.size) return;
+
+    var x0 = Math.floor((camX - viewW / 2) / SIG_CELL), x1 = Math.floor((camX + viewW / 2) / SIG_CELL);
+    var y0 = Math.floor((camY - viewH / 2) / SIG_CELL), y1 = Math.floor((camY + viewH / 2) / SIG_CELL);
+    var CYCLE = 14;                                     // seconds per full cycle
+
+    for (var cx = x0; cx <= x1; cx++) {
+      for (var cy = y0; cy <= y1; cy++) {
+        var bucket = sigGrid.get(cx * 46337 + cy);
+        if (!bucket) continue;
+        for (var b = 0; b < bucket.length; b++) {
+          var j = bucket[b];
+          if (Math.abs(j.x - camX) > viewW / 2 + 60) continue;
+          if (Math.abs(j.y - camY) > viewH / 2 + 60) continue;
+          var t = ((time || 0) + j.ph * CYCLE) % CYCLE;
+
+          for (var a = 0; a < j.arms.length; a++) {
+            var arm = j.arms[a];
+            // North-south arms run on the first half of the cycle, east-west
+            // on the second; amber bridges the swap.
+            var nsish = Math.abs(Math.sin(arm.h)) > 0.5;
+            var green = nsish ? t < CYCLE * 0.42 : (t > CYCLE * 0.5 && t < CYCLE * 0.92);
+            var amber = nsish ? (t >= CYCLE * 0.42 && t < CYCLE * 0.5)
+                              : (t >= CYCLE * 0.92 || t < 0.0001);
+            var lamp = green ? 2 : amber ? 1 : 0;
+
+            var back = arm.w * 0.5 + 16;                // stop line set-back
+            var side = arm.w * 0.5 + 5;                 // left kerb
+            var hx = j.x + Math.cos(arm.h) * back + Math.cos(arm.h + Math.PI / 2) * side;
+            var hy = j.y + Math.sin(arm.h) * back + Math.sin(arm.h + Math.PI / 2) * side;
+
+            ctx.save();
+            ctx.translate(hx, hy);
+            ctx.rotate(arm.h + Math.PI);                // face oncoming traffic
+            ctx.fillStyle = 'rgba(0,0,0,0.45)';
+            ctx.fillRect(-3, -8.5, 8, 19);
+            ctx.fillStyle = night ? '#1b1f26' : '#23272e';
+            ctx.fillRect(-4, -9.5, 8, 19);
+            ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+            ctx.lineWidth = 0.7;
+            ctx.strokeRect(-4, -9.5, 8, 19);
+            var cols = ['#ff3b30', '#ffb020', '#2bd96a'];
+            for (var L = 0; L < 3; L++) {
+              var on = L === lamp;
+              ctx.beginPath();
+              ctx.arc(0, -5.5 + L * 5.5, 2.3, 0, Math.PI * 2);
+              ctx.fillStyle = on ? cols[L] : 'rgba(18,20,24,0.9)';
+              ctx.fill();
+              if (on) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.globalAlpha = night ? 0.85 : 0.45;
+                ctx.drawImage(glow(), -11, -5.5 + L * 5.5 - 11, 22, 22);
+                ctx.restore();
+              }
+            }
+            ctx.restore();
+          }
+        }
+      }
+    }
   };
 
   // Scatter vegetation inside park/forest polygons so greens stop reading as
