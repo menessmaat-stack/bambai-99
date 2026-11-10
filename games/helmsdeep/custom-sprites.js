@@ -221,29 +221,62 @@
     return pool[i < pool.length ? i : pool.length - 1];
   }
 
-  // Night lighting. The art is drawn for daylight, so at night the sprite is
-  // dimmed and lit windows plus a warm spill are composited back on top.
-  // Window positions come from the footprint hash, so they do not crawl.
+  // Night lighting.
+  //
+  // `ctx.filter` forces Canvas2D to allocate and composite a separate surface
+  // for every drawImage. Measured at Fort: 16.7ms of __hdBSpr time by day
+  // against 87.4ms at night for the same 9900 calls - a 5x cost that lands
+  // squarely on dense, zoomed-out views. Each sprite is therefore dimmed once
+  // into an offscreen canvas and reused, and the warm spill is one shared
+  // pre-rendered glow rather than a fresh radial gradient per building.
+  var nightCache = new WeakMap();
+  function nightVariant(img) {
+    var c = nightCache.get(img);
+    if (c) return c;
+    var w = img.naturalWidth, h = img.naturalHeight;
+    if (!w || !h) return img;
+    var cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    var g = cv.getContext('2d');
+    g.filter = 'brightness(0.46) saturate(0.72)';
+    g.drawImage(img, 0, 0);
+    nightCache.set(img, cv);
+    return cv;
+  }
+
+  var glowTile = null;
+  function glow() {
+    if (glowTile) return glowTile;
+    var S = 128;
+    var cv = document.createElement('canvas');
+    cv.width = S; cv.height = S;
+    var g = cv.getContext('2d');
+    var rg = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    rg.addColorStop(0, 'rgba(255,186,94,0.5)');
+    rg.addColorStop(1, 'rgba(255,186,94,0)');
+    g.fillStyle = rg;
+    g.fillRect(0, 0, S, S);
+    glowTile = cv;
+    return cv;
+  }
+
   function nightLights(ctx, cx, cy, w, h, seed, density) {
     var n = Math.round(w * h / 1400 * density);
-    if (n < 3) n = 3; else if (n > 26) n = 26;
+    if (n < 3) n = 3; else if (n > 22) n = 22;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    var r = (w > h ? w : h) * 0.7;
-    var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    g.addColorStop(0, 'rgba(255,186,94,0.15)');
-    g.addColorStop(1, 'rgba(255,186,94,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    var r = (w > h ? w : h) * 1.4;
+    ctx.globalAlpha = 0.32;
+    ctx.drawImage(glow(), cx - r / 2, cy - r / 2, r, r);
+    ctx.globalAlpha = 1;
     for (var i = 0; i < n; i++) {
       var a = hash2(seed + i * 7919, seed - i * 104729);
       var b = hash2(seed - i * 15485, seed + i * 86028);
       if (a > 0.82) continue;                       // some flats are dark
-      var px = cx + (a - 0.5) * w * 0.86;
-      var py = cy + (b - 0.5) * h * 0.86;
-      var s = 1.6 + a * 2.4;
+      var sz = 1.6 + a * 2.4;
       ctx.fillStyle = b > 0.72 ? 'rgba(186,226,255,0.85)' : 'rgba(255,208,130,0.9)';
-      ctx.fillRect(px - s / 2, py - s / 2, s, s * 0.7);
+      ctx.fillRect(cx + (a - 0.5) * w * 0.86 - sz / 2, cy + (b - 0.5) * h * 0.86 - sz / 2,
+                   sz, sz * 0.7);
     }
     ctx.restore();
   }
@@ -252,10 +285,7 @@
     var kx = w / img.naturalWidth, ky = h / img.naturalHeight;
     var k = kx > ky ? kx : ky;
     var dw = img.naturalWidth * k, dh = img.naturalHeight * k;
-    ctx.save();
-    if (night) ctx.filter = 'brightness(0.46) saturate(0.72)';
-    ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
-    ctx.restore();
+    ctx.drawImage(night ? nightVariant(img) : img, cx - dw / 2, cy - dh / 2, dw, dh);
     if (night && density > 0) nightLights(ctx, cx, cy, dw, dh, seed, density);
     return dh;
   }
@@ -277,25 +307,42 @@
     var hgt = (q.hgt || 0) / M;                        // metres
     if (longSide < 4 || longSide > 110) return false;  // leave towers and sheds alone
 
+    // OSM leaves `hgt` at 0 on most Mumbai footprints, so plot area carries
+    // the signal instead: a 300 m2 plot is a house, a 900 m2 one is a block.
+    var area = (w / M) * (h / M);                      // square metres
     var kind = q.kind, pool;
     if (kind === 'slum') pool = CATALOG.slums;
     else if (kind === 'retail') pool = longSide < 16 ? CATALOG.stalls : CATALOG.chains;
-    else if (longSide < 26 && hgt < 14) pool = CATALOG.houses;
-    else if (kind === 'apartment' || kind === 'house' || kind === undefined) pool = CATALOG.flats;
-    else return false;
+    else if (kind === 'house') pool = CATALOG.houses;
+    else if (kind === 'apartment') pool = CATALOG.flats;
+    else if (hgt > 14 || area > 520) pool = CATALOG.flats;
+    else if (longSide < 26) pool = CATALOG.houses;
+    else pool = CATALOG.flats;
 
     var img = spriteFor(pick(pool, q.cx | 0, q.cy | 0));
     if (!img) return false;
-    // Street stalls are 3-6 m objects. Scaling one to fill a 16 m retail
-    // footprint turns a tea cart into a warehouse, so cap them.
-    if (pool === CATALOG.stalls) {
+
+    // Each reference drawing carries its own plot - lawn, driveway, setback -
+    // so fitting the artwork to the footprint leaves the building itself
+    // noticeably smaller than its plot and the city reads as a scatter of
+    // islands. Overscaling pushes that margin past the footprint edge so
+    // neighbours meet, and the per-pool factor restores the size hierarchy
+    // that cover-fitting flattens: a tower block must not read as a bungalow.
+    var over = 1.25, dens = 1;
+    if (pool === CATALOG.houses) over = 1.12;
+    else if (pool === CATALOG.flats) over = 1.45;
+    else if (pool === CATALOG.slums) { over = 1.18; dens = 0.5; }
+    else if (pool === CATALOG.chains) over = 1.2;
+    else if (pool === CATALOG.stalls) {
+      // Street stalls are 3-6 m objects. Scaling one to fill a 16 m retail
+      // footprint turns a tea cart into a warehouse, so cap them instead.
       var cap = 7 * M;
       if (w > cap) w = cap;
       if (h > cap) h = cap;
+      over = 1;
     }
-    drawSprite(ctx, img, (minx + maxx) / 2, (miny + maxy) / 2, w, h,
-               !!(view && view.night), (q.cx | 0) * 31 + (q.cy | 0),
-               pool === CATALOG.slums ? 0.5 : 1);
+    drawSprite(ctx, img, (minx + maxx) / 2, (miny + maxy) / 2, w * over, h * over,
+               !!(view && view.night), (q.cx | 0) * 31 + (q.cy | 0), dens);
     return true;
   };
 
@@ -437,6 +484,7 @@
     // The Arabian Sea polygon is tens of thousands of units long, so the
     // armour is generated per frame for the visible stretch only.
     var pad = 60;
+    if (!view || !isFinite(view.x0) || !isFinite(view.x1)) return;
     var x0 = view.x0 - pad, y0 = view.y0 - pad, x1 = view.x1 + pad, y1 = view.y1 + pad;
     var inward = area.__wind;
     if (inward === undefined) inward = area.__wind = signedArea(pts) > 0 ? 1 : -1;
@@ -483,21 +531,14 @@
         if ((stations & 7) === 3) {
           if (palm) {
             var tx = px - nx * 15, ty = py - ny * 15, pd = 22 + r * 10;
-            ctx.save();
-            if (night) ctx.filter = 'brightness(0.45) saturate(0.7)';
-            ctx.drawImage(palm, tx - pd / 2, ty - pd / 2, pd,
+            ctx.drawImage(night ? nightVariant(palm) : palm, tx - pd / 2, ty - pd / 2, pd,
                           pd * palm.naturalHeight / palm.naturalWidth);
-            ctx.restore();
           }
           if (night) {
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
-            var lx = px - nx * 8, ly = py - ny * 8;
-            var g2 = ctx.createRadialGradient(lx, ly, 0, lx, ly, 26);
-            g2.addColorStop(0, 'rgba(255,196,110,0.55)');
-            g2.addColorStop(1, 'rgba(255,196,110,0)');
-            ctx.fillStyle = g2;
-            ctx.fillRect(lx - 26, ly - 26, 52, 52);
+            ctx.globalAlpha = 0.9;
+            ctx.drawImage(glow(), px - nx * 8 - 26, py - ny * 8 - 26, 52, 52);
             ctx.restore();
           }
         }
@@ -540,6 +581,30 @@
       ctx.drawImage(im, p.x - dw / 2, p.y - dh / 2, dw, dh);
     }
   };
+
+
+  // A throw inside any of these runs inside the render loop, which aborts the
+  // rest of the frame - the city stops updating and input looks dead even
+  // though the game is still stepping. Each hook is wrapped so one bad
+  // footprint can only cost its own draw, and the failure is reported once.
+  (function hardenHooks() {
+    var reported = {};
+    ['__hdBSpr', '__hdDrawLandmarks', '__hdPlants', '__hdShore'].forEach(function (name) {
+      var fn = window[name];
+      if (typeof fn !== 'function') return;
+      window[name] = function () {
+        try {
+          return fn.apply(this, arguments);
+        } catch (err) {
+          if (!reported[name]) {
+            reported[name] = true;
+            console.error('[helmsdeep] ' + name + ' disabled after error:', err);
+          }
+          return false;
+        }
+      };
+    });
+  })();
 
   function pointIn(pts, x, y) {
     var inside = false;
