@@ -8,3 +8,6 @@ Screen Recording*.mov
 /*.png
 /*.html
 *.zip
+
+# Source reference sheets (multi-MB originals; sliced output lives in sprites/)
+refs/

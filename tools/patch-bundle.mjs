@@ -13,6 +13,49 @@ const FILE = 'games/helmsdeep/helmsdeep.js';
 
 /** [description, find, replace] — `find` must be unique in the bundle. */
 const EDITS = [
+  // `D` is the baked map data and `A` the view descriptor; the real canvas
+  // context is `A.ctx`. Drawing here puts landmark art directly on top of the
+  // building layer and underneath traffic.
+  [
+    'landmark art in the world layer',
+    'T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y);let X=[];',
+    'T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y),' +
+      'window.__hdDrawLandmarks&&window.__hdDrawLandmarks(A.ctx,s.cam.x,s.cam.y,$,N,A.night);let X=[];'
+  ],
+  // ===== reference art over the baked OSM geometry =======================
+  // 78% of OSM footprints have no name/height/type, so stock rendering gives
+  // grey boxes. __hdBSpr paints the hand-drawn sheets onto the real footprint
+  // (named landmark art, or a deterministic house variant for small plots)
+  // and returns true to skip the stock box for that building.
+  [
+    'reference art over OSM footprints',
+    'for(let m=0;m<xr.length;m++){let q=xr[m];if(q.kind==="transport"',
+    'for(let m=0;m<xr.length;m++){let q=xr[m];' +
+      'if(window.__hdBSpr&&window.__hdBSpr(o,q,n))continue;' +
+      'if(q.kind==="transport"'
+  ],
+  [
+    'reference art over OSM footprints (lod renderer)',
+    'for(let F=0;F<H.length;F++){let B=H[F],m=y(B.hgt)&&B.hgt>0?B.hgt:8*G',
+    'for(let F=0;F<H.length;F++){let B=H[F];' +
+      'if(window.__hdBSpr&&window.__hdBSpr(o,B,n))continue;' +
+      'let m=y(B.hgt)&&B.hgt>0?B.hgt:8*G'
+  ],
+  // Mumbai's sea edge is tetrapod armour, promenade and palms, not a bare
+  // stroke. __hdShore walks the water polygon and builds that procedurally.
+  [
+    'procedural shoreline armour',
+    'if(r.fillStyle=l.sea,r.fill("evenodd"),i)r.strokeStyle=l.shore,r.lineWidth=Math.max(0.6*G,1.2*E),r.stroke();break}',
+    'if(r.fillStyle=l.sea,r.fill("evenodd"),i)r.strokeStyle=l.shore,r.lineWidth=Math.max(0.6*G,1.2*E),r.stroke();' +
+      'window.__hdShore&&window.__hdShore(r,V,E,n,1);break}'
+  ],
+  [
+    'scatter vegetation inside parks',
+    'r.lineWidth=Math.max(0.5*G,1*E),r.stroke(),aE(r,V);break}case"apron":',
+    'r.lineWidth=Math.max(0.5*G,1*E),r.stroke(),aE(r,V),' +
+      'window.__hdPlants&&window.__hdPlants(r,V,E);break}case"apron":'
+  ],
+
   // ===== palette: stop the city looking washed out ========================
   ['day sea', 'sea:"#20536a"', 'sea:"#17658a"'],
   ['day land', 'land:"#4f4d49"', 'land:"#615a4f"'],
@@ -460,6 +503,9 @@ const EDITS = [
     'r.lineWidth=Math.max(5*G,7*E),r.stroke();' +
     // Land fill
     'r.fillStyle=l.land,r.fill("evenodd");' +
+    // Tetrapod armour, promenade kerb and palm row along the seaward face.
+    // side=-1 because the polygon interior here is the city, not the sea.
+    'window.__hdShore&&window.__hdShore(r,V,E,n,-1);' +
     'break}'
   ],
   // ===== bazooka ===========================================================
