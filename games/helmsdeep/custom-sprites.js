@@ -173,7 +173,15 @@
       'bdd-chawl-block', 'railway-overbridge', 'dadar-junction', 'harbour-line-shed',
       'bus-metro-interchange', 'dense-chawl-block'],
     houses: ['house-brown-gable', 'house-red-hip', 'shop-awning', 'house-grey-twin',
-      'house-garage', 'house-brick-warehouse', 'house-courtyard', 'house-industrial-unit'],
+      'house-garage', 'house-brick-warehouse', 'house-courtyard', 'house-industrial-unit',
+      'ha-small-gabled', 'ha-concrete-flat', 'ha-l-bungalow', 'ha-courtyard',
+      'ha-coastal-tiny', 'ha-two-story-flat', 'ha-semi-detached', 'ha-corner-residence',
+      'ha-tiny-brick', 'ha-improvised', 'ha-row-unit', 'ha-multi-material-hut',
+      'ha-two-level-tenement', 'ha-back-alley', 'ha-narrow-chawl', 'ha-old-bungalow',
+      'hb-small-gabled', 'hb-concrete-flat', 'hb-l-bungalow', 'hb-modern-suburban',
+      'hb-multi-family', 'hb-two-story-flat', 'hb-corner-family', 'hb-narrow-row',
+      'hb-compact-apartment', 'hb-medium-flat', 'hb-residential-complex', 'hb-three-rise',
+      'hb-gated-homes', 'hb-double-story', 'hb-trad-bungalow', 'hb-modern-villa'],
     flats: ['luxury-highrise', 'twin-tower', 'curved-modern', 'premium-block', 'courtyard-apts',
       'terraced-garden', 'h-shaped-block', 'high-end-condo', 'sea-facing-luxury', 'glass-front',
       'multi-block', 'urban-atrium', 'linear-premium', 'gated-enclave', 'multi-tiered',
@@ -195,11 +203,20 @@
       'oval-maidan', 'azad-maidan', 'cross-maidan', 'five-gardens', 'chhota-kashmir',
       'joggers-park', 'tata-garden', 'society-park'],
     plants: ['tree-dense-round', 'tree-conifer-star', 'palm-fan', 'shrub-leafy', 'bush-cluster',
-      'bush-flowering', 'rocks', 'hedge-row']
+      'bush-flowering', 'rocks', 'hedge-row'],
+    // Placeable only. These live under /sprites/cars/ and are deliberately
+    // kept out of the building pools, so a lorry can never be chosen as a
+    // house - the same isolation the driveable alias table enforces.
+    vehicles: ['cement-mixer', 'tipper-truck', 'excavator', 'bulldozer', 'flatbed-lorry',
+      'tanker-truck', 'army-truck', 'mobile-crane', 'coach-bus', 'city-bus', 'car-carrier',
+      'fire-engine', 'road-roller', 'ramp-truck', 'tractor-timber', 'tractor-cargo',
+      'utility-tanker', 'gas-tanker', 'ambulance']
   };
   var SLUG_DIR = {};
+  var DIR_PATH = { vehicles: 'cars' };
   Object.keys(CATALOG).forEach(function (d) {
-    CATALOG[d].forEach(function (sl) { SLUG_DIR[sl] = d; probe('/sprites/' + d + '/', sl); });
+    var dir = DIR_PATH[d] || d;
+    CATALOG[d].forEach(function (sl) { SLUG_DIR[sl] = dir; probe('/sprites/' + dir + '/', sl); });
   });
 
   function spriteFor(slug) {
@@ -212,6 +229,7 @@
   // The build editor needs the full catalog to draw its palette and the
   // night variant so placements match the rest of the city after dark.
   window.__hdCatalog = CATALOG;
+  window.__hdDirPath = DIR_PATH;
   window.__hdFrameBuildings = [];
   window.__hdVisible = [];
   window.__hdOverrides = window.__hdOverrides || {};
@@ -552,6 +570,17 @@
   // `side` is +1 for a water polygon (its interior is the sea) and -1 for a
   // land polygon (its interior is the city), so the armour always lands on
   // the seaward face of whichever polygon defines the coast here.
+  // True when there is genuinely open water 120 units out along the normal.
+  // Narrow channels - the Mithi, the Thane creek inlets - fail this, which is
+  // how the coast treatment stays off the rivers.
+  function makeOpenSea(pts, inward, isWater) {
+    return function (px, py, nx, ny) {
+      var qx = px + nx * 120, qy = py + ny * 120;
+      var inside = pointIn(pts, qx, qy);
+      return isWater ? inside : !inside;
+    };
+  }
+
   window.__hdShore = function (ctx, area, zoom, view, side) {
     if (zoom < 0.3) return;
     var pts = area.pts;
@@ -567,6 +596,7 @@
     inward *= (side || 1);
 
     var palm = spriteFor('palm-fan');
+    var openSea = makeOpenSea(pts, inward, (side || 1) > 0);
     var stations = 0;
     ctx.save();
     for (var i = 0; i < pts.length; i += 2) {
@@ -583,6 +613,7 @@
         var px = ax + dx * t, py = ay + dy * t;
         if (px < x0 || px > x1 || py < y0 || py > y1) continue;
         if (++stations > 1400) { ctx.restore(); return; }
+        if (!openSea(px, py, nx, ny)) continue;
         var r = hash2(px | 0, py | 0);
 
         // tetrapod / boulder armour just off the kerb
@@ -604,7 +635,12 @@
         ctx.fillStyle = night ? '#4b4a46' : '#cdc7b7';
         ctx.fillRect(px - nx * 3.2 - 3, py - ny * 3.2 - 3, 6.5, 6.5);
 
-        if ((stations & 7) === 3) {
+        // Palms were spaced off a running counter, so every camera move
+        // re-dealt them and the whole row appeared to slide. Space them off
+        // the world position instead and they stay put. `openSea` keeps them
+        // on the coast: probing across a creek lands back on land, so the
+        // river banks get bare kerb rather than a palm avenue.
+        if (hash2((px / 37) | 0, (py / 37) | 0) < 0.14 && openSea(px, py, nx, ny)) {
           if (palm) {
             var tx = px - nx * 15, ty = py - ny * 15, pd = 22 + r * 10;
             ctx.drawImage(night ? nightVariant(palm) : palm, tx - pd / 2, ty - pd / 2, pd,

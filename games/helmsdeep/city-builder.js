@@ -201,6 +201,7 @@
       'Drag body to move \u00b7 drag <span style="color:#4adeff">\u25a0</span> corner to resize \u00b7 ' +
       'drag <span style="color:#fde047">\u25cf</span> nub to rotate.<br>' +
       'Pick a tile then click a building to re-skin it, or click empty ground to place.<br>' +
+      '<b>D</b> or <b>Alt+drag</b> duplicate (keeps angle + size)<br>' +
       '<b>Del</b> delete \u00b7 <b>Esc</b> deselect \u00b7 <b>G</b> snap \u00b7 <b>Shift+B</b> close';
     w.appendChild(help);
 
@@ -218,6 +219,7 @@
 
     var tools = document.createElement('div');
     tools.style.cssText = 'display:flex;gap:6px;margin-top:10px;flex-wrap:wrap';
+    tools.appendChild(mkBtn('Duplicate', function () { duplicate(); }));
     tools.appendChild(mkBtn('Export', exportJson));
     tools.appendChild(mkBtn('Import', importJson));
     tools.appendChild(mkBtn('Reset edits', function () {
@@ -262,7 +264,8 @@
         ';border-radius:4px;padding:2px;cursor:pointer;height:60px;display:flex;' +
         'align-items:center;justify-content:center';
       var img = document.createElement('img');
-      img.src = '/sprites/' + activeDir + '/' + slug + '.png';
+      var dp = (window.__hdDirPath || {})[activeDir] || activeDir;
+      img.src = '/sprites/' + dp + '/' + slug + '.png';
       img.loading = 'lazy';
       img.style.cssText = 'max-width:100%;max-height:100%';
       cell.appendChild(img);
@@ -366,6 +369,12 @@
     var hitB = pick(w.x, w.y);
     if (hitB) {
       state.sel = hitB.kind === 'item' ? { kind: 'item', i: hitB.i } : { kind: 'gen', key: hitB.key };
+      if (ev.altKey) {
+        duplicate(0, 0);                      // Alt-drag: grab a clone, not the original
+        var nb = selBox();
+        if (nb) { state.drag = { mode: 'move', dx: nb.x - w.x, dy: nb.y - w.y, bx: nb.x, by: nb.y }; }
+        return;
+      }
       state.drag = { mode: 'move', dx: hitB.x - w.x, dy: hitB.y - w.y, bx: hitB.x, by: hitB.y };
       if (state.brush) { applyBrush(); return; }
       status('selected ' + (hitB.kind === 'gen' ? 'generated building' : 'placed building') +
@@ -378,8 +387,9 @@
     var img = window.__hdGetBuildingSprite(state.brush.slug);
     var ar = img && img.naturalWidth ? img.naturalHeight / img.naturalWidth : 1;
     var d = state.brush.dir;
-    var metres = d === 'stalls' ? 6 : d === 'slums' ? 12 : d === 'houses' ? 18 :
-                 d === 'chains' ? 28 : d === 'flats' ? 55 : d === 'parks' ? 160 : 70;
+    var metres = d === 'vehicles' ? 7 : d === 'stalls' ? 6 : d === 'slums' ? 12 :
+                 d === 'houses' ? 18 : d === 'chains' ? 28 : d === 'flats' ? 55 :
+                 d === 'parks' ? 160 : 70;
     var base = metres * M;
     var x = w.x, y = w.y;
     if (state.snap) { x = Math.round(x / 40) * 40; y = Math.round(y / 40) * 40; }
@@ -437,6 +447,29 @@
     saveItems(); saveOver();
   }
 
+  // Duplicate keeps the angle and size you just dialled in and drops the copy
+  // one footprint to the right, so a row of matching houses is Alt-drag or a
+  // few taps of D rather than re-rotating each one.
+  function duplicate(offX, offY) {
+    var b = selBox();
+    if (!b) return;
+    var slug = null;
+    if (state.sel.kind === 'item') slug = state.items[state.sel.i].slug;
+    else {
+      var g = (window.__hdVisible || []).find(function (v) { return v.key === state.sel.key; });
+      slug = (g && g.slug) || (window.__hdOverrides[state.sel.key] || {}).slug;
+    }
+    if (!slug) { status('this one has no art to copy \u2014 re-skin it first'); return; }
+    var dx = offX === undefined ? b.w * 1.05 : offX;
+    var dy = offY === undefined ? 0 : offY;
+    state.items.push({ slug: slug, x: b.x + dx, y: b.y + dy,
+                       w: b.w, h: b.h, rot: b.rot });
+    state.sel = { kind: 'item', i: state.items.length - 1 };
+    saveItems();
+    status('duplicated \u2014 ' + Math.round(b.rot * 180 / Math.PI) + '\u00b0, ' +
+           Math.round(b.w / M) + ' m');
+  }
+
   function remove() {
     if (!state.sel) return;
     if (state.sel.kind === 'item') { state.items.splice(state.sel.i, 1); saveItems(); }
@@ -456,6 +489,7 @@
     if (k === 'Escape') { state.sel = null; state.brush = null; renderGrid(); status('deselected'); }
     else if (k === 'g' || k === 'G') { state.snap = !state.snap; status('grid snap ' + (state.snap ? 'on' : 'off')); }
     else if (k === 'Delete' || k === 'Backspace') remove();
+    else if (state.sel && (k === 'd' || k === 'D')) duplicate();
     else if (state.sel && (k === '[' || k === ']')) {
       var f = k === ']' ? 1.12 : 1 / 1.12;
       if (state.sel.kind === 'item') {
