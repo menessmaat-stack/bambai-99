@@ -2,31 +2,47 @@
  *
  * The baked OSM geometry gives footprints but no sense of what a block is: it
  * cannot tell a gated society from a chawl, so the renderer has to guess, and
- * guesses put a shanty next to a tower. This lets a human place the truth
- * directly - pick art, drop it, rotate and size it - and ship the result as a
- * small JSON patch anyone can import, so a neighbourhood can be corrected
- * collaboratively instead of re-derived.
+ * guesses put a shanty next to a tower. This lets a human correct the city
+ * directly - move, resize, rotate, re-skin or delete what the generator made,
+ * and drop new art anywhere - then ship the result as a JSON patch anyone can
+ * import, so a neighbourhood is corrected collaboratively rather than guessed
+ * again.
  *
- * Placements persist in localStorage and render above the generated city.
+ * Two stores, both in localStorage:
+ *   overrides - edits to generated footprints, keyed by footprint centroid
+ *   items     - buildings placed by hand that OSM never had
  */
 (function () {
   'use strict';
 
-  var KEY = 'helmsdeep.build.v1';
-  var M = 6.6667;                       // world units per metre
-  var state = { on: false, items: [], sel: -1, brush: null, snap: true, drag: null };
+  var K_ITEMS = 'helmsdeep.build.v1';
+  var K_OVER = 'helmsdeep.overrides.v1';
+  var M = 6.6667;                        // world units per metre
+
+  var state = {
+    on: false,
+    items: [],
+    brush: null,
+    snap: false,
+    sel: null,         // {kind:'item', i} | {kind:'gen', key}
+    drag: null         // {mode:'move'|'resize'|'rotate', ...}
+  };
 
   function load() {
-    try { state.items = JSON.parse(localStorage.getItem(KEY)) || []; }
-    catch (e) { state.items = []; }
+    try { state.items = JSON.parse(localStorage.getItem(K_ITEMS)) || []; } catch (e) { state.items = []; }
+    try { window.__hdOverrides = JSON.parse(localStorage.getItem(K_OVER)) || {}; }
+    catch (e) { window.__hdOverrides = {}; }
   }
-  function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(state.items)); } catch (e) { /* quota */ }
+  function saveItems() {
+    try { localStorage.setItem(K_ITEMS, JSON.stringify(state.items)); } catch (e) { /* quota */ }
+  }
+  function saveOver() {
+    try { localStorage.setItem(K_OVER, JSON.stringify(window.__hdOverrides)); } catch (e) { /* quota */ }
   }
 
   // The renderer publishes its world transform every frame. Inverting it is
-  // the only exact way to turn a click into world units, because zoom, DPR,
-  // camera lerp and screen shake are all folded into it.
+  // the only exact way to turn a click into world units: zoom, DPR, camera
+  // lerp and screen shake are all folded into that matrix.
   function screenToWorld(px, py) {
     var t = window.__hdViewTf;
     if (!t) return null;
@@ -35,27 +51,78 @@
     var x = px - t.e, y = py - t.f;
     return { x: (x * t.d - y * t.c) / det, y: (y * t.a - x * t.b) / det };
   }
+  function zoom() { return window.__hdViewTf ? window.__hdViewTf.a : 1; }
 
-  function hit(wx, wy) {
-    for (var i = state.items.length - 1; i >= 0; i--) {
-      var it = state.items[i];
-      var dx = wx - it.x, dy = wy - it.y;
-      var c = Math.cos(-it.rot), s = Math.sin(-it.rot);
-      if (Math.abs(dx * c - dy * s) <= it.w / 2 && Math.abs(dx * s + dy * c) <= it.h / 2) return i;
-    }
-    return -1;
+  function over(key) {
+    var o = window.__hdOverrides[key];
+    if (!o) o = window.__hdOverrides[key] = {};
+    return o;
   }
 
-  // Drawn from the landmark pass so placements share the city's layer:
-  // above buildings, below traffic.
+  // ------------------------------------------------------------ selection
+  // Boxes are returned in world units with a rotation, covering both stores so
+  // the rest of the editor does not care which one a thing came from.
+  function boxes() {
+    var out = [];
+    var gen = window.__hdVisible || [];
+    for (var i = 0; i < gen.length; i++) {
+      out.push({ kind: 'gen', key: gen[i].key, x: gen[i].x, y: gen[i].y,
+                 w: gen[i].w, h: gen[i].h, rot: gen[i].rot || 0 });
+    }
+    for (var j = 0; j < state.items.length; j++) {
+      var it = state.items[j];
+      out.push({ kind: 'item', i: j, x: it.x, y: it.y, w: it.w, h: it.h, rot: it.rot || 0 });
+    }
+    return out;
+  }
+
+  function selBox() {
+    if (!state.sel) return null;
+    var all = boxes();
+    for (var i = 0; i < all.length; i++) {
+      var b = all[i];
+      if (state.sel.kind === 'item' && b.kind === 'item' && b.i === state.sel.i) return b;
+      if (state.sel.kind === 'gen' && b.kind === 'gen' && b.key === state.sel.key) return b;
+    }
+    return null;
+  }
+
+  function local(b, wx, wy) {
+    var dx = wx - b.x, dy = wy - b.y;
+    var c = Math.cos(-b.rot), s = Math.sin(-b.rot);
+    return { x: dx * c - dy * s, y: dx * s + dy * c };
+  }
+
+  function pick(wx, wy) {
+    var all = boxes(), best = null, bestArea = Infinity;
+    for (var i = 0; i < all.length; i++) {
+      var b = all[i], p = local(b, wx, wy);
+      if (Math.abs(p.x) > b.w / 2 || Math.abs(p.y) > b.h / 2) continue;
+      var a = b.w * b.h;
+      if (a < bestArea) { bestArea = a; best = b; }   // smallest hit wins
+    }
+    return best;
+  }
+
+  // Handle hit test in screen pixels so grabbing stays the same size at any
+  // zoom: corner = resize, nub above the top edge = rotate.
+  function handleAt(b, wx, wy) {
+    var z = zoom(), tol = 11 / z;
+    var p = local(b, wx, wy);
+    if (Math.abs(p.x - b.w / 2) < tol && Math.abs(p.y - b.h / 2) < tol) return 'resize';
+    if (Math.abs(p.x) < tol && Math.abs(p.y + b.h / 2 + 18 / z) < tol * 1.4) return 'rotate';
+    return null;
+  }
+
+  // ---------------------------------------------------------------- render
   window.__hdDrawBuild = function (ctx, camX, camY, viewW, viewH, night) {
-    var zoom = window.__hdViewTf ? window.__hdViewTf.a : 1;
-    for (var i = 0; i < state.items.length; i++) {
-      var it = state.items[i];
+    var i, it, img;
+    for (i = 0; i < state.items.length; i++) {
+      it = state.items[i];
       var r = it.w > it.h ? it.w : it.h;
       if (Math.abs(it.x - camX) > viewW / 2 + r) continue;
       if (Math.abs(it.y - camY) > viewH / 2 + r) continue;
-      var img = window.__hdGetBuildingSprite && window.__hdGetBuildingSprite(it.slug);
+      img = window.__hdGetBuildingSprite && window.__hdGetBuildingSprite(it.slug);
       if (!img) continue;
       var kx = it.w / img.naturalWidth, ky = it.h / img.naturalHeight;
       var k = kx > ky ? kx : ky;
@@ -65,41 +132,54 @@
       if (it.rot) ctx.rotate(it.rot);
       ctx.drawImage(night && window.__hdNightSprite ? window.__hdNightSprite(img) : img,
                     -dw / 2, -dh / 2, dw, dh);
-      if (state.on) {
-        var sel = i === state.sel;
-        ctx.strokeStyle = sel ? '#4adeff' : 'rgba(74,222,255,0.3)';
-        ctx.lineWidth = (sel ? 2 : 1) / zoom;
-        ctx.strokeRect(-it.w / 2, -it.h / 2, it.w, it.h);
-        if (sel) {
-          ctx.fillStyle = '#4adeff';
-          var n = 6 / zoom;
-          ctx.fillRect(-n / 2, -it.h / 2 - n * 2, n, n * 2);     // heading nub
-        }
-      }
       ctx.restore();
     }
+    if (!state.on) return;
+
+    var z = zoom();
+    var b = selBox();
+    if (!b) return;
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(b.rot);
+    ctx.strokeStyle = '#4adeff';
+    ctx.lineWidth = 2 / z;
+    ctx.setLineDash([6 / z, 4 / z]);
+    ctx.strokeRect(-b.w / 2, -b.h / 2, b.w, b.h);
+    ctx.setLineDash([]);
+    var hs = 9 / z;
+    ctx.fillStyle = '#4adeff';
+    ctx.fillRect(b.w / 2 - hs / 2, b.h / 2 - hs / 2, hs, hs);          // resize grip
+    ctx.beginPath();
+    ctx.moveTo(0, -b.h / 2);
+    ctx.lineTo(0, -b.h / 2 - 18 / z);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, -b.h / 2 - 18 / z, hs * 0.6, 0, Math.PI * 2);
+    ctx.fillStyle = '#fde047';
+    ctx.fill();                                                        // rotate grip
+    ctx.restore();
   };
 
-  // ------------------------------------------------------------------- panel
+  // ------------------------------------------------------------------ panel
   var el = {}, activeDir = null;
 
-  function btn(label, fn) {
+  function mkBtn(label, fn) {
     var b = document.createElement('button');
     b.textContent = label;
-    b.style.cssText = 'flex:1;min-width:80px;background:#162030;border:1px solid #2b3a4d;' +
+    b.style.cssText = 'flex:1;min-width:76px;background:#162030;border:1px solid #2b3a4d;' +
       'color:#c9d4e2;padding:6px 8px;border-radius:5px;cursor:pointer;' +
       'font:600 11px Inter,system-ui,sans-serif';
     b.onclick = fn;
     return b;
   }
-
-  function status(msg) { if (el.status) el.status.textContent = msg; }
+  function status(m) { if (el.status) el.status.textContent = m; }
 
   function buildPanel() {
     if (el.panel) return;
     var w = document.createElement('div');
     w.id = 'hd-build';
-    w.style.cssText = 'position:fixed;right:12px;top:52px;width:310px;' +
+    w.style.cssText = 'position:fixed;right:12px;top:52px;width:312px;' +
       'max-height:calc(100vh - 70px);overflow:auto;z-index:60;' +
       'background:rgba(10,14,20,0.96);border:1px solid #27313d;border-radius:10px;' +
       'padding:10px;font:12px/1.45 Inter,system-ui,sans-serif;color:#c9d4e2;display:none';
@@ -116,9 +196,12 @@
 
     var help = document.createElement('div');
     help.style.cssText = 'color:#7c8aa0;font-size:11px;margin-bottom:8px';
-    help.innerHTML = 'Pick a tile, then click the map to place.<br>' +
-      'Drag to move &middot; <b>R</b>/<b>Shift+R</b> rotate 15&deg; &middot; <b>[</b>/<b>]</b> resize<br>' +
-      '<b>Del</b> remove &middot; <b>Esc</b> deselect &middot; <b>G</b> grid snap &middot; <b>Shift+B</b> toggle';
+    help.innerHTML =
+      '<b>Click any building</b> \u2014 generated ones too \u2014 to select.<br>' +
+      'Drag body to move \u00b7 drag <span style="color:#4adeff">\u25a0</span> corner to resize \u00b7 ' +
+      'drag <span style="color:#fde047">\u25cf</span> nub to rotate.<br>' +
+      'Pick a tile then click a building to re-skin it, or click empty ground to place.<br>' +
+      '<b>Del</b> delete \u00b7 <b>Esc</b> deselect \u00b7 <b>G</b> snap \u00b7 <b>Shift+B</b> close';
     w.appendChild(help);
 
     el.status = document.createElement('div');
@@ -135,13 +218,14 @@
 
     var tools = document.createElement('div');
     tools.style.cssText = 'display:flex;gap:6px;margin-top:10px;flex-wrap:wrap';
-    tools.appendChild(btn('Export', exportJson));
-    tools.appendChild(btn('Import', importJson));
-    tools.appendChild(btn('Clear all', function () {
-      if (!state.items.length) return;
-      if (confirm('Remove all ' + state.items.length + ' placements?')) {
-        state.items = []; state.sel = -1; save(); status('cleared');
-      }
+    tools.appendChild(mkBtn('Export', exportJson));
+    tools.appendChild(mkBtn('Import', importJson));
+    tools.appendChild(mkBtn('Reset edits', function () {
+      var n = state.items.length + Object.keys(window.__hdOverrides).length;
+      if (!n) return;
+      if (!confirm('Discard all ' + n + ' edits?')) return;
+      state.items = []; window.__hdOverrides = {}; state.sel = null;
+      saveItems(); saveOver(); status('reset');
     }));
     w.appendChild(tools);
 
@@ -175,7 +259,7 @@
       cell.title = slug;
       var on = state.brush && state.brush.slug === slug;
       cell.style.cssText = 'background:#0e141c;border:1px solid ' + (on ? '#4adeff' : '#222c38') +
-        ';border-radius:4px;padding:2px;cursor:pointer;height:62px;display:flex;' +
+        ';border-radius:4px;padding:2px;cursor:pointer;height:60px;display:flex;' +
         'align-items:center;justify-content:center';
       var img = document.createElement('img');
       img.src = '/sprites/' + activeDir + '/' + slug + '.png';
@@ -183,78 +267,116 @@
       img.style.cssText = 'max-width:100%;max-height:100%';
       cell.appendChild(img);
       cell.onclick = function () {
-        state.brush = { dir: activeDir, slug: slug };
+        state.brush = state.brush && state.brush.slug === slug ? null : { dir: activeDir, slug: slug };
         renderGrid();
-        status('brush: ' + slug + ' \u2014 click the map');
+        // A brush with something selected re-skins it immediately; that is the
+        // common case when fixing a block that drew as the wrong type.
+        if (state.brush && state.sel) applyBrush();
+        else status(state.brush ? 'brush: ' + slug : 'brush cleared');
       };
       el.grid.appendChild(cell);
     });
   }
 
+  function applyBrush() {
+    if (!state.brush || !state.sel) return;
+    if (state.sel.kind === 'gen') {
+      over(state.sel.key).slug = state.brush.slug;
+      over(state.sel.key).hidden = false;
+      saveOver();
+    } else {
+      state.items[state.sel.i].slug = state.brush.slug;
+      saveItems();
+    }
+    status('re-skinned to ' + state.brush.slug);
+  }
+
   function exportJson() {
-    var text = JSON.stringify(state.items);
+    var payload = { items: state.items, overrides: window.__hdOverrides };
+    var text = JSON.stringify(payload);
     if (navigator.clipboard) navigator.clipboard.writeText(text);
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
     a.download = 'bambai-build.json';
     a.click();
     URL.revokeObjectURL(a.href);
-    status(state.items.length + ' placements copied + downloaded');
+    status(state.items.length + ' placed, ' +
+           Object.keys(window.__hdOverrides).length + ' edits exported');
   }
 
   function importJson() {
-    var text = prompt('Paste a build JSON patch (adds to what is already here):');
+    var text = prompt('Paste a build patch (merges into what is here):');
     if (!text) return;
     try {
-      var add = JSON.parse(text);
-      if (!Array.isArray(add)) throw new Error('expected an array');
-      var ok = 0;
-      add.forEach(function (it) {
+      var p = JSON.parse(text);
+      var items = Array.isArray(p) ? p : (p.items || []);
+      var ovs = Array.isArray(p) ? {} : (p.overrides || {});
+      var n = 0;
+      items.forEach(function (it) {
         if (typeof it.slug !== 'string' || !isFinite(it.x) || !isFinite(it.y)) return;
         state.items.push({ slug: it.slug, x: +it.x, y: +it.y,
                            w: +it.w || 200, h: +it.h || 200, rot: +it.rot || 0 });
-        ok++;
+        n++;
       });
-      save();
-      status('imported ' + ok + ' placements');
+      Object.keys(ovs).forEach(function (k) { window.__hdOverrides[k] = ovs[k]; n++; });
+      saveItems(); saveOver();
+      status('imported ' + n + ' changes');
     } catch (e) { status('import failed: ' + e.message); }
   }
 
+  // ------------------------------------------------------------------ input
   function canvas() {
     return document.querySelector('#helmsdeep-root canvas') || document.querySelector('canvas');
   }
-
   function worldAt(ev) {
     var cv = canvas();
     if (!cv) return null;
     var r = cv.getBoundingClientRect();
+    if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) return null;
     return screenToWorld((ev.clientX - r.left) * (cv.width / r.width),
                          (ev.clientY - r.top) * (cv.height / r.height));
   }
 
   function onDown(ev) {
     if (!state.on || ev.button !== 0) return;
-    var cv = canvas();
-    if (!cv || ev.target !== cv) return;
+    if (el.panel && el.panel.contains(ev.target)) return;      // palette clicks
     var w = worldAt(ev);
     if (!w) return;
     ev.preventDefault();
     ev.stopImmediatePropagation();
 
-    var idx = hit(w.x, w.y);
-    if (idx >= 0) {
-      state.sel = idx;
-      state.drag = { dx: state.items[idx].x - w.x, dy: state.items[idx].y - w.y };
-      status('selected ' + state.items[idx].slug + ' \u2014 ' +
-             Math.round(state.items[idx].w / M) + ' m');
+    // A grip on the current selection beats picking something new, otherwise
+    // the grips would be unusable wherever buildings overlap.
+    var b = selBox();
+    if (b) {
+      var h = handleAt(b, w.x, w.y);
+      if (h === 'resize') {
+        state.drag = { mode: 'resize', w0: b.w, h0: b.h,
+                       d0: Math.hypot(w.x - b.x, w.y - b.y) || 1 };
+        status('resizing');
+        return;
+      }
+      if (h === 'rotate') {
+        state.drag = { mode: 'rotate', a0: Math.atan2(w.y - b.y, w.x - b.x), r0: b.rot };
+        status('rotating');
+        return;
+      }
+    }
+
+    var hitB = pick(w.x, w.y);
+    if (hitB) {
+      state.sel = hitB.kind === 'item' ? { kind: 'item', i: hitB.i } : { kind: 'gen', key: hitB.key };
+      state.drag = { mode: 'move', dx: hitB.x - w.x, dy: hitB.y - w.y, bx: hitB.x, by: hitB.y };
+      if (state.brush) { applyBrush(); return; }
+      status('selected ' + (hitB.kind === 'gen' ? 'generated building' : 'placed building') +
+             ' \u2014 ' + Math.round(hitB.w / M) + ' m');
       return;
     }
-    if (!state.brush) { state.sel = -1; status('pick a tile first'); return; }
+
+    if (!state.brush) { state.sel = null; status('nothing there \u2014 pick a tile to place'); return; }
 
     var img = window.__hdGetBuildingSprite(state.brush.slug);
     var ar = img && img.naturalWidth ? img.naturalHeight / img.naturalWidth : 1;
-    // Default plot sizes match what the generator uses, so a placed block
-    // lands at the same scale as its generated neighbours.
     var d = state.brush.dir;
     var metres = d === 'stalls' ? 6 : d === 'slums' ? 12 : d === 'houses' ? 18 :
                  d === 'chains' ? 28 : d === 'flats' ? 55 : d === 'parks' ? 160 : 70;
@@ -262,22 +384,66 @@
     var x = w.x, y = w.y;
     if (state.snap) { x = Math.round(x / 40) * 40; y = Math.round(y / 40) * 40; }
     state.items.push({ slug: state.brush.slug, x: x, y: y, w: base, h: base * ar, rot: 0 });
-    state.sel = state.items.length - 1;
-    save();
-    status('placed ' + state.brush.slug + ' at ' + metres + ' m (' + state.items.length + ' total)');
+    state.sel = { kind: 'item', i: state.items.length - 1 };
+    saveItems();
+    status('placed ' + state.brush.slug + ' at ' + metres + ' m');
   }
 
   function onMove(ev) {
-    if (!state.on || !state.drag || state.sel < 0) return;
+    if (!state.on || !state.drag) return;
     var w = worldAt(ev);
     if (!w) return;
-    var it = state.items[state.sel];
-    it.x = w.x + state.drag.dx;
-    it.y = w.y + state.drag.dy;
-    if (state.snap) { it.x = Math.round(it.x / 40) * 40; it.y = Math.round(it.y / 40) * 40; }
+    var b = selBox();
+    if (!b) return;
+    var d = state.drag;
+
+    if (d.mode === 'move') {
+      var nx = w.x + d.dx, ny = w.y + d.dy;
+      if (state.snap) { nx = Math.round(nx / 40) * 40; ny = Math.round(ny / 40) * 40; }
+      if (state.sel.kind === 'item') {
+        state.items[state.sel.i].x = nx;
+        state.items[state.sel.i].y = ny;
+      } else {
+        var o = over(state.sel.key);
+        o.dx = (o.dx || 0) + (nx - b.x);
+        o.dy = (o.dy || 0) + (ny - b.y);
+      }
+    } else if (d.mode === 'resize') {
+      var f = (Math.hypot(w.x - b.x, w.y - b.y) || 1) / d.d0;
+      if (f < 0.15) f = 0.15; else if (f > 8) f = 8;
+      if (state.sel.kind === 'item') {
+        state.items[state.sel.i].w = d.w0 * f;
+        state.items[state.sel.i].h = d.h0 * f;
+      } else {
+        over(state.sel.key).scale = (over(state.sel.key).baseScale || 1) * f;
+      }
+      status('size ' + Math.round(d.w0 * f / M) + ' m');
+    } else if (d.mode === 'rotate') {
+      var a = Math.atan2(w.y - b.y, w.x - b.x) - d.a0 + d.r0;
+      if (ev.shiftKey) a = Math.round(a / (Math.PI / 12)) * (Math.PI / 12);
+      if (state.sel.kind === 'item') state.items[state.sel.i].rot = a;
+      else over(state.sel.key).rot = a;
+      status('rotation ' + Math.round(a * 180 / Math.PI) + '\u00b0');
+    }
   }
 
-  function onUp() { if (state.drag) { state.drag = null; save(); } }
+  function onUp() {
+    if (!state.drag) return;
+    if (state.drag.mode === 'resize' && state.sel && state.sel.kind === 'gen') {
+      var o = over(state.sel.key);
+      o.baseScale = o.scale || 1;             // next drag starts from here
+    }
+    state.drag = null;
+    saveItems(); saveOver();
+  }
+
+  function remove() {
+    if (!state.sel) return;
+    if (state.sel.kind === 'item') { state.items.splice(state.sel.i, 1); saveItems(); }
+    else { over(state.sel.key).hidden = true; saveOver(); }
+    state.sel = null;
+    status('deleted');
+  }
 
   function onKey(ev) {
     if ((ev.key === 'B' || ev.key === 'b') && ev.shiftKey) {
@@ -286,20 +452,24 @@
       return;
     }
     if (!state.on) return;
-    var it = state.sel >= 0 ? state.items[state.sel] : null;
     var k = ev.key;
-
-    if (k === 'Escape') { state.sel = -1; state.brush = null; renderGrid(); status('deselected'); }
+    if (k === 'Escape') { state.sel = null; state.brush = null; renderGrid(); status('deselected'); }
     else if (k === 'g' || k === 'G') { state.snap = !state.snap; status('grid snap ' + (state.snap ? 'on' : 'off')); }
-    else if (it && (k === 'r' || k === 'R')) {
-      it.rot += (ev.shiftKey ? -1 : 1) * Math.PI / 12;
-      save(); status('rotated to ' + Math.round(it.rot * 180 / Math.PI) + '\u00b0');
-    } else if (it && (k === '[' || k === ']')) {
+    else if (k === 'Delete' || k === 'Backspace') remove();
+    else if (state.sel && (k === '[' || k === ']')) {
       var f = k === ']' ? 1.12 : 1 / 1.12;
-      it.w *= f; it.h *= f;
-      save(); status('size ' + Math.round(it.w / M) + ' m');
-    } else if (it && (k === 'Delete' || k === 'Backspace')) {
-      state.items.splice(state.sel, 1); state.sel = -1; save(); status('removed');
+      if (state.sel.kind === 'item') {
+        state.items[state.sel.i].w *= f; state.items[state.sel.i].h *= f; saveItems();
+      } else {
+        var o = over(state.sel.key);
+        o.scale = (o.scale || 1) * f; o.baseScale = o.scale; saveOver();
+      }
+      status('resized');
+    } else if (state.sel && (k === 'r' || k === 'R')) {
+      var step = (ev.shiftKey ? -1 : 1) * Math.PI / 12;
+      if (state.sel.kind === 'item') { state.items[state.sel.i].rot += step; saveItems(); }
+      else { var o2 = over(state.sel.key); o2.rot = (o2.rot || 0) + step; saveOver(); }
+      status('rotated');
     } else return;
 
     ev.preventDefault();
@@ -310,8 +480,13 @@
     buildPanel();
     state.on = on;
     el.panel.style.display = on ? 'block' : 'none';
-    if (on) { renderTabs(); status(state.items.length + ' placements loaded'); }
-    else { state.sel = -1; state.drag = null; }
+    var cv = canvas();
+    if (cv) cv.style.cursor = on ? 'crosshair' : '';
+    if (on) {
+      renderTabs();
+      status(state.items.length + ' placed, ' +
+             Object.keys(window.__hdOverrides).length + ' edits loaded');
+    } else { state.sel = null; state.drag = null; }
     var b = document.getElementById('btnBuild');
     if (b) b.style.filter = on ? 'brightness(1.45)' : '';
   }
@@ -321,8 +496,8 @@
   load();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildPanel);
   else buildPanel();
-  // Capture phase: the game listens for keys on window, so editor keys must be
-  // swallowed before they start driving the car.
+  // Capture phase: the game listens on window, so editor input has to be taken
+  // before it starts driving the car or dragging the minimap.
   window.addEventListener('keydown', onKey, true);
   window.addEventListener('mousedown', onDown, true);
   window.addEventListener('mousemove', onMove, true);

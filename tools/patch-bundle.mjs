@@ -19,7 +19,7 @@ const EDITS = [
   [
     'landmark art in the world layer',
     'T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y);let X=[];',
-    'T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y),' +
+    'window.__hdMap=D,T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y),' +
       'window.__hdDrawLandmarks&&window.__hdDrawLandmarks(A.ctx,s.cam.x,s.cam.y,$,N,A.night);let X=[];'
   ],
   // ===== reference art over the baked OSM geometry =======================
@@ -1367,7 +1367,7 @@ const EDITS = [
     'if(l){' +
     // Compute track heading angle dynamically so station canopy aligns perfectly with the tracks!
     'let trkAng=0;' +
-    'if(D&&D.rail){for(let rl of D.rail){if(!rl.pts||rl.pts.length<4)continue;' +
+    'let hdM=window.__hdMap;if(hdM&&hdM.rail){for(let rl of hdM.rail){if(!rl.pts||rl.pts.length<4)continue;' +
     'for(let pi=0;pi<rl.pts.length-3;pi+=2){' +
     'let mx=(rl.pts[pi]+rl.pts[pi+2])/2,my=(rl.pts[pi+1]+rl.pts[pi+3])/2;' +
     'if(Math.hypot(mx-n,my-u)<T(50)){trkAng=Math.atan2(rl.pts[pi+3]-rl.pts[pi+1],rl.pts[pi+2]-rl.pts[pi]);break;}}' +
@@ -1383,7 +1383,7 @@ const EDITS = [
     // BLUE METALLIC VAULTED ROOF CANOPY (Exact Reference Image #2)
     'let gr=e.createLinearGradient(0,-sW/2,0,sW/2);gr.addColorStop(0,"#0284c7"),gr.addColorStop(0.5,"#38bdf8"),gr.addColorStop(1,"#0369a1");' +
     'e.fillStyle=gr,e.beginPath(),e.roundRect(-sL/2-1*G,-sW/2-1*G,sL+2*G,sW+2*G,3*G),e.fill();' +
-    'e.strokeStyle="#0f172a",e.lineWidth=Math.max(0.4*G,Q),e.stroke();' +
+    'e.strokeStyle="#0f172a",e.lineWidth=Math.max(0.4*G,o),e.stroke();' +
     // Transverse arched curved roof ribs
     'e.strokeStyle="rgba(255,255,255,0.45)",e.lineWidth=Math.max(0.3*G,0.6*o);' +
     'for(let rx=-sL/2+3*G;rx<sL/2;rx+=5*G){e.beginPath(),e.moveTo(rx,-sW/2-1*G),e.lineTo(rx,sW/2+1*G),e.stroke();}' +

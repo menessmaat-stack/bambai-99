@@ -212,6 +212,9 @@
   // The build editor needs the full catalog to draw its palette and the
   // night variant so placements match the rest of the city after dark.
   window.__hdCatalog = CATALOG;
+  window.__hdFrameBuildings = [];
+  window.__hdVisible = [];
+  window.__hdOverrides = window.__hdOverrides || {};
 
   // Deterministic per-footprint hash so a plot keeps the same art forever.
   function hash2(x, y) {
@@ -341,27 +344,20 @@
     var area = (w / M) * (h / M);                      // square metres
     var kind = q.kind, pool;
     var zone = zoneAt(q.cx || minx, q.cy || miny);
+    // Plot area decides house vs block - forcing a tower onto a 200 m2 plot
+    // is what pushed art out over the kerb. The zone only decides whether a
+    // pocket is informal, which is the thing OSM genuinely does not record.
     var big = hgt > 14 || area > 520;
 
     if (kind === 'slum' || (zone === 'slum' && !big)) pool = CATALOG.slums;
     else if (kind === 'retail') pool = longSide < 16 ? CATALOG.stalls : CATALOG.chains;
-    else if (kind === 'apartment' || big) pool = CATALOG.flats;
+    else if (kind === 'apartment') pool = CATALOG.flats;
     else if (kind === 'house') pool = CATALOG.houses;
-    else if (zone === 'flat') pool = CATALOG.flats;
-    else if (zone === 'house') pool = CATALOG.houses;
-    else pool = longSide < 22 ? CATALOG.houses : CATALOG.flats;
+    else pool = big ? CATALOG.flats : CATALOG.houses;
 
     var img = spriteFor(pick(pool, q.cx | 0, q.cy | 0));
     if (!img) return false;
 
-    // Every reference drawing depicts a building of a known real size: a
-    // bungalow plot is ~20 m across, a block of flats ~42 m, a shanty ~14 m.
-    // Stretching whichever art to whichever footprint is what made the city
-    // read as disproportionate - a bungalow blown up to 45 m next to a tower
-    // squeezed down to 15 m. The drawn size is therefore clamped to a window
-    // around the pool's real scale, and the footprint only decides where in
-    // that window it lands. Keeping it at or under the footprint is also what
-    // stops art spilling across the kerb.
     var nominal = 18, lo = 14, hi = 26, over = 1.0, dens = 1;
     if (pool === CATALOG.flats) { nominal = 55; lo = 38; hi = 74; over = 1.1; }
     else if (pool === CATALOG.slums) { nominal = 12; lo = 8; hi = 17; over = 1.1; dens = 0.5; }
@@ -370,13 +366,48 @@
 
     lo *= M; hi *= M;
     var long = w > h ? w : h;
+    // Hard ceiling tied to the plot: art may bleed a little past the
+    // footprint for a sense of mass, never across the road.
+    var ceiling = long * 1.25;
+    if (hi > ceiling) hi = ceiling;
+    if (lo > hi) lo = hi;
     var want = long * over;
     if (want < lo) want = lo; else if (want > hi) want = hi;
     var scale = want / long;
     var dw = w * scale, dh = h * scale;
 
-    drawSprite(ctx, img, (minx + maxx) / 2, (miny + maxy) / 2, dw, dh,
-               !!(view && view.night), (q.cx | 0) * 31 + (q.cy | 0), dens);
+    var ox = (minx + maxx) / 2, oy = (miny + maxy) / 2, rot = 0;
+
+    // Human overrides win over anything the generator decided. Keyed on the
+    // footprint centroid, which is stable across sessions because it comes
+    // from the baked geometry rather than draw order.
+    var key = (ox | 0) + ':' + (oy | 0);
+    var ov = window.__hdOverrides && window.__hdOverrides[key];
+    if (ov) {
+      if (ov.hidden) return true;                 // deleted: suppress the box too
+      if (ov.slug) { var oi = spriteFor(ov.slug); if (oi) img = oi; }
+      if (ov.scale) { dw *= ov.scale; dh *= ov.scale; }
+      if (ov.dx) ox += ov.dx;
+      if (ov.dy) oy += ov.dy;
+      rot = ov.rot || 0;
+    }
+
+    if (window.__hdFrameBuildings) {
+      window.__hdFrameBuildings.push({ key: key, x: ox, y: oy, w: dw, h: dh, rot: rot,
+                                       slug: ov && ov.slug ? ov.slug : null });
+    }
+
+    if (rot) {
+      ctx.save();
+      ctx.translate(ox, oy);
+      ctx.rotate(rot);
+      drawSprite(ctx, img, 0, 0, dw, dh, !!(view && view.night),
+                 (q.cx | 0) * 31 + (q.cy | 0), dens);
+      ctx.restore();
+    } else {
+      drawSprite(ctx, img, ox, oy, dw, dh, !!(view && view.night),
+                 (q.cx | 0) * 31 + (q.cy | 0), dens);
+    }
     return true;
   };
 
@@ -472,6 +503,10 @@
       var tf = ctx.getTransform();
       window.__hdViewTf = { a: tf.a, b: tf.b, c: tf.c, d: tf.d, e: tf.e, f: tf.f };
     }
+    // The building pass runs just before this one, so whatever it collected is
+    // exactly what is on screen right now - that is the editor's hit list.
+    window.__hdVisible = window.__hdFrameBuildings || [];
+    window.__hdFrameBuildings = [];
     var zoom = viewW > 0 ? ctx.canvas.width / viewW : 1;
     var inv = 1 / (zoom > 0.0001 ? zoom : 0.0001);
     for (var i = 0; i < LANDMARKS.length; i++) {
