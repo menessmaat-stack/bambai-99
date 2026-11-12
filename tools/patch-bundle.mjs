@@ -1489,6 +1489,22 @@ const EDITS = [
     'f.font="bold 11px system-ui",f.fillStyle="#fde047",f.textAlign="left",f.fillText("🎯 TARGET: "+C.name,26,capY+18),' +
     'f.font="bold 11px system-ui",f.fillStyle="#ffffff",f.textAlign="right",f.fillText(R.toFixed(1)+" km",324,capY+18),f.textAlign="left"})()'
   ],
+
+  // ===== 28. Free camera while the city editor is open ===================
+  // The camera is welded to the player, so editing meant driving to the
+  // block you wanted to fix. With the editor open the builder sets
+  // `window.__hdFreeCam` and owns the camera outright; clearing it hands the
+  // view back to the follow lerp on the next frame, wherever the player is.
+  [
+    'free camera for the city editor',
+    's.cam.x+=(k-s.cam.x)*Math.min(1,4.2*t),s.cam.y+=(ee-s.cam.y)*Math.min(1,4.2*t)',
+    // The site is one term of a comma sequence, so the replacement has to
+    // stay an expression; an if/else here is a syntax error. The lerp runs
+    // y-first so the replacement never contains the search string, which
+    // would make a second run wrap the wrapper.
+    '(window.__hdFreeCam?(s.cam.x=window.__hdFreeCam.x,s.cam.y=window.__hdFreeCam.y):' +
+      '(s.cam.y+=(ee-s.cam.y)*Math.min(1,4.2*t),s.cam.x+=(k-s.cam.x)*Math.min(1,4.2*t)))'
+  ],
 ];
 
 const check = process.argv.includes('--check');

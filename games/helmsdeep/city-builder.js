@@ -30,8 +30,11 @@
     sel: null,         // {kind:'item', i} | {kind:'gen', key}
     multi: [],         // marquee selection, same shape as `sel`
     marquee: null,     // {x0,y0,x1,y1} in world units while dragging
-    drag: null         // {mode:'move'|'resize'|'rotate', ...}
+    drag: null,        // {mode:'move'|'resize'|'rotate', ...}
+    cam: null          // free camera while editing; null hands it back
   };
+
+  var PAN_STEP = 320;                    // ~48 m per arrow tap
 
   // Who is editing. Falls back to the signed-in game account, then to a
   // stable per-browser id, so an exported patch always carries an author.
@@ -174,6 +177,52 @@
     return null;
   }
 
+  // Faint orange over everything you have changed, so a glance at the map
+  // tells you which blocks have been corrected and which are still whatever
+  // the generator guessed. Two layers: the block wash and the item box.
+  var WORK_CELL = 1400;                  // ~210 m, about a Mumbai block
+
+  function drawWorked(ctx, camX, camY, viewW, viewH, z) {
+    var cells = {}, spots = [], k, parts, ov = window.__hdOverrides || {};
+    for (k in ov) {
+      if (!Object.prototype.hasOwnProperty.call(ov, k)) continue;
+      parts = k.split(':');
+      var x = +parts[0], y = +parts[1];
+      if (!isFinite(x) || !isFinite(y)) continue;
+      spots.push([x, y, 70]);
+      cells[Math.floor(x / WORK_CELL) + ',' + Math.floor(y / WORK_CELL)] = 1;
+    }
+    for (var i = 0; i < state.items.length; i++) {
+      var it = state.items[i];
+      spots.push([it.x, it.y, (it.w > it.h ? it.w : it.h) * 0.6]);
+      cells[Math.floor(it.x / WORK_CELL) + ',' + Math.floor(it.y / WORK_CELL)] = 1;
+    }
+    if (!spots.length) return;
+
+    var halfW = viewW / 2 + WORK_CELL, halfH = viewH / 2 + WORK_CELL;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,146,38,0.10)';
+    for (k in cells) {
+      if (!Object.prototype.hasOwnProperty.call(cells, k)) continue;
+      parts = k.split(',');
+      var cx = +parts[0] * WORK_CELL, cy = +parts[1] * WORK_CELL;
+      if (Math.abs(cx + WORK_CELL / 2 - camX) > halfW) continue;
+      if (Math.abs(cy + WORK_CELL / 2 - camY) > halfH) continue;
+      ctx.fillRect(cx, cy, WORK_CELL, WORK_CELL);
+    }
+    ctx.fillStyle = 'rgba(255,146,38,0.20)';
+    ctx.strokeStyle = 'rgba(255,146,38,0.55)';
+    ctx.lineWidth = 1.2 / z;
+    for (var s = 0; s < spots.length; s++) {
+      var p = spots[s], r = p[2];
+      if (Math.abs(p[0] - camX) > viewW / 2 + r) continue;
+      if (Math.abs(p[1] - camY) > viewH / 2 + r) continue;
+      ctx.fillRect(p[0] - r, p[1] - r, r * 2, r * 2);
+      ctx.strokeRect(p[0] - r, p[1] - r, r * 2, r * 2);
+    }
+    ctx.restore();
+  }
+
   // ---------------------------------------------------------------- render
   window.__hdDrawBuild = function (ctx, camX, camY, viewW, viewH, night) {
     var i, it, img;
@@ -197,6 +246,12 @@
     if (!state.on) return;
 
     var z = zoom();
+
+    // Where you have already worked. Edits are sparse, so this walks the two
+    // stores directly rather than the visible list: a faint orange wash over
+    // the ~200 m block that holds them, and a tighter box on each thing you
+    // touched. Painted under the selection chrome so cyan still reads.
+    drawWorked(ctx, camX, camY, viewW, viewH, z);
 
     if (state.multi.length) {
       ctx.save();
@@ -498,8 +553,21 @@
   }
 
   function onDown(ev) {
-    if (!state.on || ev.button !== 0) return;
+    if (!state.on) return;
     if (el.panel && el.panel.contains(ev.target)) return;      // palette clicks
+    // Right or middle drag walks the camera. Left is already spoken for by
+    // selection and the marquee, and the editor should not need the car to
+    // be driven to the block being fixed.
+    if (ev.button === 2 || ev.button === 1) {
+      var pw = worldAt(ev);
+      if (!pw) return;
+      state.drag = { mode: 'pan', wx: pw.x, wy: pw.y };
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      status('panning');
+      return;
+    }
+    if (ev.button !== 0) return;
     var w = worldAt(ev);
     if (!w) return;
     ev.preventDefault();
@@ -545,9 +613,12 @@
         return;
       }
       state.drag = { mode: 'move', dx: hitB.x - w.x, dy: hitB.y - w.y, bx: hitB.x, by: hitB.y };
-      if (state.brush) { applyBrush(); return; }
+      // A single click selects and nothing else. Re-skinning here meant
+      // every nudge of an already-placed building silently replaced it with
+      // whatever was highlighted in the palette; that is now a double click.
       status('selected ' + (hitB.kind === 'gen' ? 'generated building' : 'placed building') +
-             ' \u2014 ' + Math.round(hitB.w / M) + ' m');
+             ' \u2014 ' + Math.round(hitB.w / M) + ' m' +
+             (state.brush ? ' \u2014 double-click to make it ' + state.brush.slug : ''));
       return;
     }
 
@@ -583,6 +654,15 @@
     if (!w) return;
     var d = state.drag;
 
+    // Pan is computed before the move, because dragging the camera changes
+    // the world point under the cursor: hold the grabbed point still and
+    // shift the camera by the difference.
+    if (d.mode === 'pan') {
+      if (!state.cam) return;
+      state.cam.x += d.wx - w.x;
+      state.cam.y += d.wy - w.y;
+      return;
+    }
     if (d.mode === 'marquee') {
       state.marquee.x1 = w.x;
       state.marquee.y1 = w.y;
@@ -663,6 +743,7 @@
       return;
     }
     if (!state.drag) return;
+    if (state.drag.mode === 'pan') { state.drag = null; status('ready'); return; }
     if (state.drag.mode === 'resize' && state.sel && state.sel.kind === 'gen') {
       var o = over(state.sel.key);
       o.baseScale = o.scale || 1;             // next drag starts from here
@@ -746,6 +827,24 @@
     }
     if (!state.on) return;
     var k = ev.key;
+
+    // Arrows walk the free camera while the editor is open. WASD is left
+    // alone: D duplicates, and a letter that both pans and edits is how you
+    // lose work. Hold Shift for three blocks at a time.
+    if (state.cam) {
+      var step = PAN_STEP * (ev.shiftKey ? 3 : 1);
+      var px = 0, py = 0;
+      if (k === 'ArrowLeft') px = -step;
+      else if (k === 'ArrowRight') px = step;
+      else if (k === 'ArrowUp') py = -step;
+      else if (k === 'ArrowDown') py = step;
+      if (px || py) {
+        state.cam.x += px; state.cam.y += py;
+        ev.preventDefault(); ev.stopImmediatePropagation();
+        return;
+      }
+    }
+
     if (k === 'Escape') { state.sel = null; state.multi = []; state.marquee = null;
       state.brush = null; renderGrid(); status('deselected'); }
     else if (k === 'g' || k === 'G') { state.snap = !state.snap; status('grid snap ' + (state.snap ? 'on' : 'off')); }
@@ -789,6 +888,33 @@
     ev.stopImmediatePropagation();
   }
 
+  // Double click re-skins what is under the cursor with the palette brush.
+  // Single click only selects, so dragging a building about no longer turns
+  // it into whatever happened to be highlighted.
+  function onDbl(ev) {
+    if (!state.on || ev.button !== 0) return;
+    if (el.panel && el.panel.contains(ev.target)) return;
+    if (!state.brush) return;
+    var w = worldAt(ev);
+    if (!w) return;
+    var hit = pick(w.x, w.y);
+    if (!hit) return;
+    state.sel = hit.kind === 'item' ? { kind: 'item', i: hit.i } : { kind: 'gen', key: hit.key };
+    state.drag = null;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    applyBrush();
+  }
+
+  // The camera is the game's while you play and the editor's while you
+  // build, handed over at the point the panel opens so the view does not
+  // jump: it starts exactly where the player was standing.
+  function camNow() {
+    var cv = canvas();
+    if (!cv) return null;
+    return screenToWorld(cv.width / 2, cv.height / 2);
+  }
+
   function toggle(on) {
     buildPanel();
     state.on = on;
@@ -796,11 +922,19 @@
     var cv = canvas();
     if (cv) cv.style.cursor = on ? 'crosshair' : '';
     if (on) {
+      var c = camNow();
+      state.cam = c ? { x: c.x, y: c.y } : null;
+      window.__hdFreeCam = state.cam;
       renderTabs();
       renderHistory();
       status(state.items.length + ' placed, ' +
-             Object.keys(window.__hdOverrides).length + ' edits loaded');
-    } else { state.sel = null; state.drag = null; }
+             Object.keys(window.__hdOverrides).length + ' edits loaded \u2014 ' +
+             'right-drag or arrows to move the map');
+    } else {
+      state.sel = null; state.drag = null;
+      state.cam = null;
+      window.__hdFreeCam = null;              // the player gets it back
+    }
     var b = document.getElementById('btnBuild');
     if (b) b.style.filter = on ? 'brightness(1.45)' : '';
   }
@@ -818,4 +952,10 @@
   window.addEventListener('mousedown', onDown, true);
   window.addEventListener('mousemove', onMove, true);
   window.addEventListener('mouseup', onUp, true);
+  window.addEventListener('dblclick', onDbl, true);
+  // Right-drag is the pan gesture, so the browser menu has to stay shut
+  // while the editor is open.
+  window.addEventListener('contextmenu', function (ev) {
+    if (state.on) ev.preventDefault();
+  }, true);
 })();

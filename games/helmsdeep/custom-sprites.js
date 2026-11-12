@@ -259,6 +259,21 @@
     return pool[i < pool.length ? i : pool.length - 1];
   }
 
+  //: A block is built by one developer in one decade, so its houses look
+  //: alike. Hashing every plot on its own centroid gave a different model
+  //: per plot, which is why a street read as a sample book. The model is
+  //: chosen per ~135 m block instead, with one neighbouring variant mixed in
+  //: for the few plots that would otherwise look stamped.
+  var BLOCK = 900;
+  function pickCluster(pool, x, y) {
+    if (pool.length < 2) return pool[0];
+    var bx = Math.floor(x / BLOCK), by = Math.floor(y / BLOCK);
+    var base = Math.floor(hash2(bx * 7919, by * 104729) * pool.length);
+    if (base >= pool.length) base = pool.length - 1;
+    var jitter = hash2(x | 0, y | 0) < 0.28 ? 1 : 0;
+    return pool[(base + jitter) % pool.length];
+  }
+
   // Night lighting.
   //
   // `ctx.filter` forces Canvas2D to allocate and composite a separate surface
@@ -322,7 +337,10 @@
 
   function drawSprite(ctx, img, cx, cy, w, h, night, seed, density) {
     var kx = w / img.naturalWidth, ky = h / img.naturalHeight;
-    var k = kx > ky ? kx : ky;
+    // Contain, not cover. Cover-fitting a 4:3 sheet onto a narrow plot drew
+    // the art up to a third wider than the plot it belonged to, which is how
+    // buildings ended up lying across the carriageway.
+    var k = kx < ky ? kx : ky;
     var dw = img.naturalWidth * k, dh = img.naturalHeight * k;
     ctx.drawImage(night ? nightVariant(img) : img, cx - dw / 2, cy - dh / 2, dw, dh);
     if (night && density > 0) nightLights(ctx, cx, cy, dw, dh, seed, density);
@@ -423,6 +441,168 @@
     return z;
   }
 
+  // ---------------------------------------------------------------------
+  // Streets, and how a plot sits against them.
+  //
+  // The sprite was previously drawn into the footprint's axis-aligned
+  // bounding box, so a plot lying at 30 degrees to the grid - which most of
+  // Mumbai's are - got a house square to the compass sitting diagonally
+  // across it. That is the "randomly placed" look, and the slop between the
+  // box and the plot is what pushed art onto the carriageway.
+  //
+  // Instead: take the footprint's own long edge as the building's facing,
+  // snap it to the nearest street when the two nearly agree so a terrace
+  // lines up, measure the plot along that axis, and keep the art inside what
+  // is left after the carriageway and a pavement are taken out.
+  // ---------------------------------------------------------------------
+  var ROAD_CELL = 2400;                  // ~360 m buckets
+  var ROAD_REACH = 2600;                 // give up past this; it is open land
+  var PAVE = 12;                         // ~1.8 m of walking room at the kerb
+  var GAP = 0.92;                        // breathing space between neighbours
+  var roadGrid = null;
+
+  function roadKey(cx, cy) { return cx * 73856093 ^ cy; }
+
+  function buildRoads() {
+    roadGrid = new Map();
+    var map = window.__hdMap;
+    if (!map || !map.graph || !map.graph.edges) return;
+    var edges = map.graph.edges;
+    for (var i = 0; i < edges.length; i++) {
+      var e = edges[i];
+      if (!e || !e.pts || e.pts.length < 4) continue;
+      var hw = (e.width || 40) * 0.5;
+      for (var p = 0; p + 3 < e.pts.length; p += 2) {
+        var x1 = e.pts[p], y1 = e.pts[p + 1], x2 = e.pts[p + 2], y2 = e.pts[p + 3];
+        var seg = [x1, y1, x2, y2, hw];
+        var c0 = Math.floor(Math.min(x1, x2) / ROAD_CELL);
+        var c1 = Math.floor(Math.max(x1, x2) / ROAD_CELL);
+        var r0 = Math.floor(Math.min(y1, y2) / ROAD_CELL);
+        var r1 = Math.floor(Math.max(y1, y2) / ROAD_CELL);
+        // A long link crossing many cells is rare; cap it so one motorway
+        // segment cannot be inserted into a thousand buckets.
+        if ((c1 - c0) * (r1 - r0) > 64) { c1 = c0; r1 = r0; }
+        for (var cx = c0; cx <= c1; cx++) {
+          for (var cy = r0; cy <= r1; cy++) {
+            var k = roadKey(cx, cy), list = roadGrid.get(k);
+            if (!list) roadGrid.set(k, list = []);
+            list.push(seg);
+          }
+        }
+      }
+    }
+  }
+
+  // Nearest carriageway: {d, hw, ang} in world units, or null.
+  function nearestRoad(x, y) {
+    if (!roadGrid) buildRoads();
+    if (!roadGrid || !roadGrid.size) return null;
+    var cx = Math.floor(x / ROAD_CELL), cy = Math.floor(y / ROAD_CELL);
+    var best = null, bestD = ROAD_REACH * ROAD_REACH;
+    for (var ox = -1; ox <= 1; ox++) {
+      for (var oy = -1; oy <= 1; oy++) {
+        var list = roadGrid.get(roadKey(cx + ox, cy + oy));
+        if (!list) continue;
+        for (var i = 0; i < list.length; i++) {
+          var s = list[i];
+          var dx = s[2] - s[0], dy = s[3] - s[1];
+          var len2 = dx * dx + dy * dy;
+          var t = len2 ? ((x - s[0]) * dx + (y - s[1]) * dy) / len2 : 0;
+          if (t < 0) t = 0; else if (t > 1) t = 1;
+          var px = s[0] + dx * t - x, py = s[1] + dy * t - y;
+          var d2 = px * px + py * py;
+          if (d2 < bestD) { bestD = d2; best = s; }
+        }
+      }
+    }
+    if (!best) return null;
+    return { d: Math.sqrt(bestD), hw: best[4],
+             ang: Math.atan2(best[3] - best[1], best[2] - best[0]) };
+  }
+
+  // Both angles folded into [-pi/2, pi/2): a building has no front in this
+  // art, so facing north and facing south are the same placement.
+  function fold90(a) {
+    a = a % Math.PI;
+    if (a >= Math.PI / 2) a -= Math.PI;
+    else if (a < -Math.PI / 2) a += Math.PI;
+    return a;
+  }
+
+  var geoCache = new Map();
+
+  function geoFor(q, key) {
+    var g = geoCache.get(key);
+    if (g !== undefined) return g;
+
+    var pts = q.pts, n = pts.length;
+    // Facing = the longest wall. Short jogs in the outline are noise.
+    var ang = 0, bestLen = -1;
+    for (var i = 0; i < n; i += 2) {
+      var j = (i + 2) % n;
+      var dx = pts[j] - pts[i], dy = pts[j + 1] - pts[i + 1];
+      var l = dx * dx + dy * dy;
+      if (l > bestLen) { bestLen = l; ang = Math.atan2(dy, dx); }
+    }
+    ang = fold90(ang);
+
+    // `cx`/`cy` are present on every baked footprint, but a hand-built
+    // record may not carry them; fall back to the outline's first vertex
+    // rather than querying the road index at (NaN, NaN).
+    var qx = (q.cx === undefined || q.cx === null) ? pts[0] : q.cx;
+    var qy = (q.cy === undefined || q.cy === null) ? pts[1] : q.cy;
+    var road = nearestRoad(qx, qy);
+    if (road) {
+      var ra = fold90(road.ang);
+      var diff = fold90(ra - ang);
+      // Within 25 degrees the plot and the street are meant to agree, and
+      // OSM's digitising wobble is what separates them. Past that the plot
+      // genuinely faces something else, so leave it be.
+      if (Math.abs(diff) < 0.44) ang = ra;
+    }
+
+    // Oriented extents: project the outline onto the facing and its normal.
+    var c = Math.cos(ang), s = Math.sin(ang);
+    var minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+    for (var p = 0; p < n; p += 2) {
+      var u = pts[p] * c + pts[p + 1] * s;
+      var v = -pts[p] * s + pts[p + 1] * c;
+      if (u < minU) minU = u; if (u > maxU) maxU = u;
+      if (v < minV) minV = v; if (v > maxV) maxV = v;
+    }
+    var ow = maxU - minU, oh = maxV - minV;
+    var mu = (minU + maxU) / 2, mv = (minV + maxV) / 2;
+    g = {
+      ang: ang, w: ow, h: oh,
+      x: mu * c - mv * s, y: mu * s + mv * c,
+      cap: 1, blocked: false
+    };
+
+    if (road) {
+      var da = fold90(ang - road.ang);
+      // Extent facing the road. Using the half-diagonal here condemned every
+      // plot on a narrow street, because a long terrace reaches far along
+      // the kerb without ever crossing it.
+      var reach = 0.5 * (Math.abs(ow * Math.sin(da)) + Math.abs(oh * Math.cos(da)));
+      if (road.d < road.hw * 0.75) {
+        // The footprint's own centre is inside the carriageway: a flyover
+        // deck or a mis-digitised shed. Nothing belongs there.
+        g.blocked = true;
+      } else {
+        // Otherwise the plot stays and only the art is held back, so a house
+        // tight against a lane is drawn smaller rather than deleted. Judging
+        // this on the centroid alone emptied half of Bandra.
+        var free = road.d - road.hw - PAVE;
+        if (free < reach * 0.45) free = reach * 0.45;   // never vanish
+        if (reach > free) g.cap = free / reach;
+      }
+    }
+
+    if (geoCache.size > 60000) geoCache.clear();
+    geoCache.set(key, g);
+    return g;
+  }
+
   // Called from both building renderers for every visible footprint.
   // Returns true when it painted, so the stock grey box is skipped.
   window.__hdBSpr = function (ctx, q, view) {
@@ -458,59 +638,70 @@
     else if (zone === 'house') pool = big && longSide > 40 ? CATALOG.flats : CATALOG.houses;
     else pool = big ? CATALOG.flats : CATALOG.houses;
 
-    var chosen = pick(pool, q.cx | 0, q.cy | 0);
+    // The key is the AABB centroid, unchanged, because every saved override
+    // and every exported patch is already filed under it.
+    var ox = (minx + maxx) / 2, oy = (miny + maxy) / 2;
+    var key = (ox | 0) + ':' + (oy | 0);
+
+    var geo = geoFor(q, key);
+    var ov = window.__hdOverrides && window.__hdOverrides[key];
+    // A plot inside the carriageway gets nothing. Returning true suppresses
+    // the stock grey box as well, which is the point: the road stays a road.
+    if (geo.blocked && !(ov && (ov.dx || ov.dy))) return true;
+
+    var chosen = pickCluster(pool, q.cx === undefined ? minx : q.cx,
+                                   q.cy === undefined ? miny : q.cy);
     var img = spriteFor(chosen);
     if (!img) return false;
 
-    var nominal = 18, lo = 14, hi = 26, over = 1.0, dens = 1;
-    if (pool === CATALOG.flats) { nominal = 55; lo = 38; hi = 74; over = 1.1; }
-    else if (pool === CATALOG.slums) { nominal = 12; lo = 8; hi = 17; over = 1.1; dens = 0.5; }
-    else if (pool === CATALOG.chains) { nominal = 28; lo = 21; hi = 36; }
-    else if (pool === CATALOG.stalls) { nominal = 6; lo = 4; hi = 8; }
+    var hi = 26, dens = 1;
+    if (pool === CATALOG.flats) hi = 80;
+    else if (pool === CATALOG.slums) { hi = 17; dens = 0.5; }
+    else if (pool === CATALOG.chains) hi = 40;
+    else if (pool === CATALOG.stalls) hi = 9;
+    hi *= M;
 
-    lo *= M; hi *= M;
-    var long = w > h ? w : h;
-    // Hard ceiling tied to the plot: art may bleed a little past the
-    // footprint for a sense of mass, never across the road.
-    var ceiling = long * 1.25;
-    if (hi > ceiling) hi = ceiling;
-    if (lo > hi) lo = hi;
-    var want = long * over;
-    if (want < lo) want = lo; else if (want > hi) want = hi;
-    var scale = want / long;
-    var dw = w * scale, dh = h * scale;
+    // The art fills its own plot, less a walking gap and whatever the kerb
+    // needs. Sizing it on the oriented plot rather than the bounding box is
+    // the whole point: a diagonal plot's box is up to 40% longer than the
+    // plot, and that difference is what used to spill across the road.
+    // `hi` only stops one huge compound being painted as a single giant
+    // house; it is not a target, which is what shrank everything to a
+    // doll's house marooned in the middle of its plot.
+    var dw = geo.w * GAP * geo.cap, dh = geo.h * GAP * geo.cap;
+    var long = dw > dh ? dw : dh;
+    if (long > hi) { var k = hi / long; dw *= k; dh *= k; }
 
-    var ox = (minx + maxx) / 2, oy = (miny + maxy) / 2, rot = 0;
+    var ox2 = geo.x, oy2 = geo.y, rot = geo.ang;
 
     // Human overrides win over anything the generator decided. Keyed on the
     // footprint centroid, which is stable across sessions because it comes
     // from the baked geometry rather than draw order.
-    var key = (ox | 0) + ':' + (oy | 0);
-    var ov = window.__hdOverrides && window.__hdOverrides[key];
     if (ov) {
       if (ov.hidden) return true;                 // deleted: suppress the box too
       if (ov.slug) { var oi = spriteFor(ov.slug); if (oi) img = oi; }
       if (ov.scale) { dw *= ov.scale; dh *= ov.scale; }
-      if (ov.dx) ox += ov.dx;
-      if (ov.dy) oy += ov.dy;
-      rot = ov.rot || 0;
+      if (ov.dx) ox2 += ov.dx;
+      if (ov.dy) oy2 += ov.dy;
+      if (ov.rot !== undefined && ov.rot !== null) rot = ov.rot;
     }
 
     if (window.__hdFrameBuildings) {
-      window.__hdFrameBuildings.push({ key: key, x: ox, y: oy, w: dw, h: dh, rot: rot,
+      window.__hdFrameBuildings.push({ key: key, x: ox2, y: oy2, w: dw, h: dh, rot: rot,
                                        slug: (ov && ov.slug) || chosen,
-                                       kind: kind, police: kind === 'civic' });
+                                       kind: kind, police: kind === 'civic',
+                                       edited: !!ov });
     }
 
     if (rot) {
       ctx.save();
-      ctx.translate(ox, oy);
+      ctx.translate(ox2, oy2);
       ctx.rotate(rot);
       drawSprite(ctx, img, 0, 0, dw, dh, !!(view && view.night),
                  (q.cx | 0) * 31 + (q.cy | 0), dens);
       ctx.restore();
     } else {
-      drawSprite(ctx, img, ox, oy, dw, dh, !!(view && view.night),
+      drawSprite(ctx, img, ox2, oy2, dw, dh, !!(view && view.night),
                  (q.cx | 0) * 31 + (q.cy | 0), dens);
     }
     return true;

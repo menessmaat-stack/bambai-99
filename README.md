@@ -170,6 +170,53 @@ and `--check` to confirm a bundle is patched. It covers:
   and HUD badge. The news crew needed six bodies in one 90 m circle within 90 s;
   two is enough now, so CH9 Mumbai Live actually turns up.
 
+## How a building lands on its plot
+
+`custom-sprites.js` paints the hand-drawn sheets over the baked OSM
+footprints. It used to drop the art into the footprint's **axis-aligned
+bounding box**, which is where "randomly placed, half of them on the road"
+came from: most Mumbai plots sit at an angle to the compass, so the box is up
+to 40% bigger than the plot it describes, and a cover-fit sprite filled the
+box rather than the plot.
+
+- **Facing.** The longest wall of the footprint is the building's facing. If
+  the nearest street runs within 25 degrees of that, the facing snaps to the
+  street, so a terrace lines up instead of each house finding its own angle.
+  The art is then measured on the *oriented* plot, not the box.
+- **Off the carriageway.** `buildRoads()` buckets every graph edge into
+  360 m cells with its real half-width; `nearestRoad()` answers in world
+  units. A footprint whose own centre is inside the carriageway (flyover
+  decks, mis-digitised sheds) is dropped outright — the painter returns true
+  so the stock grey box does not take its place. Everything else is held back
+  to whatever room is left after the kerb and 1.8 m of pavement, measured
+  across the road rather than on the diagonal: judging it by the diagonal
+  condemned every plot on a narrow street.
+- **Room to walk.** Art is contained inside its plot, never cover-fitted over
+  it, and shrunk a further 8%, so there is a gap between neighbours.
+- **Blocks look alike.** The model is picked per ~135 m block instead of per
+  plot, with one neighbouring variant mixed in. A street used to read as a
+  sample book because every footprint hashed its own centroid.
+
+`geoFor` caches all of this per footprint centroid, so the road query runs
+once per building rather than once per frame.
+
+## City editor
+
+Open with the **BUILD** button or Shift+B.
+
+- **The map moves, not the car.** The editor takes the camera when it opens,
+  starting exactly where the player stands: right-drag or middle-drag to pan,
+  arrow keys to step (Shift for three blocks). Closing hands the camera back
+  to the player. The bundle honours `window.__hdFreeCam` for this — edit 28
+  in `tools/patch-bundle.mjs`.
+- **One click selects, two re-skin.** A single click with a tile picked in
+  the palette used to replace the building you clicked, which meant nudging
+  anything silently changed it. Selection and dragging are a single click;
+  double-click applies the tile.
+- **Faint orange marks your work.** Every block holding an edit gets a wash,
+  and each edited or placed building its own box, so corrected neighbourhoods
+  are obvious against whatever the generator guessed.
+
 ## Who played, and for how long
 
 Login is mandatory: `index.html` creates or signs into a player id with a PIN,
