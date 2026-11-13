@@ -17,10 +17,11 @@ games/helmsdeep/spawn-select.js    applies ?spawn=<district> to the game menu
 games/helmsdeep/session-tracker.js login gate + play-time heartbeats
 games/helmsdeep/weapons.js         the gun roster, held artwork and gunfire synth
 sprites/guns/*.png                 32 guns sliced out of the weapon sheet
-sprites/ground/*.png               30 flat road and terrain tiles for the editor
+sprites/ground/*.png               12 flat road decals for the editor
 api/account.js                 POST signup/login, returns a signed token
 api/session.js                 POST session heartbeats (append-only blobs)
 api/stats.js                   GET aggregated player/play-time totals (admin key)
+api/build.js                   GET/POST a player's city edits (survives a redeploy)
 api/_lib.js                    Vercel Blob REST + HMAC token helpers
 stats/index.html               owner dashboard for the numbers above
 mumbai-map.json                baked OpenStreetMap city (3 MB, loaded from "/")
@@ -335,15 +336,21 @@ Open with the **BUILD** button or Shift+B.
 - **Faint orange marks your work.** Every block holding an edit gets a wash,
   and each edited or placed building its own box, so corrected neighbourhoods
   are obvious against whatever the generator guessed.
-- **Roads and terrain are dragged, not clicked.** A tile from the `roads` or
-  `terrain` tab lays a run: press on the ground, pull, and the strip follows
-  the cursor with the tile repeated along it, never stretched. The bearing
-  snaps to 15° so a road comes out straight instead of a degree off per drag;
-  Alt gives a free angle. A run is an ordinary item afterwards — click it,
-  drag the body to move it, the corner to widen it, the nub to turn it, Del
-  to lift it — and it is painted *under* the buildings, so a house standing
-  on a road still stands on it.
-- **You decide where cars park.** `Parking bay` then drag out a bay; it is
+- **Road draws the city's own road.** `Road` then drag: the run follows the
+  cursor, the bearing snapping to 15° so it comes out straight instead of a
+  degree off per drag (Alt frees it), and it is painted exactly the way `Ii`
+  paints every other street — pavement, casing, carriageway, dashed centre
+  line, in the palette the rest of the map is using. A run is an ordinary
+  item afterwards: click it, drag the body, widen it at the corner, turn it
+  at the nub, Del to lift it.
+- **Ground is painted, not tiled.** `grass`, `forest`, `sand`, `dirt`,
+  `gravel` and `water` drag out a rectangle filled in the exact colours `qi`
+  fills a park, a beach or the sea with, and grass and woodland get the same
+  scattered vegetation the generator puts on a real park.
+- **It all goes under the buildings.** Roads, ground, bays and road decals
+  are drawn in their own pass before the building layer, in that order, so a
+  house standing on a road still stands on it.
+- **You decide where cars park.** `Parking` then drag out a bay; it is
   divided into 9 m slots and cars park nose-in, one per slot. The engine used
   to scatter up to fourteen against whatever large footprint was on screen,
   which is how chawl forecourts and the middle of service lanes filled up
@@ -352,17 +359,22 @@ Open with the **BUILD** button or Shift+B.
   frontages so the kerb is not bare. `__hdParking` owns this; the engine's
   `hdParked` only runs when the editor is absent.
 
-### The ground tiles, and why the houses are not here
+### Why the tiles are decals and the houses are not here
 
-The road-issue and terrain sheets are drawn in 2:1 isometric, which is the
-one thing this game is not. Each tile is un-sheared off its own top face
-before it ships: the silhouette's widest row gives the two side corners of
-the top face, the apex sits a quarter of the width above it, and that rhombus
-is mapped to a square — so the block's side walls fall outside the crop and
-are thrown away. What lands in `sprites/ground/` is flat, top-down and has a
-real alpha channel. Twelve road tiles and eighteen terrain tiles; two of the
-road cells (the garbage pile and the dumpster) are overlapped by stray art in
-the source sheet and were dropped rather than shipped dirty.
+The road-issue sheet is drawn in 2:1 isometric, which is the one thing this
+game is not. Each tile is un-sheared off its own top face before it ships:
+the silhouette's widest row gives the two side corners of the top face, the
+apex sits a quarter of the width above it, and that rhombus is mapped to a
+square — so the block's side walls fall outside the crop and are thrown away.
+What lands in `sprites/ground/` is flat, top-down and has a real alpha
+channel.
+
+They are **decals**, dropped one at a time: a pothole, a grate, a manhole, a
+waterlogged patch. The first attempt repeated one along a dragged run, which
+at a road's width is a tile every 13 m — the sheet's own kerbs and crack
+lines repeating with it, a striped ribbon laid over the city rather than a
+street in it. The terrain sheet was the same banding in green and is gone;
+painted ground replaced it.
 
 The houses sheet gets no such treatment and is **not** in the game. Those are
 buildings seen from the corner with two lit facades and a roof; un-shearing
@@ -370,6 +382,30 @@ them recovers only the roof, and whatever the crop misses comes through as
 smeared wall. There is no automatic way to turn a drawn facade into a
 top-down plan. Hand-drawn roof plans like the ones already in
 `sprites/houses/` drop straight in.
+
+### Where your edits live
+
+They used to live only in `localStorage`, which is keyed by **origin** — and
+every Vercel deployment gets its own hostname. Open the game from a fresh
+deployment link and the city came up empty: an afternoon of placements looked
+deleted when it was really sitting on a hostname nobody was looking at.
+
+Edits now belong to the signed-in player id. `city-builder.js` keeps the
+local copy as a cache so the city draws instantly, and syncs it to
+`/api/build` — one blob per player, debounced 1.2 s after an edit and flushed
+with `sendBeacon` on the way out. On startup it pulls, and the server copy
+wins if it is ahead. `rev` only counts up and a write behind what the server
+holds is refused with a 409, so a tab left open overnight is told to pull
+rather than allowed to overwrite a later session. The panel says which state
+it is in — *saved to your account*, *saving…*, or *offline — kept on this
+browser*.
+
+Two smaller holes closed with it. A failed local write was swallowed: if the
+five-deep revision history filled the quota, `saveItems` threw, the catch
+ignored it, and the next reload read whatever had last written successfully.
+Writes now drop the history and retry, and say so in the panel if they still
+cannot land. And if the local store comes back empty while a snapshot still
+holds a whole state, the snapshot is taken rather than starting from nothing.
 
 ## Who played, and for how long
 

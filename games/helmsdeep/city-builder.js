@@ -18,6 +18,7 @@
   var K_ITEMS = 'helmsdeep.build.v1';
   var K_OVER = 'helmsdeep.overrides.v1';
   var K_HIST = 'helmsdeep.build.history.v1';
+  var K_REV = 'helmsdeep.build.rev';
   var K_WHO = 'helmsdeep.build.author';
   var HIST_MAX = 5;                      // admin can roll back this far
   var M = 6.6667;                        // world units per metre
@@ -32,13 +33,12 @@
     multi: [],         // marquee selection, same shape as `sel`
     marquee: null,     // {x0,y0,x1,y1} in world units while dragging
     drag: null,        // {mode:'move'|'resize'|'rotate'|'lay', ...}
-    cam: null          // free camera while editing; null hands it back
+    cam: null,         // free camera while editing; null hands it back
+    rev: 0             // counts up on every edit; the server keeps the highest
   };
 
-  // Palette tabs whose tiles lie flat on the ground and are dragged out as a
-  // run rather than clicked down one at a time.
-  var GROUND_DIR = { roads: 'road', terrain: 'terrain' };
-  var LAY_SNAP = Math.PI / 12;           // 15 degrees, so a run comes out straight
+  // 15 degrees, so a road run comes out straight instead of a degree off.
+  var LAY_SNAP = Math.PI / 12;
 
   var PAN_STEP = 320;                    // ~48 m per arrow tap
 
@@ -86,17 +86,148 @@
     return Math.round(d / 86400) + 'd ago';
   }
 
+  // ------------------------------------------------------- never lose work
+  //
+  // Two ways an afternoon of placements used to vanish, both fixed here.
+  //
+  // 1. localStorage is keyed by origin, and every Vercel deployment gets its
+  //    own hostname. Opening the game from a fresh deployment link showed an
+  //    empty city. Edits now belong to the signed-in player id on the server
+  //    (`/api/build`) and the local copy is only a cache.
+  // 2. A failed write was swallowed. If the five-deep history filled the
+  //    quota, `saveItems` threw, the catch ignored it, and the next reload
+  //    read whatever was last written successfully. Writes now retry after
+  //    dropping the history, and say so if they still cannot land.
+  function readKey(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; }
+  }
+
+  var lastSaveError = '';
+
+  function writeKey(key, value) {
+    var text = JSON.stringify(value);
+    try {
+      localStorage.setItem(key, text);
+      lastSaveError = '';
+      return true;
+    } catch (e) {
+      // Out of room: the revision history is the expendable part.
+      try { localStorage.removeItem(K_HIST); } catch (e2) { /* ignore */ }
+      try {
+        localStorage.setItem(key, text);
+        lastSaveError = '';
+        return true;
+      } catch (e3) {
+        lastSaveError = 'browser storage is full \u2014 kept on the server only';
+        return false;
+      }
+    }
+  }
+
   function load() {
-    try { state.items = JSON.parse(localStorage.getItem(K_ITEMS)) || []; } catch (e) { state.items = []; }
-    try { window.__hdOverrides = JSON.parse(localStorage.getItem(K_OVER)) || {}; }
-    catch (e) { window.__hdOverrides = {}; }
+    state.items = readKey(K_ITEMS, null) || [];
+    window.__hdOverrides = readKey(K_OVER, null) || {};
+    state.rev = readKey(K_REV, 0) || 0;
+    // A half-written local store is still recoverable: the newest snapshot
+    // holds a whole state, so take it rather than start from nothing.
+    if (!state.items.length && !Object.keys(window.__hdOverrides).length) {
+      var h = history();
+      if (h.length && (h[0].items || h[0].overrides)) {
+        state.items = h[0].items || [];
+        window.__hdOverrides = h[0].overrides || {};
+      }
+    }
   }
-  function saveItems() {
-    try { localStorage.setItem(K_ITEMS, JSON.stringify(state.items)); } catch (e) { /* quota */ }
+  function saveItems() { writeKey(K_ITEMS, state.items); push(); }
+  function saveOver() { writeKey(K_OVER, window.__hdOverrides); push(); }
+
+  // The server copy. `rev` only ever counts up, and the server refuses a
+  // write that is behind what it holds, so a tab left open overnight cannot
+  // overwrite a later session - it is told to pull instead.
+  var syncState = 'local', pushT = 0, pulling = false;
+
+  function token() {
+    var auth = readKey('helmsdeep.auth', null);
+    return auth && auth.token ? auth.token : null;
   }
-  function saveOver() {
-    try { localStorage.setItem(K_OVER, JSON.stringify(window.__hdOverrides)); } catch (e) { /* quota */ }
+
+  function setSync(s) { syncState = s; renderSync(); }
+
+  function push(now) {
+    var tk = token();
+    if (!tk) { setSync('local'); return; }
+    state.rev = (state.rev || 0) + 1;
+    writeKey(K_REV, state.rev);
+    clearTimeout(pushT);
+    var body = JSON.stringify({ token: tk, rev: state.rev,
+                                items: state.items, overrides: window.__hdOverrides });
+    if (now) {                                   // on the way out
+      try { navigator.sendBeacon('/api/build', new Blob([body], { type: 'application/json' })); }
+      catch (e) { /* nothing more we can do */ }
+      return;
+    }
+    setSync('saving');
+    // Debounced: a drag commits on release, but a rapid series of them is one
+    // write rather than twenty.
+    pushT = setTimeout(function () {
+      fetch('/api/build', { method: 'POST', headers: { 'content-type': 'application/json' },
+                            body: body, keepalive: true })
+        .then(function (r) {
+          if (r.status === 409) { pull(true); return; }
+          setSync(r.ok ? 'saved' : 'offline');
+        })
+        .catch(function () { setSync('offline'); });
+    }, 1200);
   }
+
+  // Takes the server copy when it is ahead. Called once at startup and again
+  // if a write comes back stale.
+  function pull(force) {
+    var tk = token();
+    if (!tk || pulling) return;
+    pulling = true;
+    fetch('/api/build?token=' + encodeURIComponent(tk), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        pulling = false;
+        if (!d) { setSync('offline'); return; }
+        var theirs = Number(d.rev) || 0;
+        if (!force && theirs <= (state.rev || 0)) {
+          // Local is the same or newer. If the server has never seen it, send it.
+          if (theirs < (state.rev || 0)) push();
+          else setSync('saved');
+          return;
+        }
+        state.items = Array.isArray(d.items) ? d.items : [];
+        window.__hdOverrides = d.overrides && typeof d.overrides === 'object' ? d.overrides : {};
+        state.rev = theirs;
+        writeKey(K_ITEMS, state.items);
+        writeKey(K_OVER, window.__hdOverrides);
+        writeKey(K_REV, state.rev);
+        setSync('saved');
+        if (el.panel && state.on) { renderHistory(); }
+      })
+      .catch(function () { pulling = false; setSync('offline'); });
+  }
+
+  function renderSync() {
+    if (!el.sync) return;
+    var n = state.items.length + Object.keys(window.__hdOverrides || {}).length;
+    var text = { saving: 'saving\u2026', saved: 'saved to your account',
+                 offline: 'offline \u2014 kept on this browser',
+                 local: 'not signed in \u2014 kept on this browser' }[syncState];
+    el.sync.textContent = n + ' edit' + (n === 1 ? '' : 's') + ' \u00b7 ' + text +
+                          (lastSaveError ? ' \u00b7 ' + lastSaveError : '');
+    el.sync.style.color = syncState === 'saved' ? '#7fd49a'
+                        : syncState === 'saving' ? '#8fa0b8' : '#e0a33a';
+  }
+
+  window.addEventListener('pagehide', function () {
+    if (pushT) { clearTimeout(pushT); push(true); }
+  });
 
   // The renderer publishes its world transform every frame. Inverting it is
   // the only exact way to turn a click into world units: zoom, DPR, camera
@@ -231,16 +362,30 @@
 
   // ---------------------------------------------------------- ground pass
   //
-  // Roads, terrain and parking bays are items like any other - same box, so
-  // selecting, moving, rotating, resizing, deleting and the undo history all
-  // work on them unchanged - but they are painted in a different pass. The
-  // building layer runs after this one, so a house laid on a road stays on
-  // top of it rather than under it, which is the way round a city works.
+  // Roads, painted ground, parking bays and road decals are items like any
+  // other - same box, so selecting, moving, rotating, resizing, deleting and
+  // the undo history all work on them unchanged - but they are painted in a
+  // different pass. The building layer runs after this one, so a house
+  // standing on a road stays on top of it, which is the way round a city
+  // works.
   //
   // A road is one straight run: `w` is its length, `h` its width, `rot` its
-  // bearing. The tile is square and repeated along the length, so the run is
-  // as long as you drag and the art never stretches.
-  function isGround(it) { return it.kind === 'road' || it.kind === 'terrain' || it.kind === 'park'; }
+  // bearing.
+  function isGround(it) {
+    return it.kind === 'road' || it.kind === 'ground' ||
+           it.kind === 'park' || it.kind === 'decal' || it.kind === 'terrain';
+  }
+
+  var TOOL_HINT = {
+    road: 'drag a run \u2014 15\u00b0 steps, Alt for free',
+    park: 'drag out a bay \u2014 one slot per 9 m',
+    'ground:grass': 'drag a rectangle of grass',
+    'ground:forest': 'drag a rectangle of woodland',
+    'ground:sand': 'drag a rectangle of sand',
+    'ground:dirt': 'drag a rectangle of bare earth',
+    'ground:gravel': 'drag a rectangle of gravel',
+    'ground:water': 'drag a rectangle of water'
+  };
 
   // Which palette tab a slug came from, and how brightly that kind of
   // building burns after dark. A warehouse is not a block of flats.
@@ -263,27 +408,104 @@
   var SLOT = 62;
   function bays(it) { return Math.max(1, Math.round(it.w / SLOT)); }
 
-  function drawStrip(ctx, it, night) {
-    var img = window.__hdGetBuildingSprite && window.__hdGetBuildingSprite(it.slug);
-    if (!img) return;
-    var src = night && window.__hdNightSprite ? window.__hdNightSprite(img) : img;
-    var side = it.h, n = Math.max(1, Math.round(it.w / side));
-    var step = it.w / n;
+  // A laid road is the engine's road, not a photograph of one.
+  //
+  // The first attempt repeated a square tile from the asset sheet along the
+  // run. At a road's width that is one tile every 13 m, and the sheet's own
+  // kerbs and crack lines repeat with it: the result read as a striped ribbon
+  // laid over the city rather than a street in it, and a terrain run was the
+  // same banding in green. So a run is drawn the way `Ii` draws every other
+  // road - kerb, casing, carriageway, centre line, in the palette the rest of
+  // the map is using - and a ground patch is a single tile you place and
+  // size, never a repeat.
+  var DAY = { road: '#454950', kerb: '#7e7b73', casing: '#23262a',
+              mark: 'rgba(238,238,230,0.8)' };
+  var NIGHT = { road: '#2a2d32', kerb: '#43423d', casing: '#111317',
+                mark: 'rgba(226,226,214,0.55)' };
+
+  function drawRoad(ctx, it, night) {
+    var c = night ? NIGHT : DAY;
+    var half = it.w / 2, w = it.h;
     ctx.save();
     ctx.translate(it.x, it.y);
     ctx.rotate(it.rot || 0);
-    // The sheet draws its road running up the tile, so each one is turned a
-    // quarter turn to lie along the run. The tile is square, so a terrain
-    // patch does not care either way.
-    for (var i = 0; i < n; i++) {
-      ctx.save();
-      ctx.translate(-it.w / 2 + step * (i + 0.5), 0);
-      ctx.rotate(Math.PI / 2);
-      // Half a pixel of overlap, or the seams between tiles show as hairlines.
-      ctx.drawImage(src, -side / 2, -step / 2 - 0.5, side, step + 1);
-      ctx.restore();
+    ctx.lineCap = 'round';                 // so two runs meeting do not notch
+    ctx.beginPath();
+    ctx.moveTo(-half, 0);
+    ctx.lineTo(half, 0);
+    // Pavement, then the dark edge under it, then the carriageway.
+    ctx.strokeStyle = c.kerb; ctx.lineWidth = w + 20; ctx.stroke();
+    ctx.strokeStyle = c.casing; ctx.lineWidth = w + 3; ctx.stroke();
+    ctx.strokeStyle = c.road; ctx.lineWidth = w; ctx.stroke();
+    // Centre line, at the engine's 3 m dash on a 6 m gap.
+    if (w >= 46) {
+      ctx.strokeStyle = c.mark;
+      ctx.lineWidth = Math.max(1, w * 0.022);
+      ctx.setLineDash([20, 40]);
+      ctx.beginPath();
+      ctx.moveTo(-half + 10, 0);
+      ctx.lineTo(half - 10, 0);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
     ctx.restore();
+  }
+
+  function drawPatch(ctx, it, night) {
+    var img = window.__hdGetBuildingSprite && window.__hdGetBuildingSprite(it.slug);
+    if (!img) return;
+    var src = night && window.__hdNightSprite ? window.__hdNightSprite(img) : img;
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    if (it.rot) ctx.rotate(it.rot);
+    ctx.drawImage(src, -it.w / 2, -it.h / 2, it.w, it.h);
+    ctx.restore();
+  }
+
+  // Painted ground, in the exact colours `qi` fills a park, a beach or the
+  // sea with, so a patch you lay is indistinguishable from one OSM supplied.
+  // Grass and forest get the same scattered vegetation the generator puts on
+  // a real park, which is what stops a patch reading as a flat green sticker.
+  var GROUND = {
+    grass:  { day: '#55914a', night: '#243f26', edge: 'rgba(20,36,18,0.35)', plants: 1 },
+    forest: { day: '#44793c', night: '#1d3522', edge: 'rgba(16,30,14,0.4)', plants: 1 },
+    sand:   { day: '#ebd79b', night: '#7a6e4d', edge: 'rgba(196,172,118,0.85)' },
+    dirt:   { day: '#6d6150', night: '#2f2a22', edge: 'rgba(40,34,26,0.45)' },
+    gravel: { day: '#8a8274', night: '#3b382f', edge: 'rgba(48,44,38,0.45)' },
+    water:  { day: '#17658a', night: '#0d3448', edge: 'rgba(224,210,164,0.55)' }
+  };
+  var GROUND_ORDER = ['grass', 'forest', 'sand', 'dirt', 'gravel', 'water'];
+
+  // `__hdPlants` caches its scatter on the object it is given, and items are
+  // serialised to storage, so the scratch copy lives beside the item instead
+  // of on it.
+  var plantCache = new WeakMap();
+  function plantArea(it) {
+    var a = plantCache.get(it);
+    var hw = it.w / 2, hh = it.h / 2;
+    if (!a || a.w !== it.w || a.h !== it.h || a.x !== it.x || a.y !== it.y) {
+      a = { w: it.w, h: it.h, x: it.x, y: it.y,
+            pts: [it.x - hw, it.y - hh, it.x + hw, it.y - hh,
+                  it.x + hw, it.y + hh, it.x - hw, it.y + hh] };
+      plantCache.set(it, a);
+    }
+    return a;
+  }
+
+  function drawGround(ctx, it, night, inv) {
+    var g = GROUND[it.type] || GROUND.grass;
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    if (it.rot) ctx.rotate(it.rot);
+    ctx.fillStyle = night ? g.night : g.day;
+    ctx.fillRect(-it.w / 2, -it.h / 2, it.w, it.h);
+    ctx.strokeStyle = g.edge;
+    ctx.lineWidth = Math.max(1, inv);
+    ctx.strokeRect(-it.w / 2, -it.h / 2, it.w, it.h);
+    ctx.restore();
+    if (g.plants && window.__hdPlants && !it.rot) {
+      window.__hdPlants(ctx, plantArea(it), 1 / (inv || 1));
+    }
   }
 
   function drawBay(ctx, it, night) {
@@ -306,15 +528,28 @@
     ctx.restore();
   }
 
+  // Painted ground first, then roads over it, then the decals and bays on
+  // the road: the same order the map itself is built in.
+  var LAYER = { ground: 0, road: 1, park: 2, decal: 3 };
+
   window.__hdGround = function (ctx, camX, camY, viewW, viewH, night) {
+    var inv = viewW > 0 ? viewW / ctx.canvas.width : 1;
+    var draw = [];
     for (var i = 0; i < state.items.length; i++) {
       var it = state.items[i];
       if (!isGround(it)) continue;
       var r = (it.w > it.h ? it.w : it.h) * 0.6 + 40;
       if (Math.abs(it.x - camX) > viewW / 2 + r) continue;
       if (Math.abs(it.y - camY) > viewH / 2 + r) continue;
-      if (it.kind === 'park') drawBay(ctx, it, night);
-      else drawStrip(ctx, it, night);
+      draw.push(it);
+    }
+    draw.sort(function (a, b) { return (LAYER[a.kind] || 0) - (LAYER[b.kind] || 0); });
+    for (i = 0; i < draw.length; i++) {
+      var d = draw[i];
+      if (d.kind === 'ground') drawGround(ctx, d, night, inv);
+      else if (d.kind === 'road') drawRoad(ctx, d, night);
+      else if (d.kind === 'park') drawBay(ctx, d, night);
+      else drawPatch(ctx, d, night);
     }
   };
 
@@ -448,26 +683,41 @@
       '<b>Click any building</b> \u2014 generated ones too \u2014 to select.<br>' +
       'Drag body to move \u00b7 drag <span style="color:#4adeff">\u25a0</span> corner to resize \u00b7 ' +
       'drag <span style="color:#fde047">\u25cf</span> nub to rotate.<br>' +
-      '<b>roads / terrain</b> tiles are dragged out as a run \u2014 the bearing ' +
-      'snaps to 15\u00b0 so it comes out straight, Alt for a free angle.<br>' +
-      '<b>Parking bay</b> then drag: cars park in those bays and nowhere else.<br>' +
-      'Pick a tile then click a building to re-skin it, or click empty ground to place.<br>' +
+      '<b>Road</b> then drag a run \u2014 the bearing snaps to 15\u00b0 so it comes out ' +
+      'straight, Alt for a free angle. It is drawn as the city\u2019s own road.<br>' +
+      '<b>Grass / sand / dirt / water</b> then drag a rectangle to paint ground.<br>' +
+      '<b>Parking</b> then drag: cars park in those bays and nowhere else.<br>' +
+      'The <b>roads</b> tab holds potholes, grates and the rest \u2014 click to drop one.<br>' +
       '<b>D</b> or <b>Alt+drag</b> duplicate (keeps angle + size)<br>' +
       '<b>Drag empty ground</b> to marquee-select a group, then D / drag / Del<br>' +
       '<b>Del</b> delete \u00b7 <b>Esc</b> deselect \u00b7 <b>G</b> snap \u00b7 <b>Shift+B</b> close';
     w.appendChild(help);
 
-    el.park = mkBtn('\u25a4 Parking bay', function () {
-      state.tool = state.tool === 'park' ? null : 'park';
-      if (state.tool) { state.brush = null; renderGrid(); }
-      paintTool();
-      status(state.tool ? 'drag out a bay on the ground' : 'ready');
-    });
-    el.park.style.flex = '0 0 auto';
     var toolRow = document.createElement('div');
-    toolRow.style.cssText = 'display:flex;gap:6px;margin-bottom:8px';
-    toolRow.appendChild(el.park);
+    toolRow.style.cssText = 'display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap';
+    el.tools = {};
+    function armTool(name, label) {
+      var b = mkBtn(label, function () {
+        state.tool = state.tool === name ? null : name;
+        if (state.tool) { state.brush = null; renderGrid(); }
+        paintTool();
+        status(state.tool ? TOOL_HINT[state.tool] || 'drag it out' : 'ready');
+      });
+      b.style.flex = '0 0 auto';
+      b.style.minWidth = '0';
+      b.style.padding = '5px 9px';
+      el.tools[name] = b;
+      toolRow.appendChild(b);
+    }
+    armTool('road', '\u2550 Road');
+    GROUND_ORDER.forEach(function (g) { armTool('ground:' + g, g); });
+    armTool('park', '\u25a4 Parking');
     w.appendChild(toolRow);
+
+    el.sync = document.createElement('div');
+    el.sync.style.cssText = 'font-size:11px;margin-bottom:6px;min-height:14px';
+    w.appendChild(el.sync);
+    renderSync();
 
     el.status = document.createElement('div');
     el.status.style.cssText = 'font-size:11px;color:#4adeff;margin-bottom:8px;min-height:15px';
@@ -600,8 +850,7 @@
         renderGrid();
         // A brush with something selected re-skins it immediately; that is the
         // common case when fixing a block that drew as the wrong type.
-        if (state.brush && state.sel && !GROUND_DIR[state.brush.dir]) applyBrush();
-        else if (state.brush && GROUND_DIR[state.brush.dir]) status('drag a run of ' + slug);
+        if (state.brush && state.sel) applyBrush();
         else status(state.brush ? 'brush: ' + slug : 'brush cleared');
       };
       el.grid.appendChild(cell);
@@ -622,11 +871,13 @@
   }
 
   function paintTool() {
-    if (!el.park) return;
-    var on = state.tool === 'park';
-    el.park.style.background = on ? '#0e3a4a' : '#162030';
-    el.park.style.borderColor = on ? '#4adeff' : '#2b3a4d';
-    el.park.style.color = on ? '#9fe8ff' : '#c9d4e2';
+    if (!el.tools) return;
+    Object.keys(el.tools).forEach(function (name) {
+      var b = el.tools[name], on = state.tool === name;
+      b.style.background = on ? '#0e3a4a' : '#162030';
+      b.style.borderColor = on ? '#4adeff' : '#2b3a4d';
+      b.style.color = on ? '#9fe8ff' : '#c9d4e2';
+    });
   }
 
   // ------------------------------------------------------------- parking
@@ -794,20 +1045,24 @@
     // Laying ground comes before picking something up: a road run starts on
     // open tarmac, and the buildings already standing there must not swallow
     // the drag.
-    if (state.tool === 'park') {
-      state.items.push({ kind: 'park', x: w.x, y: w.y, w: SLOT, h: 56, rot: 0 });
-      state.sel = { kind: 'item', i: state.items.length - 1 };
-      state.drag = { mode: 'lay', x0: w.x, y0: w.y, i: state.sel.i, free: !!ev.altKey };
-      status('drag out the bay \u2014 one slot per 9 m');
-      return;
-    }
-    if (state.brush && GROUND_DIR[state.brush.dir]) {
-      state.items.push({ kind: GROUND_DIR[state.brush.dir], slug: state.brush.slug,
-                         x: w.x, y: w.y, w: 1, h: state.brush.dir === 'roads' ? 90 : 160, rot: 0 });
-      state.sel = { kind: 'item', i: state.items.length - 1 };
-      state.drag = { mode: 'lay', x0: w.x, y0: w.y, i: state.sel.i, free: !!ev.altKey };
-      status('drag the run out \u2014 Alt for a free angle');
-      return;
+    if (state.tool) {
+      var made = null;
+      if (state.tool === 'park') {
+        made = { kind: 'park', x: w.x, y: w.y, w: SLOT, h: 56, rot: 0 };
+      } else if (state.tool === 'road') {
+        made = { kind: 'road', x: w.x, y: w.y, w: 1, h: 90, rot: 0 };
+      } else if (state.tool.indexOf('ground:') === 0) {
+        made = { kind: 'ground', type: state.tool.slice(7),
+                 x: w.x, y: w.y, w: 1, h: 1, rot: 0 };
+      }
+      if (made) {
+        state.items.push(made);
+        state.sel = { kind: 'item', i: state.items.length - 1 };
+        state.drag = { mode: made.kind === 'ground' ? 'rect' : 'lay',
+                       x0: w.x, y0: w.y, i: state.sel.i, free: !!ev.altKey };
+        status(TOOL_HINT[state.tool] || 'drag it out');
+        return;
+      }
     }
 
     var hitB = pick(w.x, w.y);
@@ -857,11 +1112,15 @@
     var d = state.brush.dir;
     var metres = d === 'vehicles' ? 7 : d === 'stalls' ? 6 : d === 'slums' ? 12 :
                  d === 'houses' ? 18 : d === 'chains' ? 28 : d === 'flats' ? 55 :
-                 d === 'parks' ? 160 : 70;
+                 d === 'parks' ? 160 : d === 'roads' ? 13 : 70;
     var base = metres * M;
     var x = w.x, y = w.y;
     if (state.snap) { x = Math.round(x / 40) * 40; y = Math.round(y / 40) * 40; }
-    state.items.push({ slug: state.brush.slug, x: x, y: y, w: base, h: base * ar, rot: 0 });
+    // A pothole belongs on the road surface, not on top of the buildings,
+    // so it goes into the ground pass with the rest of the tarmac.
+    state.items.push({ kind: d === 'roads' ? 'decal' : undefined,
+                       slug: state.brush.slug, x: x, y: y,
+                       w: base, h: base * ar, rot: 0 });
     state.sel = { kind: 'item', i: state.items.length - 1 };
     commit('placed ' + state.brush.slug);
     status('placed ' + state.brush.slug + ' at ' + metres + ' m');
@@ -904,7 +1163,20 @@
       it.y = d.y0 + Math.sin(ang) * len / 2;
       status(it.kind === 'park'
         ? bays(it) + ' bay' + (bays(it) === 1 ? '' : 's')
-        : Math.round(len / M) + ' m of ' + (it.slug || 'ground'));
+        : Math.round(len / M) + ' m of road');
+      return;
+    }
+    // Painted ground is a rectangle between where the drag started and where
+    // the cursor is, not a run: a strip of grass is a strip, a field is a
+    // field, and neither should be forced through a fixed width.
+    if (d.mode === 'rect') {
+      var g = state.items[d.i];
+      if (!g) return;
+      g.w = Math.max(16, Math.abs(w.x - d.x0));
+      g.h = Math.max(16, Math.abs(w.y - d.y0));
+      g.x = (d.x0 + w.x) / 2;
+      g.y = (d.y0 + w.y) / 2;
+      status(Math.round(g.w / M) + ' x ' + Math.round(g.h / M) + ' m of ' + g.type);
       return;
     }
     if (d.mode === 'group') {
@@ -983,13 +1255,15 @@
     }
     if (!state.drag) return;
     if (state.drag.mode === 'pan') { state.drag = null; status('ready'); return; }
-    if (state.drag.mode === 'lay') {
+    if (state.drag.mode === 'lay' || state.drag.mode === 'rect') {
       var laid = state.items[state.drag.i];
       state.drag = null;
-      commit('laid ' + (laid && laid.kind === 'park' ? 'parking' : 'ground'));
+      var what = !laid ? 'ground'
+        : laid.kind === 'park' ? 'parking' : laid.kind === 'road' ? 'road' : laid.type;
+      commit('laid ' + what);
       status(laid && laid.kind === 'park'
         ? bays(laid) + ' bay' + (bays(laid) === 1 ? '' : 's') + ' \u2014 cars park here now'
-        : 'laid \u2014 drag the body to move it, the corner to widen it');
+        : 'laid ' + what + ' \u2014 drag the body to move it, the corner to resize');
       return;
     }
     if (state.drag.mode === 'resize' && state.sel && state.sel.kind === 'gen') {
@@ -1213,6 +1487,10 @@
   window.__hdBuildState = state;
 
   load();
+  // The local copy draws immediately; the account copy lands a moment later
+  // and wins if it is ahead, which is what makes a new deployment hostname,
+  // a different browser or a cleared cache a non-event.
+  pull(false);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildPanel);
   else buildPanel();
   // Capture phase: the game listens on window, so editor input has to be taken

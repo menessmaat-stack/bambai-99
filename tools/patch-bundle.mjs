@@ -1414,15 +1414,19 @@ const EDITS = [
     'le("ASSASSINATION CONTRACT: Eliminate "+c.n+" convoy! Bounty: ₹"+c.bounty.toLocaleString("en-IN"));};' +
     'return S9.__helmsdeep={'
   ],
-  // ===== 23. Sniper Telescopic Crosshair Reticle & Aiming Line =====
+  // ===== 23. Sniper telescopic crosshair reticle and aiming line =========
+  // `k.aimX`/`k.aimY` are the cursor in *world* coordinates, not a direction
+  // from the player. Normalising them put the reticle 340 units along the
+  // line from the world origin, which is a fixed bearing down and left of
+  // wherever you stood, pointing nowhere near what the rifle was about to
+  // hit. The scope now sits on the cursor, which is where the round goes.
   [
     'sniper telescopic crosshair reticle',
     'else if(k.onFoot&&Q.current==="play")if(s.ride>=0)f.fillStyle="rgba(255,235,170,0.95)"',
     'else if(k.onFoot&&Q.current==="play"){' +
-    'if(k.weapon==="sniper"){' +
-    'let aimD=Math.hypot(k.aimX,k.aimY)||1,nx=k.aimX/aimD,ny=k.aimY/aimD;' +
-    'let tx=k.x+nx*340,ty=k.y+ny*340;' +
-    'f.strokeStyle="rgba(239,68,68,0.5)",f.lineWidth=1.2,f.beginPath(),f.moveTo(k.x,k.y),f.lineTo(tx,ty),f.stroke();' +
+    'if(k.weapon==="sniper"||k.weapon==="dmr"){' +
+    'let tx=k.aimX,ty=k.aimY;' +
+    'f.strokeStyle="rgba(239,68,68,0.35)",f.lineWidth=1,f.beginPath(),f.moveTo(k.x,k.y),f.lineTo(tx,ty),f.stroke();' +
     'f.strokeStyle="#ef4444",f.lineWidth=2,f.beginPath(),f.arc(tx,ty,24,0,Math.PI*2),f.stroke();' +
     'f.strokeStyle="rgba(239,68,68,0.7)",f.lineWidth=1,f.beginPath(),f.arc(tx,ty,10,0,Math.PI*2),f.stroke();' +
     'f.beginPath(),f.moveTo(tx-30,ty),f.lineTo(tx-10,ty),f.moveTo(tx+10,ty),f.lineTo(tx+30,ty);' +

@@ -225,22 +225,22 @@
       'tanker-truck', 'army-truck', 'mobile-crane', 'coach-bus', 'city-bus', 'car-carrier',
       'fire-engine', 'road-roller', 'ramp-truck', 'tractor-timber', 'tractor-cargo',
       'utility-tanker', 'gas-tanker', 'ambulance'],
-    // Ground tiles. The source sheets are drawn in 2:1 isometric, which is
-    // the one thing this game is not, so each tile is un-sheared off its own
-    // top face before it ships: the rhombus between the silhouette's widest
-    // row and the apex above it maps to a square, and the block's side walls
-    // fall outside and are thrown away. These lie flat under the buildings
-    // and are laid by the editor, never by the generator.
-    roads: ['road-paved', 'road-cracked', 'road-pothole', 'road-patch', 'road-manhole',
-      'road-sewer-grate', 'road-gravel-verge', 'road-waterlogged', 'road-ditch',
-      'road-drain-pipe', 'road-construction', 'road-excavation'],
-    terrain: ['grassland', 'wildflowers', 'scrubland', 'forest-edge', 'pasture', 'orchard',
-      'vineyard', 'farmstead', 'pond-reeds', 'oasis', 'desert-sand', 'cactus-patch',
-      'rock-formation', 'badlands', 'dirt-path', 'ground-dirt', 'ground-earth',
-      'ground-weeds']
+    // Road defects, dropped on a carriageway one at a time. The source sheet
+    // is drawn in 2:1 isometric, which is the one thing this game is not, so
+    // each is un-sheared off its own top face before it ships: the rhombus
+    // between the silhouette's widest row and the apex above it maps to a
+    // square, and the block's side walls fall outside and are thrown away.
+    //
+    // These are decals, not a surface. Tiling one along a run gave a striped
+    // ribbon laid over the city - the sheet's own kerbs and cracks repeating
+    // every 13 m - so laying a road draws the engine's road instead, and
+    // ground is painted in the map's own colours. The editor owns both.
+    roads: ['road-pothole', 'road-cracked', 'road-patch', 'road-manhole',
+      'road-sewer-grate', 'road-waterlogged', 'road-ditch', 'road-drain-pipe',
+      'road-construction', 'road-excavation', 'road-gravel-verge', 'road-paved']
   };
   var SLUG_DIR = {};
-  var DIR_PATH = { vehicles: 'cars', roads: 'ground', terrain: 'ground' };
+  var DIR_PATH = { vehicles: 'cars', roads: 'ground' };
   Object.keys(CATALOG).forEach(function (d) {
     var dir = DIR_PATH[d] || d;
     CATALOG[d].forEach(function (sl) { SLUG_DIR[sl] = dir; probe('/sprites/' + dir + '/', sl); });
