@@ -1490,6 +1490,53 @@ const EDITS = [
     'f.font="bold 11px system-ui",f.fillStyle="#ffffff",f.textAlign="right",f.fillText(R.toFixed(1)+" km",324,capY+18),f.textAlign="left"})()'
   ],
 
+  // ===== 29. Car budget: parked stock was eating the ambient traffic =====
+  // `Ru` is the hard cap on `s.cars` and `Y5` the cap on ambient `traffic`
+  // cars. `hdParked()` runs first and parks up to 14 vehicles at societies
+  // and police compounds; with gang cars and a patrol on top, the 28-slot
+  // budget was full before `Bi()` reached its spawn loop, so a six-lane
+  // junction carried three moving cars. The budget now holds the parked
+  // stock, the gangs and a full ambient stream at once.
+  ['car budget', 'let Ru=28,Y5=6,j5=2,', 'let Ru=62,Y5=24,j5=3,'],
+
+  // ===== 30. Nothing runs on the surface over a tunnel ====================
+  // OSM tags Metro Line 3 as 64 km of `layer:-2` tunnel under Dadar, Worli
+  // and the airport. The renderer treats every `metro` way as elevated and
+  // the train spawner takes any rail/metro polyline, so eight-car rakes were
+  // sliding across Shivaji Park and straight over the carriageway. Rail that
+  // is underground and not on a bridge is neither drawn nor given trains;
+  // the transit map (T) still shows the whole line.
+  [
+    'no track drawn over a tunnel',
+    'if(I&&I.pts&&I.pts.length>=4)Kt.push(I)',
+    'if(I&&I.pts&&I.pts.length>=4&&!(I.layer<0&&!I.bridge))Kt.push(I)'
+  ],
+  [
+    'no trains in a tunnel',
+    'if(K.kind!=="rail"&&K.kind!=="metro"||K.pts.length<6)continue;',
+    'if(K.kind!=="rail"&&K.kind!=="metro"||K.pts.length<6||K.layer<0&&!K.bridge)continue;'
+  ],
+  // Edit 24 snaps a metro station's barrel canopy onto the nearest track
+  // within 700 m. For Line 3 that track is the tunnel, so Dadar and the rest
+  // of the underground stations were putting a lit blue platform across
+  // Gokhale Road. A station whose nearest rail is underground gets nothing
+  // on the surface; the answer is cached on the station record, so the scan
+  // runs once per station rather than once per frame.
+  [
+    'no canopy over an underground station',
+    'Y6(r,I.x,I.y,I.name,I.kind==="metro",i,E)}',
+    'if(I.hdTun===void 0){let bd=T(700)*T(700),bl=null;' +
+    'for(let R of e.rail){if(!R.pts||R.pts.length<4)continue;' +
+    'for(let pi=0;pi+3<R.pts.length;pi+=2){' +
+    'let mx=(R.pts[pi]+R.pts[pi+2])/2,my=(R.pts[pi+1]+R.pts[pi+3])/2,dx=mx-I.x,dy=my-I.y,d2=dx*dx+dy*dy;' +
+    'if(d2<bd)bd=d2,bl=R}}' +
+    'I.hdTun=bl&&bl.layer<0&&!bl.bridge?1:0}' +
+    'if(I.hdTun)continue;' +
+    // Flipped comparison so the replacement never contains the search
+    // string: a second run would otherwise wrap the wrapper.
+    'Y6(r,I.x,I.y,I.name,"metro"===I.kind,i,E)}'
+  ],
+
   // ===== 28. Free camera while the city editor is open ===================
   // The camera is welded to the player, so editing meant driving to the
   // block you wanted to fix. With the editor open the builder sets

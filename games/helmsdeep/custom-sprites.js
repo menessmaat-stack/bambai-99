@@ -335,12 +335,14 @@
     ctx.restore();
   }
 
-  function drawSprite(ctx, img, cx, cy, w, h, night, seed, density) {
+  // `cover` is only for art drawn inside a clip path: the polygon decides the
+  // shape, so the sheet has to reach its corners and whatever spills is cut.
+  function drawSprite(ctx, img, cx, cy, w, h, night, seed, density, cover) {
     var kx = w / img.naturalWidth, ky = h / img.naturalHeight;
     // Contain, not cover. Cover-fitting a 4:3 sheet onto a narrow plot drew
     // the art up to a third wider than the plot it belonged to, which is how
     // buildings ended up lying across the carriageway.
-    var k = kx < ky ? kx : ky;
+    var k = cover ? (kx > ky ? kx : ky) : (kx < ky ? kx : ky);
     var dw = img.naturalWidth * k, dh = img.naturalHeight * k;
     ctx.drawImage(night ? nightVariant(img) : img, cx - dw / 2, cy - dh / 2, dw, dh);
     if (night && density > 0) nightLights(ctx, cx, cy, dw, dh, seed, density);
@@ -493,12 +495,14 @@
     }
   }
 
-  // Nearest carriageway: {d, hw, ang} in world units, or null.
+  // Nearest carriageway: {d, hw, ang, px, py} in world units, or null.
+  // `px`/`py` is the point on the centreline, which is the only direction
+  // something sitting in the road can be pushed without guessing.
   function nearestRoad(x, y) {
     if (!roadGrid) buildRoads();
     if (!roadGrid || !roadGrid.size) return null;
     var cx = Math.floor(x / ROAD_CELL), cy = Math.floor(y / ROAD_CELL);
-    var best = null, bestD = ROAD_REACH * ROAD_REACH;
+    var best = null, bestD = ROAD_REACH * ROAD_REACH, bx = 0, by = 0;
     for (var ox = -1; ox <= 1; ox++) {
       for (var oy = -1; oy <= 1; oy++) {
         var list = roadGrid.get(roadKey(cx + ox, cy + oy));
@@ -509,14 +513,15 @@
           var len2 = dx * dx + dy * dy;
           var t = len2 ? ((x - s[0]) * dx + (y - s[1]) * dy) / len2 : 0;
           if (t < 0) t = 0; else if (t > 1) t = 1;
-          var px = s[0] + dx * t - x, py = s[1] + dy * t - y;
+          var qx = s[0] + dx * t, qy = s[1] + dy * t;
+          var px = qx - x, py = qy - y;
           var d2 = px * px + py * py;
-          if (d2 < bestD) { bestD = d2; best = s; }
+          if (d2 < bestD) { bestD = d2; best = s; bx = qx; by = qy; }
         }
       }
     }
     if (!best) return null;
-    return { d: Math.sqrt(bestD), hw: best[4],
+    return { d: Math.sqrt(bestD), hw: best[4], px: bx, py: by,
              ang: Math.atan2(best[3] - best[1], best[2] - best[0]) };
   }
 
@@ -614,6 +619,10 @@
     }
     var w = maxx - minx, h = maxy - miny;
     if (!(w > 0) || !(h > 0)) return false;
+    // The key is the AABB centroid, unchanged, because every saved override
+    // and every exported patch is already filed under it.
+    var ox = (minx + maxx) / 2, oy = (miny + maxy) / 2;
+    var key = (ox | 0) + ':' + (oy | 0);
     var longSide = (w > h ? w : h) / M;                // metres
     var hgt = (q.hgt || 0) / M;                        // metres
     if (longSide < 4 || longSide > 110) return false;  // leave towers and sheds alone
@@ -638,10 +647,6 @@
     else if (zone === 'house') pool = big && longSide > 40 ? CATALOG.flats : CATALOG.houses;
     else pool = big ? CATALOG.flats : CATALOG.houses;
 
-    // The key is the AABB centroid, unchanged, because every saved override
-    // and every exported patch is already filed under it.
-    var ox = (minx + maxx) / 2, oy = (miny + maxy) / 2;
-    var key = (ox | 0) + ':' + (oy | 0);
 
     var geo = geoFor(q, key);
     var ov = window.__hdOverrides && window.__hdOverrides[key];
@@ -792,6 +797,104 @@
     ["parks","society-park","SOCIETY PARK",-35068,-22115,933,867]
   ];
 
+  // ---------------------------------------------------------------------
+  // Landmarks, measured against the map rather than trusted.
+  //
+  // Every entry above was read off a map by hand, so the art landed wherever
+  // the reading put it: 39 of the 81 reached across a carriageway and six
+  // had their centre inside one. Shivaji Park was the worst of them, a
+  // 380 m sheet of grass 150 m south-east of the maidan OSM records, painted
+  // over Keluskar Road and the terrace behind it.
+  //
+  // A park has real geometry to bind to, so it gets it: the art is fitted to
+  // the OSM park polygon and clipped to that outline, and the ground then
+  // ends exactly where the map says it ends. Buildings have none - outside
+  // the 23,090 named records the bake carries, South Mumbai footprints are
+  // a 12 m grid, so there is nothing to snap the Taj to. They keep their
+  // authored spot and are only walked out of the carriageway and capped to
+  // the room left beside it.
+  // ---------------------------------------------------------------------
+  var PARK_KINDS = { park: 1, forest: 1, sand: 1, beach: 1 };
+  var lmGeo = new Map();
+
+  function polyBox(pts) {
+    var minx = pts[0], maxx = pts[0], miny = pts[1], maxy = pts[1];
+    for (var i = 2; i < pts.length; i += 2) {
+      if (pts[i] < minx) minx = pts[i]; else if (pts[i] > maxx) maxx = pts[i];
+      if (pts[i + 1] < miny) miny = pts[i + 1]; else if (pts[i + 1] > maxy) maxy = pts[i + 1];
+    }
+    return { x: (minx + maxx) / 2, y: (miny + maxy) / 2, w: maxx - minx, h: maxy - miny };
+  }
+
+  // The baked greens are patchy - there is no polygon at all under the Oval,
+  // Azad Maidan or the Hanging Gardens - so a park only binds when the
+  // candidate is unmistakably the same ground: the same area to within a
+  // factor of about two, and no further away than the art is wide. A loose
+  // match is worse than none, because it drags a maidan onto a verge.
+  function bindPark(x, y, w, h) {
+    var areas = window.__hdMap.areas;
+    if (!areas) return null;
+    var want = w * h, reach = (w > h ? w : h);
+    var best = null, bestScore = Infinity;
+    for (var i = 0; i < areas.length; i++) {
+      var a = areas[i];
+      if (!PARK_KINDS[a.kind] || !a.pts || a.pts.length < 8) continue;
+      var b = polyBox(a.pts);
+      var d = Math.hypot(b.x - x, b.y - y);
+      if (d > reach) continue;
+      var ratio = (b.w * b.h) / want;
+      if (ratio < 0.55 || ratio > 1.9) continue;    // not the green this art is
+      // Containment beats proximity: a maidan whose centroid is 200 m away
+      // is still the maidan the label was aimed at.
+      var score = d - (pointIn(a.pts, x, y) ? reach : 0);
+      if (score < bestScore) { bestScore = score; best = { pts: a.pts, box: b }; }
+    }
+    return best;
+  }
+
+  // Walk a centre out of the carriageway and onto the pavement, then take
+  // whatever width is left beside it. The walk repeats because stepping off
+  // one arm of a junction can land on the next. Art does not vanish: below a
+  // third of its drawn size there is no room for it anywhere near the spot
+  // it names, and shrinking further only produces a speck.
+  function clampToStreet(x, y, w, h) {
+    var r = nearestRoad(x, y);
+    for (var pass = 0; pass < 4 && r && r.d < r.hw + PAVE; pass++) {
+      var clear = r.hw + PAVE;
+      var dx = x - r.px, dy = y - r.py, l = Math.hypot(dx, dy);
+      if (l < 0.001) { dx = -Math.sin(r.ang); dy = Math.cos(r.ang); l = 1; }
+      x += dx / l * (clear - r.d); y += dy / l * (clear - r.d);
+      r = nearestRoad(x, y);
+    }
+    if (r) {
+      var half = (w < h ? w : h) / 2, free = r.d - r.hw - PAVE;
+      if (half > free) {
+        var k = free > 0 ? free / half : 0;
+        if (k < 0.34) k = 0.34;
+        w *= k; h *= k;
+      }
+    }
+    return { x: x, y: y, w: w, h: h };
+  }
+
+  function landmarkGeo(L) {
+    var g = lmGeo.get(L[1]);
+    if (g !== undefined) return g;
+    if (!window.__hdMap) {
+      return { mode: 'free', x: L[3], y: L[4], w: L[5], h: L[6], pts: null };
+    }
+    var x = L[3], y = L[4], w = L[5], h = L[6];
+    var a = L[0] === 'parks' ? bindPark(x, y, w, h) : null;
+    if (a) {
+      g = { mode: 'poly', x: a.box.x, y: a.box.y, w: a.box.w, h: a.box.h, pts: a.pts };
+    } else {
+      var c = clampToStreet(x, y, w, h);
+      g = { mode: 'free', x: c.x, y: c.y, w: c.w, h: c.h, pts: null };
+    }
+    lmGeo.set(L[1], g);
+    return g;
+  }
+
   window.__hdDrawLandmarks = function (ctx, camX, camY, viewW, viewH, night) {
     // Published for the build editor: inverting this is the only exact way to
     // turn a click into world units once zoom, DPR and camera shake are in.
@@ -806,15 +909,34 @@
     var zoom = viewW > 0 ? ctx.canvas.width / viewW : 1;
     var inv = 1 / (zoom > 0.0001 ? zoom : 0.0001);
     for (var i = 0; i < LANDMARKS.length; i++) {
-      var L = LANDMARKS[i], x = L[3], y = L[4], w = L[5], h = L[6];
-      if (Math.abs(x - camX) > viewW / 2 + w) continue;
-      if (Math.abs(y - camY) > viewH / 2 + h) continue;
+      var L = LANDMARKS[i];
+      // Cull on the authored coordinate with a wide margin: a park binds to
+      // its polygon and a building only steps off the kerb, so neither moves
+      // further than its own size.
+      var reach = (L[5] > L[6] ? L[5] : L[6]) * 2;
+      if (Math.abs(L[3] - camX) > viewW / 2 + reach) continue;
+      if (Math.abs(L[4] - camY) > viewH / 2 + reach) continue;
       var img = spriteFor(L[1]);
       if (!img) continue;
+      var g = landmarkGeo(L);
+      var x = g.x, y = g.y, w = g.w, h = g.h;
       // Parks get the same night dimming but no lit windows - a maidan at
       // 2am is dark grass, not a lit facade.
       var dens = L[0] === 'parks' ? 0 : (L[0] === 'transit' ? 0.7 : 1.1);
-      var dh = drawSprite(ctx, img, x, y, w, h, night, x * 31 + y, dens);
+      var dh;
+      if (g.mode === 'poly') {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(g.pts[0], g.pts[1]);
+        for (var p = 2; p < g.pts.length; p += 2) ctx.lineTo(g.pts[p], g.pts[p + 1]);
+        ctx.closePath();
+        ctx.clip();
+        drawSprite(ctx, img, x, y, w, h, night, x * 31 + y, dens, true);
+        ctx.restore();
+        dh = h;                                        // the outline, not the sheet
+      } else {
+        dh = drawSprite(ctx, img, x, y, w, h, night, x * 31 + y, dens);
+      }
       if (L[0] !== 'parks' && window.__hdFrameBuildings) {
         // Landmarks are editable and parkable like any other footprint.
         window.__hdFrameBuildings.push({ key: 'lm:' + L[1], x: x, y: y, w: w, h: dh,

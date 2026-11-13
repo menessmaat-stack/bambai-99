@@ -200,15 +200,60 @@ box rather than the plot.
 `geoFor` caches all of this per footprint centroid, so the road query runs
 once per building rather than once per frame.
 
+## Landmarks, and the ground under them
+
+The 81 entries in `LANDMARKS` were read off a map by hand, and it showed: 39
+of them reached across a carriageway and six had their centre inside one.
+Shivaji Park was the worst — a 380 m sheet of grass 150 m south-east of the
+maidan OSM records, painted square to the compass over Keluskar Road.
+
+- **A park is its polygon.** Park art is now fitted to the OSM
+  park/forest/sand outline and drawn clipped to it, so the ground ends
+  exactly where the map says it ends. The match has to be unmistakable —
+  same area to within a factor of about two, no further off than the art is
+  wide — because the bake is patchy: there is no polygon at all under the
+  Oval, Azad Maidan or the Hanging Gardens, and a loose match drags a maidan
+  onto a verge.
+- **A building steps off the kerb.** There is nothing to snap the Taj to:
+  outside the 23,090 named records the bake carries, footprints are a 12 m
+  grid. Building, home and transit art keeps its authored spot and is walked
+  out of the carriageway (repeatedly, since stepping off one arm of a
+  junction can land on the next), then capped to the room left beside it,
+  with a floor at a third of its drawn size so a landmark never becomes a
+  speck. No landmark centre now sits in a carriageway, and the worst
+  remaining overhang is 17 m of kerb.
+
+## Trains stay out of the streets
+
+OSM tags Metro Line 3 as 64 km of `layer:-2` tunnel under Dadar, Worli and
+the airport. The renderer treated every `metro` way as elevated and the train
+spawner took any rail polyline, so eight-car rakes slid across Shivaji Park
+and over the carriageway, and Dadar's underground station put a lit blue
+canopy across Gokhale Road. Rail that is underground and not on a bridge is
+now neither drawn nor given trains, and a station whose nearest track is a
+tunnel gets nothing on the surface — edits 30 and 31 in
+`tools/patch-bundle.mjs`. The transit map (T) still shows the whole line.
+
+## How many cars are on the road
+
+`Ru` caps `s.cars` and `Y5` caps the ambient `traffic` ones. `hdParked()`
+runs first and parks up to 14 vehicles at societies and police compounds;
+with gang cars and a patrol on top, the 28-slot budget was full before the
+spawner reached its loop, so a six-lane junction carried three moving cars.
+The budget is 62 with 24 ambient, which holds the parked stock, the gangs and
+a full stream at once — measured at 16.7 ms a frame either way.
+
 ## City editor
 
 Open with the **BUILD** button or Shift+B.
 
 - **The map moves, not the car.** The editor takes the camera when it opens,
-  starting exactly where the player stands: right-drag or middle-drag to pan,
-  arrow keys to step (Shift for three blocks). Closing hands the camera back
-  to the player. The bundle honours `window.__hdFreeCam` for this — edit 28
-  in `tools/patch-bundle.mjs`.
+  starting exactly where the player stands. **Scroll** walks it — two fingers
+  on a trackpad, where right-drag is awkward and the game's own wheel zoom is
+  no use to the editor — and right-drag, middle-drag and the arrow keys
+  (Shift for three blocks) do the same. Closing hands the camera back to the
+  player. The bundle honours `window.__hdFreeCam` for this — edit 28 in
+  `tools/patch-bundle.mjs`.
 - **One click selects, two re-skin.** A single click with a tile picked in
   the palette used to replace the building you clicked, which meant nudging
   anything silently changed it. Selection and dragging are a single click;

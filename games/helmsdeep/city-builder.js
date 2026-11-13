@@ -342,6 +342,7 @@
     var help = document.createElement('div');
     help.style.cssText = 'color:#7c8aa0;font-size:11px;margin-bottom:8px';
     help.innerHTML =
+      '<b>Scroll</b> to move the map \u00b7 right-drag or arrows do the same<br>' +
       '<b>Click any building</b> \u2014 generated ones too \u2014 to select.<br>' +
       'Drag body to move \u00b7 drag <span style="color:#4adeff">\u25a0</span> corner to resize \u00b7 ' +
       'drag <span style="color:#fde047">\u25cf</span> nub to rotate.<br>' +
@@ -906,6 +907,27 @@
     applyBrush();
   }
 
+  // Scroll moves the map. Right-drag works but needs a two-button mouse, and
+  // on a trackpad the obvious gesture for walking a map is two fingers; the
+  // game's own wheel handler is a zoom, which the editor has no use for, so
+  // it is taken here while the panel is open.
+  function onWheel(ev) {
+    if (!state.on || !state.cam) return;
+    if (el.panel && el.panel.contains(ev.target)) return;    // the palette scrolls
+    var cv = canvas();
+    if (!cv) return;
+    var r = cv.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    // CSS pixels -> canvas pixels -> world units.
+    var k = (cv.width / r.width) / (zoom() || 1);
+    // Chrome reports pixels, Firefox lines, and a page scroll is a screen.
+    var unit = ev.deltaMode === 1 ? 16 : ev.deltaMode === 2 ? r.height : 1;
+    state.cam.x += ev.deltaX * unit * k;
+    state.cam.y += ev.deltaY * unit * k;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+  }
+
   // The camera is the game's while you play and the editor's while you
   // build, handed over at the point the panel opens so the view does not
   // jump: it starts exactly where the player was standing.
@@ -929,7 +951,7 @@
       renderHistory();
       status(state.items.length + ' placed, ' +
              Object.keys(window.__hdOverrides).length + ' edits loaded \u2014 ' +
-             'right-drag or arrows to move the map');
+             'scroll, right-drag or arrows to move the map');
     } else {
       state.sel = null; state.drag = null;
       state.cam = null;
@@ -953,6 +975,7 @@
   window.addEventListener('mousemove', onMove, true);
   window.addEventListener('mouseup', onUp, true);
   window.addEventListener('dblclick', onDbl, true);
+  window.addEventListener('wheel', onWheel, { capture: true, passive: false });
   // Right-drag is the pan gesture, so the browser menu has to stay shut
   // while the editor is open.
   window.addEventListener('contextmenu', function (ev) {
