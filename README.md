@@ -15,6 +15,8 @@ games/helmsdeep/helmsdeep.css  shell styles
 games/helmsdeep/touch-controls.js  on-screen controls for phones/tablets
 games/helmsdeep/spawn-select.js    applies ?spawn=<district> to the game menu
 games/helmsdeep/session-tracker.js login gate + play-time heartbeats
+games/helmsdeep/weapons.js         the gun roster, held artwork and gunfire synth
+sprites/guns/*.png                 32 guns sliced out of the weapon sheet
 api/account.js                 POST signup/login, returns a signed token
 api/session.js                 POST session heartbeats (append-only blobs)
 api/stats.js                   GET aggregated player/play-time totals (admin key)
@@ -169,6 +171,66 @@ and `--check` to confirm a bundle is patched. It covers:
   load) and dispatch call-outs (₹180 + ₹1.3/m), both with pins, par-time bonus
   and HUD badge. The news crew needed six bodies in one 90 m circle within 90 s;
   two is enough now, so CH9 Mumbai Live actually turns up.
+
+## Guns
+
+`games/helmsdeep/weapons.js` carries the roster, the artwork and the noise;
+the bundle keeps the ammunition and the ballistics. Five hooks join them —
+`__hdGun`, `__hdBullets`, `__hdSfx`, the digit keys, and nothing else — and
+each falls back to the stock drawing if the script is missing.
+
+- **Thirty-two guns off one sheet.** `guns.png` is sliced into
+  `sprites/guns/*.png`, flood-filled from the card edge so the art carries a
+  real alpha channel rather than a white box. Eleven pistols, five SMGs,
+  three shotguns, seven rifles, two marksman rifles and four bolt-action
+  snipers.
+- **Nine keys, families behind each.** `1`-`9` are pistol, SMG, shotgun,
+  rifle, marksman, sniper, grenade, flamer, bazooka. Pressing the key you are
+  already holding walks through that family: `1` goes Glock 17, Glock 18C,
+  Glock 19, compact, P226, Beretta, M1911, Tokarev, revolver, Desert Eagle.
+  The *slot* owns the magazine, so changing gun inside a family never strands
+  you with an empty one, and the variant's rate of fire, spread, damage and
+  muzzle velocity are written straight into the live stat row the firing code
+  already reads. An MP5K empties at 17 rounds a second and a Desert Eagle at
+  two; a suppressed ACR is quieter and tighter than the plain one.
+- **The card, for three seconds.** Selecting a gun puts its artwork, name,
+  round count and a dot per variant on screen, then takes it away.
+- **Held, not implied.** The weapon was a 6x2.4 black rectangle. It is now
+  the gun, drawn at the character's scale — 7 units for a pistol against 16
+  for an AWP, on a man about 15 tall — mirrored when the heading crosses so
+  it never hangs upside down under the arm, driven back by its own recoil,
+  with a muzzle flash on the frames the round is leaving (suppressors get
+  none) and brass out of the ejection port.
+- **Rounds you can see.** Every bullet was the same 2 px dash. A tracer is
+  now as long as the round is fast, with a hot head and a glow behind it,
+  which is the difference between a 760 m/s buckshot pellet and a 2400 m/s
+  AWM round.
+- **Each family sounds like itself.** A gunshot is a crack, a body and a
+  tail: the broadband snap, the bore resonance, and the report coming back
+  off the buildings. A pistol is 50 ms of it, a shotgun 340 with the slide
+  racking after, a sniper 550 with two late echoes down the street.
+  Suppressed guns trade the tail for the noise of the action. The dry
+  trigger clicks, the grenade leaves the hand with a whoosh, and blasts got
+  a real low end instead of one swept sine.
+
+## Rivers and roads
+
+Water was one flat fill of the sea colour with a sand hairline round it.
+That is right for the Arabian Sea, which has swell and a coastline drawn on
+top of it, and wrong for a 20 m nalla, which came out as a highlighter stroke
+ruled across the city. `__hdWater` clips to the polygon and paints what a
+channel looks like from above: dark under the banks, open down the middle, a
+silt line at the edge and a current running along it. The width comes from
+area over half the perimeter, not the bounding box — a river running
+diagonally fills a square box and would otherwise be shaded solid black.
+
+Two things made roads glare. The kerb is drawn 20 units wider than the
+carriageway, which at street zoom is a band as broad as a lane, and in warm
+sand it read as a shoulder of beach either side of every road; it is concrete
+now. And every flyover carried a `#cbd5e1` crash barrier three metres wide
+down both sides, brighter than the lane markings on its own deck, so the Sea
+Link and the SCLR connectors read as strips of light. That parapet is
+concrete and kerb-sized.
 
 ## How a building lands on its plot
 

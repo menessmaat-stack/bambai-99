@@ -89,9 +89,10 @@ const EDITS = [
   // Mumbai's sea edge is tetrapod armour, promenade and palms, not a bare
   // stroke. __hdShore walks the water polygon and builds that procedurally.
   [
-    'procedural shoreline armour',
+    'procedural shoreline armour and river banks',
     'if(r.fillStyle=l.sea,r.fill("evenodd"),i)r.strokeStyle=l.shore,r.lineWidth=Math.max(0.6*G,1.2*E),r.stroke();break}',
     'if(r.fillStyle=l.sea,r.fill("evenodd"),i)r.strokeStyle=l.shore,r.lineWidth=Math.max(0.6*G,1.2*E),r.stroke();' +
+      'window.__hdWater&&window.__hdWater(r,V,E,n),' +
       'window.__hdShore&&window.__hdShore(r,V,E,n,1);break}'
   ],
   [
@@ -106,7 +107,11 @@ const EDITS = [
   ['day land', 'land:"#4f4d49"', 'land:"#615a4f"'],
   ['day park', 'park:"#4e7f45"', 'park:"#55914a"'],
   ['day forest', 'forest:"#3e6b3a"', 'forest:"#44793c"'],
-  ['day kerb', 'kerb:"#9b968b"', 'kerb:"#aaa294"'],
+  // The kerb is drawn 20 units wider than the carriageway, which at street
+  // zoom is a band as broad as a lane: in warm sand it read as a shoulder of
+  // beach either side of every road. Concrete reads as a pavement.
+  ['day kerb', 'kerb:"#9b968b"', 'kerb:"#7e7b73"'],
+  ['night kerb', 'kerb:"#53514b"', 'kerb:"#43423d"'],
   ['day median', 'median:"#6d6a62"', 'median:"#7b7568"'],
   ['night sea', 'sea:"#102a39"', 'sea:"#0d3448"'],
   ['night land', 'land:"#23242a"', 'land:"#2a2922"'],
@@ -601,15 +606,19 @@ const EDITS = [
     'r:2.4+Math.random()*3.6,col:hdH<0.3?"#ffd98a":hdH<0.55?"#ff8a2a":"#9a9a9a",glow:hdH<0.55});' +
     's.parts.push({x:$.x,y:$.y,vx:0,vy:0,life:0.12,max:0.12,r:5.5,col:"#fff3c0",glow:!0})}'
   ],
+  // Nine slots now, and a dead trigger clicks instead of saying nothing.
   [
-    'ammo hint mentions seven slots',
+    'ammo hint mentions nine slots',
     '`${Z.name} — out of ammo. 1-6 to switch.`',
-    '`${Z.name} — out of ammo. 1-7 to switch.`'
+    '`${Z.name} — out of ammo. 1-9 to switch.`,window.__hdSfx&&window.__hdSfx("empty")'
   ],
+  // The stock digit handler selects by index into `WEAPON_ORDER`, which no
+  // longer matches the nine number keys `weapons.js` owns. It keeps working
+  // on its own when that script is missing.
   [
-    'seven weapon keys',
+    'digit keys defer to the weapon wheel',
     'if(Q.current==="play"&&v>="1"&&v<="6")t2(Number(v)-1)',
-    'if(Q.current==="play"&&v>="1"&&v<="7")t2(Number(v)-1)'
+    'if(Q.current==="play"&&v>="1"&&v<="7"&&!window.__hdGun)t2(Number(v)-1)'
   ],
 
   // ===== people get hit, not just killed ==================================
@@ -1085,8 +1094,10 @@ const EDITS = [
   [
     'bridge guardrails and lane lines',
     'if(r.strokeStyle=l.deck,r.lineWidth=Math.max(i*1.2,_),an(r,V.pts,Y,F))r.stroke();if(!E)continue;let B=Math.max(0.15*G,1*i);if(!V.oneway){if(r.strokeStyle=l.mark,r.lineWidth=B,r.setLineDash([3*G,6*G]),an(r,V.pts,Y,F))r.stroke();r.setLineDash([])}',
-    // 1. Thick concrete guardrail crash barriers (fenders) along BOTH edges (wide and bold!):
-    'r.strokeStyle="#cbd5e1";r.lineWidth=_+Math.max(6*G,10*i);if(an(r,V.pts,Y,F))r.stroke();' +
+    // 1. Concrete crash barrier along both edges. It used to be #cbd5e1,
+    //    three metres wide: brighter than the lane markings on the deck, so
+    //    every flyover read as a strip of light rather than a road.
+    'r.strokeStyle=n.night?"#4b5057":"#8e949c";r.lineWidth=_+Math.max(3.2*G,6*i);if(an(r,V.pts,Y,F))r.stroke();' +
     // 2. Inner asphalt road deck:
     'if(r.strokeStyle=l.deck,r.lineWidth=Math.max(i*1.2,_),an(r,V.pts,Y,F))r.stroke();' +
     // 3. Unconditional lane markings at ALL zoom levels (NO if (!E) gate!):
@@ -1535,6 +1546,44 @@ const EDITS = [
     // Flipped comparison so the replacement never contains the search
     // string: a second run would otherwise wrap the wrapper.
     'Y6(r,I.x,I.y,I.name,"metro"===I.kind,i,E)}'
+  ],
+
+  // ===== 32. Guns: four hooks, and `weapons.js` owns the rest =============
+  // The held weapon was a 6x2.4 black rectangle, every round was the same
+  // 2 px dash whatever fired it, and one noise burst stood in for a pistol,
+  // a shotgun and a .50 rifle alike. These four sites hand all of that to
+  // `games/helmsdeep/weapons.js`, which carries the sliced weapon sheet, the
+  // per-family synth and the variant table. Each falls back to the stock
+  // drawing if the script has not loaded.
+  [
+    'held weapon art',
+    'f.fillStyle="#1b1d21",f.fillRect(4.4,-1.2,6,2.4)',
+    // The fallback writes 6.0 where the original wrote 6, so the replacement
+    // never contains the search string and a second run cannot wrap it twice.
+    '(window.__hdGun&&window.__hdGun(f,t)||(f.fillStyle="#1b1d21",f.fillRect(4.4,-1.2,6.0,2.4)))'
+  ],
+  [
+    'tracer rounds',
+    'f.lineWidth=2;for(let C of s.bullets)f.strokeStyle=C.from==="player"?"#ffe9a0":"#ff9a70",' +
+      'f.beginPath(),f.moveTo(C.x,C.y),f.lineTo(C.x-C.vx*0.014,C.y-C.vy*0.014),f.stroke();',
+    'if(window.__hdBullets)window.__hdBullets(f,s.bullets);else{f.lineWidth=2.0;' +
+      'for(let C of s.bullets)f.strokeStyle=C.from==="player"?"#ffe9a0":"#ff9a70",' +
+      'f.beginPath(),f.moveTo(C.x,C.y),f.lineTo(C.x-C.vx*0.014,C.y-C.vy*0.014),f.stroke();}'
+  ],
+  [
+    'per-weapon gunshot',
+    'En={shot:()=>{if(!L||B.current',
+    'En={shot:()=>{if(window.__hdSfx&&window.__hdSfx("shot"))return;if(!L||B.current'
+  ],
+  [
+    'richer blast',
+    ',boom:()=>{if(!L||B.current',
+    ',boom:()=>{if(window.__hdSfx&&window.__hdSfx("boom"))return;if(!L||B.current'
+  ],
+  [
+    'grenade leaves the hand',
+    'h:z}),En.thud(0.14),Zn(Z.heat,!1);return}',
+    'h:z}),window.__hdSfx?window.__hdSfx("throw"):En.thud(0.14),Zn(Z.heat,!1);return}'
   ],
 
   // ===== 28. Free camera while the city editor is open ===================

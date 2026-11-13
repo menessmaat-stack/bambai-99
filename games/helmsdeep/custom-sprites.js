@@ -988,6 +988,113 @@
     };
   }
 
+  // Rivers, creeks and the drains that pass for them.
+  //
+  // Every water polygon was one flat fill of the sea colour with a sand
+  // hairline round it, which is fine for the Arabian Sea - it has swell and a
+  // coastline on top - and terrible for a 20 m nalla, which came out as a
+  // highlighter stroke ruled across the city. Inland water now gets what a
+  // channel actually looks like from above: dark under the banks, lighter
+  // down the middle, and a current running along it.
+  //
+  // Everything is drawn inside a clip of the polygon, so a wide stroke on the
+  // outline paints a bank shadow and nothing escapes onto the land.
+  // A river's bounding box says nothing about how wide the river is: a
+  // channel running diagonally fills a square box. For a long strip, area
+  // over half the perimeter is the width, and the longest edge is the way
+  // the water runs.
+  function waterShape(area) {
+    var s = area.__wshape;
+    if (s) return s;
+    var p = area.pts, n = p.length;
+    var x0 = p[0], x1 = p[0], y0 = p[1], y1 = p[1];
+    var twice = 0, per = 0, best = -1, ang = 0;
+    for (var i = 0; i < n; i += 2) {
+      var j = (i + 2) % n;
+      if (p[i] < x0) x0 = p[i]; else if (p[i] > x1) x1 = p[i];
+      if (p[i + 1] < y0) y0 = p[i + 1]; else if (p[i + 1] > y1) y1 = p[i + 1];
+      twice += p[i] * p[j + 1] - p[j] * p[i + 1];
+      var dx = p[j] - p[i], dy = p[j + 1] - p[i + 1];
+      var l = dx * dx + dy * dy;
+      per += Math.sqrt(l);
+      if (l > best) { best = l; ang = Math.atan2(dy, dx); }
+    }
+    var area2 = Math.abs(twice) / 2;
+    var wide = per > 1 ? (2 * area2) / per : 0;
+    return (area.__wshape = {
+      bw: x1 - x0, bh: y1 - y0, x: (x0 + x1) / 2, y: (y0 + y1) / 2,
+      width: wide, ang: ang, span: Math.max(x1 - x0, y1 - y0)
+    });
+  }
+
+  window.__hdWater = function (ctx, area, inv, view) {
+    var pts = area.pts;
+    if (!pts || pts.length < 8) return;
+    var zoom = 1 / (inv || 1);
+    if (zoom < 0.18) return;                        // a hairline at map zoom
+    var box = waterShape(area);
+    // The sea is tens of kilometres across and already has swell, surf and a
+    // coastline drawn over it. This is for the water that does not.
+    if (box.bw > 26000 || box.bh > 26000) return;
+    var night = !!(view && view.night);
+
+    var ang = box.ang;
+    var narrow = box.width;
+    if (!(narrow > 2)) return;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(pts[0], pts[1]);
+    for (var i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
+    ctx.closePath();
+    ctx.clip();
+
+    // Banks. Half of each stroke falls outside the clip, so what is left is
+    // a band of shade hugging the inside of the outline. Kept under half the
+    // channel so the middle stays open water rather than going black.
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = night ? 'rgba(2,12,22,0.55)' : 'rgba(8,38,58,0.50)';
+    ctx.lineWidth = narrow * 0.44;
+    ctx.stroke();
+    ctx.strokeStyle = night ? 'rgba(0,6,14,0.5)' : 'rgba(5,26,42,0.45)';
+    ctx.lineWidth = narrow * 0.16;
+    ctx.stroke();
+    // Silt where the water meets the bank: a warm hairline, not a sand kerb.
+    ctx.strokeStyle = night ? 'rgba(70,64,46,0.35)' : 'rgba(142,124,84,0.45)';
+    ctx.lineWidth = Math.max(1.5, 2.5 * inv);
+    ctx.stroke();
+
+    if (zoom >= 0.5) {
+      // Current. Streaks along the channel, drifting, so still water reads as
+      // moving water the moment you stand next to it.
+      var t = window.__hdTime || 0;
+      var step = Math.max(14, narrow * 0.30);
+      var run = Math.max(box.bw, box.bh) * 1.5 + step * 2;
+      var half = narrow * 0.5;
+      ctx.save();
+      ctx.translate(box.x, box.y);
+      ctx.rotate(ang);
+      ctx.lineCap = 'round';
+      for (var k = -3; k <= 3; k++) {
+        var off = k * step * 0.34;
+        if (Math.abs(off) > half * 0.8) continue;
+        var drift = ((t * 26 + k * 37) % step);
+        ctx.strokeStyle = night
+          ? 'rgba(150,186,226,' + (0.05 + (k % 2 ? 0.02 : 0.04)) + ')'
+          : 'rgba(216,240,255,' + (0.07 + (k % 2 ? 0.03 : 0.06)) + ')';
+        ctx.lineWidth = Math.max(1.2, narrow * 0.05);
+        ctx.beginPath();
+        for (var x = -run / 2 + drift; x < run / 2; x += step * 2.2) {
+          ctx.moveTo(x, off + Math.sin(x * 0.012 + t * 0.7 + k) * narrow * 0.05);
+          ctx.lineTo(x + step * 1.1, off + Math.sin((x + step) * 0.012 + t * 0.7 + k) * narrow * 0.05);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    ctx.restore();
+  };
+
   window.__hdShore = function (ctx, area, zoom, view, side) {
     if (zoom < 0.3) return;
     var pts = area.pts;
