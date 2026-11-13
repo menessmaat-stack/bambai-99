@@ -17,6 +17,7 @@ games/helmsdeep/spawn-select.js    applies ?spawn=<district> to the game menu
 games/helmsdeep/session-tracker.js login gate + play-time heartbeats
 games/helmsdeep/weapons.js         the gun roster, held artwork and gunfire synth
 sprites/guns/*.png                 32 guns sliced out of the weapon sheet
+sprites/ground/*.png               30 flat road and terrain tiles for the editor
 api/account.js                 POST signup/login, returns a signed token
 api/session.js                 POST session heartbeats (append-only blobs)
 api/stats.js                   GET aggregated player/play-time totals (admin key)
@@ -205,6 +206,17 @@ each falls back to the stock drawing if the script is missing.
   now as long as the round is fast, with a hot head and a glow behind it,
   which is the difference between a 760 m/s buckshot pellet and a 2400 m/s
   AWM round.
+- **The blast.** The flash was one yellow wedge alive for two frames, which
+  at this scale is a dot. A shot now throws a white-hot core, three tongues
+  of flame — wider out of a shotgun — light onto the road around the muzzle,
+  smoke standing off the barrel, and a couple of embers of unburnt powder,
+  over 70 ms so it actually registers at 60 fps.
+- **Rounds land somewhere.** A bullet used to vanish in silence: the engine
+  deletes it the frame it hits and never says so. `__hdBullets` sees the live
+  array every frame, so anything that was there last frame and is gone now
+  with time left on its fuse hit something — and that is where six sparks
+  back along the flight path, a puff of dust and a one-frame flash go. No
+  bundle change was needed for it.
 - **Each family sounds like itself.** A gunshot is a crack, a body and a
   tail: the broadband snap, the bore resonance, and the report coming back
   off the buildings. A pistol is 50 ms of it, a shotgun 340 with the slide
@@ -323,6 +335,41 @@ Open with the **BUILD** button or Shift+B.
 - **Faint orange marks your work.** Every block holding an edit gets a wash,
   and each edited or placed building its own box, so corrected neighbourhoods
   are obvious against whatever the generator guessed.
+- **Roads and terrain are dragged, not clicked.** A tile from the `roads` or
+  `terrain` tab lays a run: press on the ground, pull, and the strip follows
+  the cursor with the tile repeated along it, never stretched. The bearing
+  snaps to 15° so a road comes out straight instead of a degree off per drag;
+  Alt gives a free angle. A run is an ordinary item afterwards — click it,
+  drag the body to move it, the corner to widen it, the nub to turn it, Del
+  to lift it — and it is painted *under* the buildings, so a house standing
+  on a road still stands on it.
+- **You decide where cars park.** `Parking bay` then drag out a bay; it is
+  divided into 9 m slots and cars park nose-in, one per slot. The engine used
+  to scatter up to fourteen against whatever large footprint was on screen,
+  which is how chawl forecourts and the middle of service lanes filled up
+  with Fortuners. Draw one bay and that stock stops entirely: cars appear in
+  your bays and nowhere else. With no bays drawn it keeps five at civic
+  frontages so the kerb is not bare. `__hdParking` owns this; the engine's
+  `hdParked` only runs when the editor is absent.
+
+### The ground tiles, and why the houses are not here
+
+The road-issue and terrain sheets are drawn in 2:1 isometric, which is the
+one thing this game is not. Each tile is un-sheared off its own top face
+before it ships: the silhouette's widest row gives the two side corners of
+the top face, the apex sits a quarter of the width above it, and that rhombus
+is mapped to a square — so the block's side walls fall outside the crop and
+are thrown away. What lands in `sprites/ground/` is flat, top-down and has a
+real alpha channel. Twelve road tiles and eighteen terrain tiles; two of the
+road cells (the garbage pile and the dumpster) are overlapped by stray art in
+the source sheet and were dropped rather than shipped dirty.
+
+The houses sheet gets no such treatment and is **not** in the game. Those are
+buildings seen from the corner with two lit facades and a roof; un-shearing
+them recovers only the roof, and whatever the crop misses comes through as
+smeared wall. There is no automatic way to turn a drawn facade into a
+top-down plan. Hand-drawn roof plans like the ones already in
+`sprites/houses/` drop straight in.
 
 ## Who played, and for how long
 

@@ -224,10 +224,23 @@
     vehicles: ['cement-mixer', 'tipper-truck', 'excavator', 'bulldozer', 'flatbed-lorry',
       'tanker-truck', 'army-truck', 'mobile-crane', 'coach-bus', 'city-bus', 'car-carrier',
       'fire-engine', 'road-roller', 'ramp-truck', 'tractor-timber', 'tractor-cargo',
-      'utility-tanker', 'gas-tanker', 'ambulance']
+      'utility-tanker', 'gas-tanker', 'ambulance'],
+    // Ground tiles. The source sheets are drawn in 2:1 isometric, which is
+    // the one thing this game is not, so each tile is un-sheared off its own
+    // top face before it ships: the rhombus between the silhouette's widest
+    // row and the apex above it maps to a square, and the block's side walls
+    // fall outside and are thrown away. These lie flat under the buildings
+    // and are laid by the editor, never by the generator.
+    roads: ['road-paved', 'road-cracked', 'road-pothole', 'road-patch', 'road-manhole',
+      'road-sewer-grate', 'road-gravel-verge', 'road-waterlogged', 'road-ditch',
+      'road-drain-pipe', 'road-construction', 'road-excavation'],
+    terrain: ['grassland', 'wildflowers', 'scrubland', 'forest-edge', 'pasture', 'orchard',
+      'vineyard', 'farmstead', 'pond-reeds', 'oasis', 'desert-sand', 'cactus-patch',
+      'rock-formation', 'badlands', 'dirt-path', 'ground-dirt', 'ground-earth',
+      'ground-weeds']
   };
   var SLUG_DIR = {};
-  var DIR_PATH = { vehicles: 'cars' };
+  var DIR_PATH = { vehicles: 'cars', roads: 'ground', terrain: 'ground' };
   Object.keys(CATALOG).forEach(function (d) {
     var dir = DIR_PATH[d] || d;
     CATALOG[d].forEach(function (sl) { SLUG_DIR[sl] = dir; probe('/sprites/' + dir + '/', sl); });
@@ -314,26 +327,38 @@
     return cv;
   }
 
+  // World units per screen pixel, refreshed once a frame by the landmark
+  // pass. A lit window is about 30 cm across, which is a third of a pixel on
+  // a zoomed-out street: the lights were being drawn and then rounded away,
+  // which is why a city at 2am looked switched off.
+  var viewInv = 1;
+
   function nightLights(ctx, cx, cy, w, h, seed, density) {
     var n = Math.round(w * h / 1400 * density);
-    if (n < 3) n = 3; else if (n > 22) n = 22;
+    if (n < 4) n = 4; else if (n > 26) n = 26;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    var r = (w > h ? w : h) * 1.4;
-    ctx.globalAlpha = 0.32;
+    var r = (w > h ? w : h) * 1.5;
+    ctx.globalAlpha = 0.4;
     ctx.drawImage(glow(), cx - r / 2, cy - r / 2, r, r);
     ctx.globalAlpha = 1;
+    // Never smaller than a pixel and a half on screen, so the windows stay
+    // visible from the air without turning into blobs up close.
+    var floor = viewInv * 1.5;
     for (var i = 0; i < n; i++) {
       var a = hash2(seed + i * 7919, seed - i * 104729);
       var b = hash2(seed - i * 15485, seed + i * 86028);
-      if (a > 0.82) continue;                       // some flats are dark
+      if (a > 0.86) continue;                       // some flats are dark
       var sz = 1.6 + a * 2.4;
-      ctx.fillStyle = b > 0.72 ? 'rgba(186,226,255,0.85)' : 'rgba(255,208,130,0.9)';
+      if (sz < floor) sz = floor;
+      ctx.fillStyle = b > 0.72 ? 'rgba(186,226,255,0.9)' : 'rgba(255,208,130,0.95)';
       ctx.fillRect(cx + (a - 0.5) * w * 0.86 - sz / 2, cy + (b - 0.5) * h * 0.86 - sz / 2,
                    sz, sz * 0.7);
     }
     ctx.restore();
   }
+  // The build editor paints its own placements, and they are just as dark.
+  window.__hdNightLights = nightLights;
 
   // `cover` is only for art drawn inside a clip path: the polygon decides the
   // shape, so the sheet has to reach its corners and whatever spills is cut.
@@ -908,6 +933,7 @@
     window.__hdFrameBuildings = [];
     var zoom = viewW > 0 ? ctx.canvas.width / viewW : 1;
     var inv = 1 / (zoom > 0.0001 ? zoom : 0.0001);
+    viewInv = inv;
     for (var i = 0; i < LANDMARKS.length; i++) {
       var L = LANDMARKS[i];
       // Cull on the authored coordinate with a wide margin: a park binds to

@@ -162,63 +162,129 @@
     ctx.drawImage(img, x0, -H * 0.5, L, H);
     ctx.restore();
 
-    if (since >= 0 && since < 0.045 && !v.quiet) muzzle(ctx, x0 + L, since / 0.045, v);
+    if (since >= 0 && since < 0.07 && !v.quiet) muzzle(ctx, x0 + L, since / 0.07, v);
     return true;
   };
 
+  // The flash was a single yellow wedge two frames long, which at this scale
+  // is a dot. A real muzzle blast is a white core, a burning plume thrown
+  // forward, sparks either side of it and the whole street lit for a frame,
+  // so that is what comes out of the barrel now. The lifetime is 70 ms, long
+  // enough to actually register at 60 fps.
   function muzzle(ctx, x, k, v) {
-    var f = 1 - k;
-    var r = (v.flash || 3.4) * (0.6 + f);
+    var f = 1 - k;                       // 1 at the instant of firing
+    var r = (v.flash || 4.2) * (0.55 + f * 0.9);
+    var sp = v.pellets ? 1.5 : 1;        // a shotgun throws a wider cone
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = 'rgba(255,214,120,' + (0.85 * f).toFixed(3) + ')';
+
+    // Light thrown onto the road around the muzzle.
+    var g = ctx.createRadialGradient(x, 0, 0, x, 0, r * 7);
+    g.addColorStop(0, 'rgba(255,196,96,' + (0.5 * f).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(255,170,60,0)');
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x + r * 2.1, -r * 0.55);
-    ctx.lineTo(x + r * 2.8, 0);
-    ctx.lineTo(x + r * 2.1, r * 0.55);
-    ctx.closePath();
+    ctx.arc(x, 0, r * 7, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,230,' + (0.9 * f).toFixed(3) + ')';
+
+    // The plume: three overlapping tongues of flame, longest in the middle.
+    for (var i = -1; i <= 1; i++) {
+      var spread = i * 0.42 * sp;
+      var len = r * (i === 0 ? 4.4 : 2.6) * (0.5 + f);
+      ctx.fillStyle = i === 0
+        ? 'rgba(255,236,170,' + (0.92 * f).toFixed(3) + ')'
+        : 'rgba(255,150,40,' + (0.6 * f).toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + Math.cos(spread - 0.24) * len, Math.sin(spread - 0.24) * len);
+      ctx.lineTo(x + Math.cos(spread) * len * 1.25, Math.sin(spread) * len * 1.25);
+      ctx.lineTo(x + Math.cos(spread + 0.24) * len, Math.sin(spread + 0.24) * len);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // White-hot core at the crown.
+    ctx.fillStyle = 'rgba(255,255,244,' + (0.95 * f).toFixed(3) + ')';
     ctx.beginPath();
-    ctx.arc(x + r * 0.5, 0, r * 0.75, 0, Math.PI * 2);
+    ctx.arc(x + r * 0.6, 0, r * (0.5 + f * 0.6), 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
   // -------------------------------------------------------------- bullets
+  //
   // A 2 px line from the muzzle to a fixed fraction of the velocity made
   // every round look the same whatever fired it. The tracer is now as long
   // as the round is fast, with a hot head and a glow behind it.
+  //
+  // Rounds also used to vanish in silence. The engine deletes a bullet the
+  // frame it hits something and never says so, but this hook sees the live
+  // array every frame: anything that was there last frame and is gone now,
+  // with time left on its fuse, hit something - and that is where the sparks
+  // and the puff of dust go.
+  var seen = new Map();
+
+  function impact(x, y, vx, vy, mine) {
+    var g = hd();
+    if (!g) return;
+    var parts = g.S.parts;
+    if (parts.length > 540) return;
+    var sp = Math.hypot(vx, vy) || 1;
+    var bx = -vx / sp, by = -vy / sp;        // back along the flight path
+    for (var i = 0; i < 6; i++) {
+      var a = Math.atan2(by, bx) + (Math.random() - 0.5) * 1.5;
+      var s = 60 + Math.random() * 190;
+      parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+                   life: 0.1 + Math.random() * 0.18, max: 0.28,
+                   r: 0.9 + Math.random() * 1.4,
+                   col: Math.random() < 0.4 ? '#fff3c0' : '#ffb545', glow: true });
+    }
+    parts.push({ x: x, y: y, vx: bx * 24, vy: by * 24, life: 0.32, max: 0.32,
+                 r: 3.4, col: '#6b6256', glow: false });     // dust off the wall
+    parts.push({ x: x, y: y, vx: 0, vy: 0, life: 0.07, max: 0.07,
+                 r: mine ? 5.5 : 4.2, col: '#fff6d0', glow: true });
+  }
+
   window.__hdBullets = function (ctx, bullets) {
+    var g = hd(), now = g ? g.S.t : 0;
+    var live = new Set();
     ctx.save();
     ctx.lineCap = 'round';
     for (var i = 0; i < bullets.length; i++) {
       var b = bullets[i];
+      live.add(b);
       var sp = Math.hypot(b.vx, b.vy) || 1;
-      var len = Math.min(34, sp * 0.016);
+      var len = Math.min(42, sp * 0.018);
       var nx = b.vx / sp, ny = b.vy / sp;
       var mine = b.from === 'player';
       var hot = mine ? '255,236,170' : '255,150,110';
       ctx.globalCompositeOperation = 'lighter';
-      ctx.strokeStyle = 'rgba(' + hot + ',0.22)';
-      ctx.lineWidth = 3.4;
+      ctx.strokeStyle = 'rgba(' + hot + ',0.20)';
+      ctx.lineWidth = 4.2;
       ctx.beginPath();
       ctx.moveTo(b.x, b.y);
       ctx.lineTo(b.x - nx * len, b.y - ny * len);
       ctx.stroke();
       ctx.strokeStyle = 'rgba(' + hot + ',0.95)';
-      ctx.lineWidth = 1.1;
+      ctx.lineWidth = 1.3;
       ctx.beginPath();
       ctx.moveTo(b.x, b.y);
-      ctx.lineTo(b.x - nx * len * 0.65, b.y - ny * len * 0.65);
+      ctx.lineTo(b.x - nx * len * 0.6, b.y - ny * len * 0.6);
       ctx.stroke();
-      ctx.fillStyle = mine ? 'rgba(255,250,222,0.95)' : 'rgba(255,196,150,0.95)';
+      ctx.fillStyle = mine ? 'rgba(255,252,232,0.98)' : 'rgba(255,200,154,0.98)';
       ctx.beginPath();
-      ctx.arc(b.x, b.y, 1.5, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, 1.9, 0, Math.PI * 2);
       ctx.fill();
+      seen.set(b, [b.x, b.y, b.vx, b.vy, b.ttl, mine, now]);
     }
     ctx.restore();
+
+    seen.forEach(function (rec, key) {
+      if (live.has(key)) return;
+      seen.delete(key);
+      if (now - rec[6] > 0.2) return;            // stale, not a hit
+      if (rec[4] > 0.04) impact(rec[0], rec[1], rec[2], rec[3], rec[5]);
+    });
   };
 
   // ----------------------------------------------------------------- audio
@@ -359,6 +425,31 @@
     if (shake === undefined) shake = 1.5;
     if (shake > 0) s.cam.shake = Math.max(s.cam.shake, shake);
     if (SHAKE[cat] === undefined || cat === 'flamer') return;   // nothing ejects
+
+    var mx = p.x + Math.cos(p.h) * (v0(cat) + 3), my = p.y + Math.sin(p.h) * (v0(cat) + 3);
+    // Smoke standing off the muzzle, drifting the way the round went. Twice
+    // as much out of a shotgun, almost none out of a 9 mm.
+    var puff = cat === 'shotgun' || cat === 'sniper' ? 3 : cat === 'pistol' || cat === 'smg' ? 1 : 2;
+    for (var i = 0; i < puff; i++) {
+      var sa = p.h + (Math.random() - 0.5) * 0.7;
+      s.parts.push({
+        x: mx, y: my,
+        vx: Math.cos(sa) * (26 + Math.random() * 44), vy: Math.sin(sa) * (26 + Math.random() * 44),
+        life: 0.3 + Math.random() * 0.4, max: 0.75,
+        r: 2.2 + Math.random() * 3.4, col: '#8e8779', glow: false
+      });
+    }
+    // Unburnt powder: a couple of embers thrown out with the round.
+    for (i = 0; i < 2; i++) {
+      var ea = p.h + (Math.random() - 0.5) * 0.9;
+      s.parts.push({
+        x: mx, y: my,
+        vx: Math.cos(ea) * (110 + Math.random() * 150), vy: Math.sin(ea) * (110 + Math.random() * 150),
+        life: 0.08 + Math.random() * 0.12, max: 0.22,
+        r: 0.9 + Math.random() * 1.1, col: '#ffcf6a', glow: true
+      });
+    }
+
     // Brass leaves the port, which is the side the gun is held on.
     var a = p.h + (Math.PI / 2) * (Math.cos(p.h) < 0 ? -1 : 1) + (Math.random() - 0.5) * 0.5;
     var sp = 50 + Math.random() * 60;
@@ -370,6 +461,13 @@
       col: cat === 'shotgun' ? '#b4342c' : '#c8a24a',
       glow: false
     });
+  }
+
+  // Where the barrel ends, in world units from the character's centre.
+  function v0(cat) {
+    var list = ROSTER[cat];
+    if (!list) return 8;
+    return list[pick[cat] % list.length].L || 8;
   }
 
   // ------------------------------------------------------------------- HUD

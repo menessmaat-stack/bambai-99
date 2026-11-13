@@ -27,12 +27,18 @@
     items: [],
     brush: null,
     snap: false,
+    tool: null,        // 'park' while the parking bay tool is armed
     sel: null,         // {kind:'item', i} | {kind:'gen', key}
     multi: [],         // marquee selection, same shape as `sel`
     marquee: null,     // {x0,y0,x1,y1} in world units while dragging
-    drag: null,        // {mode:'move'|'resize'|'rotate', ...}
+    drag: null,        // {mode:'move'|'resize'|'rotate'|'lay', ...}
     cam: null          // free camera while editing; null hands it back
   };
+
+  // Palette tabs whose tiles lie flat on the ground and are dragged out as a
+  // run rather than clicked down one at a time.
+  var GROUND_DIR = { roads: 'road', terrain: 'terrain' };
+  var LAY_SNAP = Math.PI / 12;           // 15 degrees, so a run comes out straight
 
   var PAN_STEP = 320;                    // ~48 m per arrow tap
 
@@ -223,11 +229,101 @@
     ctx.restore();
   }
 
+  // ---------------------------------------------------------- ground pass
+  //
+  // Roads, terrain and parking bays are items like any other - same box, so
+  // selecting, moving, rotating, resizing, deleting and the undo history all
+  // work on them unchanged - but they are painted in a different pass. The
+  // building layer runs after this one, so a house laid on a road stays on
+  // top of it rather than under it, which is the way round a city works.
+  //
+  // A road is one straight run: `w` is its length, `h` its width, `rot` its
+  // bearing. The tile is square and repeated along the length, so the run is
+  // as long as you drag and the art never stretches.
+  function isGround(it) { return it.kind === 'road' || it.kind === 'terrain' || it.kind === 'park'; }
+
+  // Which palette tab a slug came from, and how brightly that kind of
+  // building burns after dark. A warehouse is not a block of flats.
+  var dirCache = null;
+  function dirOf(slug) {
+    if (!dirCache) {
+      dirCache = {};
+      var cat = window.__hdCatalog || {};
+      Object.keys(cat).forEach(function (d) {
+        cat[d].forEach(function (s) { dirCache[s] = d; });
+      });
+    }
+    return dirCache[slug];
+  }
+  var LIT = { houses: 1, homes: 1.1, flats: 1.3, slums: 0.55, chains: 1.2, stalls: 0.9,
+              buildings: 1.2, transit: 0.7 };
+
+  // A car is about 50 units long, so a bay slot is 62 with room to open a
+  // door. One slot minimum, however short the bay is drawn.
+  var SLOT = 62;
+  function bays(it) { return Math.max(1, Math.round(it.w / SLOT)); }
+
+  function drawStrip(ctx, it, night) {
+    var img = window.__hdGetBuildingSprite && window.__hdGetBuildingSprite(it.slug);
+    if (!img) return;
+    var src = night && window.__hdNightSprite ? window.__hdNightSprite(img) : img;
+    var side = it.h, n = Math.max(1, Math.round(it.w / side));
+    var step = it.w / n;
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot || 0);
+    // The sheet draws its road running up the tile, so each one is turned a
+    // quarter turn to lie along the run. The tile is square, so a terrain
+    // patch does not care either way.
+    for (var i = 0; i < n; i++) {
+      ctx.save();
+      ctx.translate(-it.w / 2 + step * (i + 0.5), 0);
+      ctx.rotate(Math.PI / 2);
+      // Half a pixel of overlap, or the seams between tiles show as hairlines.
+      ctx.drawImage(src, -side / 2, -step / 2 - 0.5, side, step + 1);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function drawBay(ctx, it, night) {
+    var n = bays(it);
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot || 0);
+    ctx.fillStyle = night ? '#1d2024' : '#3a3d42';
+    ctx.fillRect(-it.w / 2, -it.h / 2, it.w, it.h);
+    ctx.strokeStyle = night ? 'rgba(226,226,214,0.45)' : 'rgba(238,238,230,0.8)';
+    ctx.lineWidth = Math.max(1.2, it.h * 0.03);
+    ctx.strokeRect(-it.w / 2, -it.h / 2, it.w, it.h);
+    ctx.beginPath();
+    for (var i = 1; i < n; i++) {
+      var x = -it.w / 2 + (it.w / n) * i;
+      ctx.moveTo(x, -it.h / 2);
+      ctx.lineTo(x, it.h / 2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  window.__hdGround = function (ctx, camX, camY, viewW, viewH, night) {
+    for (var i = 0; i < state.items.length; i++) {
+      var it = state.items[i];
+      if (!isGround(it)) continue;
+      var r = (it.w > it.h ? it.w : it.h) * 0.6 + 40;
+      if (Math.abs(it.x - camX) > viewW / 2 + r) continue;
+      if (Math.abs(it.y - camY) > viewH / 2 + r) continue;
+      if (it.kind === 'park') drawBay(ctx, it, night);
+      else drawStrip(ctx, it, night);
+    }
+  };
+
   // ---------------------------------------------------------------- render
   window.__hdDrawBuild = function (ctx, camX, camY, viewW, viewH, night) {
     var i, it, img;
     for (i = 0; i < state.items.length; i++) {
       it = state.items[i];
+      if (isGround(it)) continue;                 // painted under the buildings
       var r = it.w > it.h ? it.w : it.h;
       if (Math.abs(it.x - camX) > viewW / 2 + r) continue;
       if (Math.abs(it.y - camY) > viewH / 2 + r) continue;
@@ -241,6 +337,12 @@
       if (it.rot) ctx.rotate(it.rot);
       ctx.drawImage(night && window.__hdNightSprite ? window.__hdNightSprite(img) : img,
                     -dw / 2, -dh / 2, dw, dh);
+      // A hand-placed house was the only dark one on the street: the
+      // generator lights its own and this pass never did.
+      if (night && window.__hdNightLights && LIT[dirOf(it.slug)]) {
+        window.__hdNightLights(ctx, 0, 0, dw, dh, (it.x | 0) * 31 + (it.y | 0),
+                               LIT[dirOf(it.slug)]);
+      }
       ctx.restore();
     }
     if (!state.on) return;
@@ -346,11 +448,26 @@
       '<b>Click any building</b> \u2014 generated ones too \u2014 to select.<br>' +
       'Drag body to move \u00b7 drag <span style="color:#4adeff">\u25a0</span> corner to resize \u00b7 ' +
       'drag <span style="color:#fde047">\u25cf</span> nub to rotate.<br>' +
+      '<b>roads / terrain</b> tiles are dragged out as a run \u2014 the bearing ' +
+      'snaps to 15\u00b0 so it comes out straight, Alt for a free angle.<br>' +
+      '<b>Parking bay</b> then drag: cars park in those bays and nowhere else.<br>' +
       'Pick a tile then click a building to re-skin it, or click empty ground to place.<br>' +
       '<b>D</b> or <b>Alt+drag</b> duplicate (keeps angle + size)<br>' +
       '<b>Drag empty ground</b> to marquee-select a group, then D / drag / Del<br>' +
       '<b>Del</b> delete \u00b7 <b>Esc</b> deselect \u00b7 <b>G</b> snap \u00b7 <b>Shift+B</b> close';
     w.appendChild(help);
+
+    el.park = mkBtn('\u25a4 Parking bay', function () {
+      state.tool = state.tool === 'park' ? null : 'park';
+      if (state.tool) { state.brush = null; renderGrid(); }
+      paintTool();
+      status(state.tool ? 'drag out a bay on the ground' : 'ready');
+    });
+    el.park.style.flex = '0 0 auto';
+    var toolRow = document.createElement('div');
+    toolRow.style.cssText = 'display:flex;gap:6px;margin-bottom:8px';
+    toolRow.appendChild(el.park);
+    w.appendChild(toolRow);
 
     el.status = document.createElement('div');
     el.status.style.cssText = 'font-size:11px;color:#4adeff;margin-bottom:8px;min-height:15px';
@@ -479,10 +596,12 @@
       cell.appendChild(img);
       cell.onclick = function () {
         state.brush = state.brush && state.brush.slug === slug ? null : { dir: activeDir, slug: slug };
+        if (state.brush) { state.tool = null; paintTool(); }
         renderGrid();
         // A brush with something selected re-skins it immediately; that is the
         // common case when fixing a block that drew as the wrong type.
-        if (state.brush && state.sel) applyBrush();
+        if (state.brush && state.sel && !GROUND_DIR[state.brush.dir]) applyBrush();
+        else if (state.brush && GROUND_DIR[state.brush.dir]) status('drag a run of ' + slug);
         else status(state.brush ? 'brush: ' + slug : 'brush cleared');
       };
       el.grid.appendChild(cell);
@@ -501,6 +620,86 @@
     }
     status('re-skinned to ' + state.brush.slug);
   }
+
+  function paintTool() {
+    if (!el.park) return;
+    var on = state.tool === 'park';
+    el.park.style.background = on ? '#0e3a4a' : '#162030';
+    el.park.style.borderColor = on ? '#4adeff' : '#2b3a4d';
+    el.park.style.color = on ? '#9fe8ff' : '#c9d4e2';
+  }
+
+  // ------------------------------------------------------------- parking
+  //
+  // The engine parked up to fourteen cars against whatever large footprint
+  // happened to be on screen, which is how a chawl forecourt and the middle
+  // of a service lane ended up full of Fortuners nobody asked for. The bays
+  // you draw are the only places it may use; until you draw one it keeps a
+  // far smaller stock against civic frontages, so the kerb is not bare.
+  //
+  // Returns true either way: the engine's own parking never runs again.
+  var CIVIL = [16, 19, 20, 21, 12, 18, 2, 5, 7];   // ordinary cars and vans
+
+  // Bays are evenly spaced, so a seed built by adding the coordinates lands
+  // on the same remainder every slot and parks a row of identical red cars.
+  // Mixing the bits first is what makes a row look like a street.
+  function mix(x, y) {
+    var h = Math.imul(x | 0, 73856093) ^ Math.imul(y | 0, 19349663);
+    h = (h ^ (h >>> 13)) >>> 0;
+    return h;
+  }
+
+  function parkOne(S, x, y, h, seed) {
+    for (var i = 0; i < S.cars.length; i++) {
+      var c = S.cars[i];
+      if (!c.dead && Math.abs(c.x - x) < 26 && Math.abs(c.y - y) < 26) return false;
+    }
+    var ty = CIVIL[seed % CIVIL.length];
+    S.cars.push({ x: x, y: y, h: h, vx: 0, vy: 0, w: 0, steer: 0, type: ty,
+                  pal: (seed >>> 4) % 6, seed: ((seed >>> 8) % 100) / 100, hp: 420,
+                  player: false, ai: 'parked', speed: 0, stuck: 0, panic: 0, shootCd: 0,
+                  burn: 0, dead: false, wreckT: 0, siren: 0, patrol: false,
+                  rider: null, hdp: 1 });
+    return true;
+  }
+
+  window.__hdParking = function (S) {
+    var mine = [], i, j;
+    for (i = 0; i < state.items.length; i++) {
+      if (state.items[i].kind === 'park') mine.push(state.items[i]);
+    }
+    var p = S.player, n = 0;
+    for (j = 0; j < S.cars.length; j++) if (!S.cars[j].dead && S.cars[j].hdp) n++;
+    var cap = mine.length ? 18 : 5;
+    if (n >= cap || S.cars.length >= 60) return true;
+
+    if (mine.length) {
+      for (i = 0; i < mine.length && n < cap; i++) {
+        var it = mine[i];
+        if (Math.hypot(it.x - p.x, it.y - p.y) > 2600) continue;
+        var k = bays(it), c = Math.cos(it.rot || 0), s = Math.sin(it.rot || 0);
+        for (j = 0; j < k && n < cap; j++) {
+          var off = -it.w / 2 + (it.w / k) * (j + 0.5);
+          var bx = it.x + c * off, by = it.y + s * off;
+          if (Math.hypot(bx - p.x, by - p.y) < 120) continue;   // not under your feet
+          // A bay is drawn along its length and the cars sit across it.
+          if (parkOne(S, bx, by, (it.rot || 0) + Math.PI / 2, mix(bx, by))) n++;
+        }
+      }
+      return true;
+    }
+
+    var vis = window.__hdVisible || [];
+    for (i = 0; i < vis.length && n < cap; i++) {
+      var b = vis[i];
+      if (!(b.w >= 60 && b.h >= 60)) continue;
+      var d = Math.hypot(b.x - p.x, b.y - p.y);
+      if (d < 320 || d > 1500) continue;
+      if (parkOne(S, b.x - b.w * 0.25, b.y + b.h * 0.5 + 34, Math.PI / 2,
+                  mix(b.x, b.y))) n++;
+    }
+    return true;
+  };
 
   function exportJson() {
     var payload = { by: author(), ts: Date.now(),
@@ -592,6 +791,25 @@
       }
     }
 
+    // Laying ground comes before picking something up: a road run starts on
+    // open tarmac, and the buildings already standing there must not swallow
+    // the drag.
+    if (state.tool === 'park') {
+      state.items.push({ kind: 'park', x: w.x, y: w.y, w: SLOT, h: 56, rot: 0 });
+      state.sel = { kind: 'item', i: state.items.length - 1 };
+      state.drag = { mode: 'lay', x0: w.x, y0: w.y, i: state.sel.i, free: !!ev.altKey };
+      status('drag out the bay \u2014 one slot per 9 m');
+      return;
+    }
+    if (state.brush && GROUND_DIR[state.brush.dir]) {
+      state.items.push({ kind: GROUND_DIR[state.brush.dir], slug: state.brush.slug,
+                         x: w.x, y: w.y, w: 1, h: state.brush.dir === 'roads' ? 90 : 160, rot: 0 });
+      state.sel = { kind: 'item', i: state.items.length - 1 };
+      state.drag = { mode: 'lay', x0: w.x, y0: w.y, i: state.sel.i, free: !!ev.altKey };
+      status('drag the run out \u2014 Alt for a free angle');
+      return;
+    }
+
     var hitB = pick(w.x, w.y);
     if (hitB && state.multi.length) {
       var inGroup = state.multi.some(function (r) {
@@ -667,6 +885,26 @@
     if (d.mode === 'marquee') {
       state.marquee.x1 = w.x;
       state.marquee.y1 = w.y;
+      return;
+    }
+    // A run follows the cursor from where it started. The bearing snaps to
+    // 15 degrees unless Alt is down, which is what keeps a road straight
+    // instead of wandering a degree per drag.
+    if (d.mode === 'lay') {
+      var it = state.items[d.i];
+      if (!it) return;
+      var vx = w.x - d.x0, vy = w.y - d.y0;
+      var len = Math.hypot(vx, vy);
+      var ang = Math.atan2(vy, vx);
+      if (!d.free && !ev.altKey) ang = Math.round(ang / LAY_SNAP) * LAY_SNAP;
+      if (len < it.h * 0.5) len = it.h * 0.5;
+      it.w = len;
+      it.rot = ang;
+      it.x = d.x0 + Math.cos(ang) * len / 2;
+      it.y = d.y0 + Math.sin(ang) * len / 2;
+      status(it.kind === 'park'
+        ? bays(it) + ' bay' + (bays(it) === 1 ? '' : 's')
+        : Math.round(len / M) + ' m of ' + (it.slug || 'ground'));
       return;
     }
     if (d.mode === 'group') {
@@ -745,6 +983,15 @@
     }
     if (!state.drag) return;
     if (state.drag.mode === 'pan') { state.drag = null; status('ready'); return; }
+    if (state.drag.mode === 'lay') {
+      var laid = state.items[state.drag.i];
+      state.drag = null;
+      commit('laid ' + (laid && laid.kind === 'park' ? 'parking' : 'ground'));
+      status(laid && laid.kind === 'park'
+        ? bays(laid) + ' bay' + (bays(laid) === 1 ? '' : 's') + ' \u2014 cars park here now'
+        : 'laid \u2014 drag the body to move it, the corner to widen it');
+      return;
+    }
     if (state.drag.mode === 'resize' && state.sel && state.sel.kind === 'gen') {
       var o = over(state.sel.key);
       o.baseScale = o.scale || 1;             // next drag starts from here

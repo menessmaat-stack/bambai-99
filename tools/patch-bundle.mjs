@@ -22,7 +22,11 @@ const EDITS = [
   [
     'parked vehicles at societies and police compounds',
     'function Bi(){if(s.cars.length>=Ru)return;let t=s.player,v=0,z=0;',
-    'function hdParked(){' +
+    // `__hdParking` is the editor's: it fills the bays you drew and, until
+    // you draw any, keeps a far smaller kerbside stock than the fourteen
+    // this used to scatter over every large frontage on screen. It always
+    // claims the job, so the block below only runs without the editor.
+    'function hdParked(){if(window.__hdParking&&window.__hdParking(s))return;' +
       'let t=s.player,vis=window.__hdVisible||[],n=0;' +
       'for(let c of s.cars)if(!c.dead&&c.hdp)n++;' +
       'if(n>=14||s.cars.length>=Ru)return;' +
@@ -64,7 +68,12 @@ const EDITS = [
   [
     'landmark art in the world layer',
     'T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y);let X=[];',
-    'window.__hdMap=D,window.__hdTime=s.t,T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y),' +
+    // `__hdGround` paints the editor's roads, terrain and parking bays. It
+    // runs before the buildings so a house on a road stays on top of it,
+    // which is the way round a city works.
+    'window.__hdMap=D,window.__hdTime=s.t,' +
+      'window.__hdGround&&window.__hdGround(A.ctx,s.cam.x,s.cam.y,$,N,A.night),' +
+      'T6(D,A,s.cam.x,s.cam.y),h6(D,A,s.cam.x,s.cam.y),' +
       'window.__hdDrawLandmarks&&window.__hdDrawLandmarks(A.ctx,s.cam.x,s.cam.y,$,N,A.night);let X=[];'
   ],
   // ===== reference art over the baked OSM geometry =======================
