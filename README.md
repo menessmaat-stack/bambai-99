@@ -226,6 +226,25 @@ each falls back to the stock drawing if the script is missing.
   trigger clicks, the grenade leaves the hand with a whoosh, and blasts got
   a real low end instead of one swept sine.
 
+## The fleet
+
+`new cars.png` is a proper top-down sheet, so it is sliced straight into
+`sprites/cars/nc-*.png` — sixteen vehicles, flood-filled from the card edge
+for a real alpha channel and turned a quarter turn, because the engine draws
+a car nose-right and the sheet draws it nose-up.
+
+They come **first** in `CAR_ALIASES` wherever a chassis has one, so the whole
+civic fleet is now that art: ambulance, police cruiser and highway patrol,
+the bus on both coach chassis, the vans, both pickups, the SUVs, the taxi,
+the box truck, the tow truck, the flatbed, the street sweeper, the garbage
+truck and the mixer. Seventeen of the older car sprites they replaced are
+deleted. The ones that remain cover chassis the new sheet does not draw — the
+supercars, the vintage fleet, the gang cars, the plant and machinery.
+
+`cars angle 1.png` is **not** used. It is a three-quarter view: you are
+looking at two sides and a roof at once, and no crop of that is a top-down
+sprite. Same reason the houses sheet is still sitting out.
+
 ## Rivers and roads
 
 Water was one flat fill of the sea colour with a sand hairline round it.
@@ -343,6 +362,19 @@ Open with the **BUILD** button or Shift+B.
   line, in the palette the rest of the map is using. A run is an ordinary
   item afterwards: click it, drag the body, widen it at the corner, turn it
   at the nub, Del to lift it.
+- **Bridges, footbridges, walls and track, all drawn.** No asset sheet has a
+  top-down bridge in it, so these are built the way the engine builds its
+  own: a `Bridge` is `B6` — a shadow cast down and right of the deck, piers
+  stepping out to it, a concrete parapet either side and the deck between
+  them, which is what makes it read as *above* the water rather than painted
+  on it. `Footbridge` is the same at a quarter of the width, `Wall` is a
+  compound wall with its own shadow and a lit coping, `Rail` is ballast,
+  sleepers and two steel lines, the same build as `gi`. All drag out like a
+  road and snap to the same 15°.
+- **Your own span is solid ground.** A road or bridge you laid is not in the
+  baked graph, so the drowning check never saw it and driving your own deck
+  across the Mithi killed you on a bridge that was plainly there. The engine
+  asks `__hdDeck` first now.
 - **Ground is painted, not tiled.** `grass`, `forest`, `sand`, `dirt`,
   `gravel` and `water` drag out a rectangle filled in the exact colours `qi`
   fills a park, a beach or the sea with, and grass and woodland get the same

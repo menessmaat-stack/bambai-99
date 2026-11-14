@@ -13,8 +13,32 @@
   var loaded = {};
   var attempted = {};
 
-  // Strict 1:1 Physical Mapping:
+  // Strict 1:1 physical mapping of engine chassis to artwork.
+  //
+  // The sixteen `nc-` sprites are the new top-down sheet, and they come first
+  // wherever a chassis has one: the whole civic fleet - ambulance, police
+  // cruiser, bus, vans, pickups, the municipal trucks - is now that art, and
+  // the older sprites only survive on chassis the new sheet does not draw.
+  // The angled sheet is not used at all; it is a three-quarter view and this
+  // game is top-down, so there is nothing in it to crop to.
   var CAR_ALIASES = {
+    // === New sheet: the fleet you actually meet on the street ===
+    47: ['nc-ambulance', 'ambulance'],            // Ambulance      58x25
+    30: ['nc-police-car'],                        // Cruiser        46x21
+    78: ['nc-police-car'],                        // Highway Patrol 47x21
+    27: ['nc-city-bus', 'coach-bus'],             // Coach         100x23
+    28: ['nc-city-bus', 'city-bus'],              // School Bus     96x22
+    23: ['nc-mail-van'],                          // Rumpo          43x23
+    17: ['nc-suv-brown'],                         // Huntley        49x24
+    16: ['nc-suv-brown'],                         // Landstalker    50x24
+    74: ['nc-box-truck'],                         // Tempo          58x25
+    88: ['nc-suv-amber'],                         // Gurkha LX      48x25
+    82: ['nc-suv-amber'],                         // Fortuner       54x25
+    12: ['nc-suv-amber'],                         // Cabbie         46x21
+    26: ['nc-garbage-truck', 'garbage-truck'],    // Trashmaster    78x28
+    71: ['nc-cement-mixer', 'tipper-truck'],      // Tipper         84x29
+    75: ['nc-street-sweeper', 'gas-tanker'],      // Water Truck    88x28
+    52: ['nc-tow-truck', 'utility-tanker'],       // Fuel Bowser    72x27
     // === Supercars (l=44-46, w=20-21) ===
     56: ['porsche-911-gt3', 'porsche', 'comet'],
     57: ['lamborghini-huracan', 'huracan', 'lambo'],
@@ -27,40 +51,29 @@
     86: ['skyline', 'gtr'],
 
     // === Modern Sedans (l=46-50, w=21-22) ===
-    0:  ['sedan-silver', 'sentinel'],
-    1:  ['sedan-silver', 'primo'],
+    0:  ['nc-sedan-silver', 'sedan-silver'],
+    1:  ['nc-sedan-silver', 'sedan-silver'],
     13: ['sedan-blue'],
-    64: ['ciaz', 'sedan-silver'],
+    64: ['nc-sedan-silver', 'ciaz'],
     65: ['verna', 'sedan-blue'],
-    66: ['sedan-silver'],
+    66: ['nc-sedan-silver'],
     67: ['octavia', 'sedan-silver'],
     84: ['bentley', 'continental-gt'],
     89: ['ambassador', 'ambassador-state'],
 
-    // === Pickups & Vans (l=48-50, w=22-24) ===
-    18: ['pickup-black', 'bobcat'],
-    19: ['pickup', 'yosemite'],
-    20: ['van-white', 'moonbeam'],
-    21: ['van-white', 'burrito'],
-    22: ['van', 'pony'],
-
-    // === Municipal Trucks (l=66-78, w=26-28) ===
-    26: ['garbage-truck'], // Trashmaster (Heavy Municipal Truck)
-    47: ['ambulance'],
+    // === Pickups & Vans (l=43-50, w=22-24) ===
+    18: ['nc-crew-pickup', 'pickup-black'],
+    19: ['nc-utility-pickup', 'pickup'],
+    20: ['nc-mail-van', 'van-white'],
+    21: ['nc-mail-van', 'van-white'],
+    22: ['nc-mail-van', 'van'],
 
     // === Heavy fleet, matched to chassis by length/width, never by guess ===
-    // Chassis dimensions read from the engine table, e.g. Coach l=100 w=28,
-    // Catering Hi-Lift l=66 w=26 (a ramp/lift body), Tipper l=84 w=29.
-    24: ['flatbed-lorry'],   // Mule           l=76  w=28
-    25: ['car-carrier'],     // Linerunner     l=110 w=28
-    27: ['coach-bus'],       // Coach          l=100 w=28
-    28: ['city-bus'],        // School Bus     l=96  w=28
-    51: ['ramp-truck'],      // Catering Hi-Lift l=66 w=26
-    52: ['utility-tanker'],  // Fuel Bowser    l=72  w=27
-    71: ['tipper-truck'],    // Tipper         l=84  w=29
-    72: ['tanker-truck'],    // Tanker         l=96  w=29
-    73: ['army-truck'],      // Container      l=118 w=29
-    75: ['gas-tanker'],      // Water Truck    l=88  w=28
+    24: ['nc-box-truck', 'flatbed-lorry'],  // Mule           l=76  w=28
+    25: ['car-carrier'],                    // Linerunner     l=110 w=28
+    51: ['nc-flatbed-tow', 'ramp-truck'],   // Catering Hi-Lift l=66 w=26
+    72: ['tanker-truck'],                   // Tanker         l=96  w=29
+    73: ['army-truck'],                     // Container      l=118 w=29
 
     // === 16 Vintage Cars (Mapped ONLY to Real Car Chassis l=46-50, w=21-22!) ===
     2:  ['classic-finned-cadillac'],     // Esperanto (Classic 1950s Finned Cruiser)
@@ -123,6 +136,16 @@
   }
 
   // Pre-load all sprites
+  // The new top-down sheet, sliced in `sprites/cars/nc-*.png`. Preloaded
+  // first: these are the ones ambient traffic is mostly made of.
+  var NEW_FLEET = [
+    'nc-ambulance', 'nc-fire-engine', 'nc-police-car', 'nc-city-bus',
+    'nc-mail-van', 'nc-suv-brown', 'nc-box-truck', 'nc-suv-amber',
+    'nc-utility-pickup', 'nc-sedan-silver', 'nc-flatbed-tow', 'nc-street-sweeper',
+    'nc-garbage-truck', 'nc-cement-mixer', 'nc-tow-truck', 'nc-crew-pickup'
+  ];
+  NEW_FLEET.forEach(function (s) { probe('/sprites/cars/', s); });
+
   var carPreloads = [
     'civ-sedan-red', 'civ-sedan-silver', 'civ-sedan-darkblue', 'civ-coupe-white',
     'civ-4x4-green', 'civ-suv-black', 'civ-suv-white', 'civ-crossover-orange',
@@ -221,10 +244,13 @@
     // Placeable only. These live under /sprites/cars/ and are deliberately
     // kept out of the building pools, so a lorry can never be chosen as a
     // house - the same isolation the driveable alias table enforces.
-    vehicles: ['cement-mixer', 'tipper-truck', 'excavator', 'bulldozer', 'flatbed-lorry',
-      'tanker-truck', 'army-truck', 'mobile-crane', 'coach-bus', 'city-bus', 'car-carrier',
-      'fire-engine', 'road-roller', 'ramp-truck', 'tractor-timber', 'tractor-cargo',
-      'utility-tanker', 'gas-tanker', 'ambulance'],
+    // The new sheet first, then the plant and machinery it does not draw.
+    vehicles: ['nc-ambulance', 'nc-fire-engine', 'nc-police-car', 'nc-city-bus',
+      'nc-mail-van', 'nc-suv-brown', 'nc-box-truck', 'nc-suv-amber',
+      'nc-utility-pickup', 'nc-sedan-silver', 'nc-flatbed-tow', 'nc-street-sweeper',
+      'nc-garbage-truck', 'nc-cement-mixer', 'nc-tow-truck', 'nc-crew-pickup',
+      'excavator', 'bulldozer', 'mobile-crane', 'road-roller',
+      'tractor-timber', 'tractor-cargo', 'car-carrier', 'army-truck', 'tanker-truck'],
     // Road defects, dropped on a carriageway one at a time. The source sheet
     // is drawn in 2:1 isometric, which is the one thing this game is not, so
     // each is un-sheared off its own top face before it ships: the rhombus

@@ -376,8 +376,24 @@
            it.kind === 'park' || it.kind === 'decal' || it.kind === 'terrain';
   }
 
+  // The run styles, and how wide each comes out. All of them are drawn, not
+  // photographed: no asset sheet has a top-down bridge or wall in it, and a
+  // bridge has to be built out of the same deck, parapet, pier and shadow
+  // the engine already uses or it will not sit in the city.
+  var RUNS = {
+    road:   { style: null,     w: 90, label: '\u2550 Road' },
+    bridge: { style: 'bridge', w: 90, label: '\u2551 Bridge' },
+    foot:   { style: 'foot',   w: 26, label: 'Footbridge' },
+    wall:   { style: 'wall',   w: 20, label: 'Wall' },
+    rail:   { style: 'rail',   w: 46, label: 'Rail' }
+  };
+
   var TOOL_HINT = {
     road: 'drag a run \u2014 15\u00b0 steps, Alt for free',
+    bridge: 'drag the span \u2014 deck, parapet and piers over what is below',
+    foot: 'drag a footbridge or skywalk',
+    wall: 'drag a compound wall',
+    rail: 'drag a length of track',
     park: 'drag out a bay \u2014 one slot per 9 m',
     'ground:grass': 'drag a rectangle of grass',
     'ground:forest': 'drag a rectangle of woodland',
@@ -449,6 +465,111 @@
       ctx.setLineDash([]);
     }
     ctx.restore();
+  }
+
+  // The rest of the run styles, all drawn the way the engine draws its own.
+  //
+  // A bridge is `B6`: a shadow cast down and right of the deck, piers under
+  // the edges, a concrete parapet either side and the deck between them. A
+  // footbridge is the same at a quarter of the width with no markings. A
+  // wall is a compound wall with its own shadow, and rail is ballast,
+  // sleepers and two steel lines, the same build as `gi`.
+  function drawBridge(ctx, it, night, foot) {
+    var c = night ? NIGHT : DAY;
+    var half = it.w / 2, w = it.h;
+    var lift = Math.max(6, w * 0.22);        // how high it reads above the ground
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot || 0);
+    ctx.lineCap = 'butt';
+    // The shadow on whatever is underneath, offset like every other deck.
+    ctx.save();
+    ctx.translate(lift * 0.5, lift * 0.8);
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = w + 14;
+    ctx.beginPath(); ctx.moveTo(-half, 0); ctx.lineTo(half, 0); ctx.stroke();
+    ctx.restore();
+    // Piers, every 22 m, stepping out to the shadow.
+    var step = 150, n = Math.max(1, Math.floor(it.w / step));
+    ctx.fillStyle = night ? 'rgba(20,22,26,0.8)' : 'rgba(60,64,70,0.75)';
+    for (var i = 0; i <= n; i++) {
+      var px = -half + (it.w / n) * i;
+      for (var s = -1; s <= 1; s += 2) {
+        ctx.beginPath();
+        ctx.moveTo(px - 4, s * w * 0.34);
+        ctx.lineTo(px + 4, s * w * 0.34);
+        ctx.lineTo(px + 4 + lift * 0.5, s * w * 0.34 + lift * 0.8);
+        ctx.lineTo(px - 4 + lift * 0.5, s * w * 0.34 + lift * 0.8);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.beginPath(); ctx.moveTo(-half, 0); ctx.lineTo(half, 0);
+    // Parapet, then the deck inside it.
+    ctx.strokeStyle = night ? '#4b5057' : '#8e949c';
+    ctx.lineWidth = w + 12; ctx.stroke();
+    ctx.strokeStyle = night ? '#34383e' : '#5a5f66';
+    ctx.lineWidth = w; ctx.stroke();
+    if (!foot && w >= 46) {
+      ctx.strokeStyle = c.mark;
+      ctx.lineWidth = Math.max(1, w * 0.022);
+      ctx.setLineDash([20, 40]);
+      ctx.beginPath(); ctx.moveTo(-half + 10, 0); ctx.lineTo(half - 10, 0); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+  }
+
+  function drawWall(ctx, it, night) {
+    var half = it.w / 2, w = Math.max(6, it.h * 0.28);
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot || 0);
+    ctx.lineCap = 'butt';
+    ctx.strokeStyle = 'rgba(0,0,0,0.42)';
+    ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(-half + 3, w * 0.7); ctx.lineTo(half + 3, w * 0.7); ctx.stroke();
+    ctx.strokeStyle = night ? '#3d3a34' : '#8d8578';
+    ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(-half, 0); ctx.lineTo(half, 0); ctx.stroke();
+    ctx.strokeStyle = night ? 'rgba(200,196,186,0.18)' : 'rgba(255,252,244,0.35)';
+    ctx.lineWidth = Math.max(1, w * 0.18);
+    ctx.beginPath(); ctx.moveTo(-half, -w * 0.32); ctx.lineTo(half, -w * 0.32); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawRail(ctx, it, night) {
+    var half = it.w / 2, w = Math.max(20, it.h * 0.42);
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot || 0);
+    ctx.lineCap = 'butt';
+    ctx.strokeStyle = night ? '#312c26' : '#574f45';     // ballast
+    ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(-half, 0); ctx.lineTo(half, 0); ctx.stroke();
+    ctx.strokeStyle = night ? '#272119' : '#443b32';     // sleepers
+    ctx.lineWidth = Math.max(1.4, w * 0.11);
+    ctx.beginPath();
+    for (var x = -half; x <= half; x += Math.max(10, w * 0.5)) {
+      ctx.moveTo(x, -w * 0.38); ctx.lineTo(x, w * 0.38);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = night ? '#6a7077' : '#a7adb4';     // steel
+    ctx.lineWidth = Math.max(1, w * 0.07);
+    for (var s = -1; s <= 1; s += 2) {
+      ctx.beginPath();
+      ctx.moveTo(-half, s * w * 0.21); ctx.lineTo(half, s * w * 0.21);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawRun(ctx, it, night) {
+    if (it.style === 'bridge') drawBridge(ctx, it, night, false);
+    else if (it.style === 'foot') drawBridge(ctx, it, night, true);
+    else if (it.style === 'wall') drawWall(ctx, it, night);
+    else if (it.style === 'rail') drawRail(ctx, it, night);
+    else drawRoad(ctx, it, night);
   }
 
   function drawPatch(ctx, it, night) {
@@ -547,7 +668,7 @@
     for (i = 0; i < draw.length; i++) {
       var d = draw[i];
       if (d.kind === 'ground') drawGround(ctx, d, night, inv);
-      else if (d.kind === 'road') drawRoad(ctx, d, night);
+      else if (d.kind === 'road') drawRun(ctx, d, night);
       else if (d.kind === 'park') drawBay(ctx, d, night);
       else drawPatch(ctx, d, night);
     }
@@ -709,7 +830,7 @@
       el.tools[name] = b;
       toolRow.appendChild(b);
     }
-    armTool('road', '\u2550 Road');
+    Object.keys(RUNS).forEach(function (r) { armTool(r, RUNS[r].label); });
     GROUND_ORDER.forEach(function (g) { armTool('ground:' + g, g); });
     armTool('park', '\u25a4 Parking');
     w.appendChild(toolRow);
@@ -914,6 +1035,23 @@
     return true;
   }
 
+  // A road or bridge you laid is not in the baked graph, so the drowning
+  // check never saw it and driving your own span across the Mithi killed you
+  // on a deck that was plainly there. The engine asks this first.
+  window.__hdDeck = function (x, y) {
+    for (var i = 0; i < state.items.length; i++) {
+      var it = state.items[i];
+      if (it.kind !== 'road' && it.kind !== 'park') continue;
+      if (it.style === 'wall' || it.style === 'rail') continue;
+      var dx = x - it.x, dy = y - it.y;
+      if (Math.abs(dx) > it.w || Math.abs(dy) > it.w) continue;
+      var c = Math.cos(-(it.rot || 0)), s = Math.sin(-(it.rot || 0));
+      var lx = dx * c - dy * s, ly = dx * s + dy * c;
+      if (Math.abs(lx) <= it.w / 2 + 6 && Math.abs(ly) <= it.h / 2 + 6) return true;
+    }
+    return false;
+  };
+
   window.__hdParking = function (S) {
     var mine = [], i, j;
     for (i = 0; i < state.items.length; i++) {
@@ -1049,8 +1187,10 @@
       var made = null;
       if (state.tool === 'park') {
         made = { kind: 'park', x: w.x, y: w.y, w: SLOT, h: 56, rot: 0 };
-      } else if (state.tool === 'road') {
-        made = { kind: 'road', x: w.x, y: w.y, w: 1, h: 90, rot: 0 };
+      } else if (RUNS[state.tool]) {
+        var r = RUNS[state.tool];
+        made = { kind: 'road', style: r.style || undefined,
+                 x: w.x, y: w.y, w: 1, h: r.w, rot: 0 };
       } else if (state.tool.indexOf('ground:') === 0) {
         made = { kind: 'ground', type: state.tool.slice(7),
                  x: w.x, y: w.y, w: 1, h: 1, rot: 0 };

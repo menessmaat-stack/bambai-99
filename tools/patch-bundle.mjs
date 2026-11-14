@@ -1018,10 +1018,13 @@ const EDITS = [
   // more than 1.8m from the single-track centerline of a wide dual-carriageway
   // bridge (e.g. Bandra Kurla Complex Road over Mithi River, or Rajiv Gandhi
   // Sea Link). When that failed, the car took 170 HP/s water damage and blew up!
+  // `__hdDeck` is the editor's: a road or bridge you laid yourself is not in
+  // the baked graph, so without it driving your own span across the Mithi
+  // drowned you on a deck that was plainly there.
   [
     'bridges immune to water damage',
     '!nl(t.x,t.y)&&!Ji(D,t.x,t.y)){if(t.hp-=170*v,t.vx*=1-2.2*v,t.vy*=1-2.2*v',
-    '!nl(t.x,t.y)&&!Ji(D,t.x,t.y)&&!cu(D,t.x,t.y)&&!(Du(D,t.x,t.y,T(35))?.dist<=T(35))){if(t.hp-=170*v,t.vx*=1-2.2*v,t.vy*=1-2.2*v'
+    '!nl(t.x,t.y)&&!Ji(D,t.x,t.y)&&!cu(D,t.x,t.y)&&!(window.__hdDeck&&window.__hdDeck(t.x,t.y))&&!(Du(D,t.x,t.y,T(35))?.dist<=T(35))){if(t.hp-=170*v,t.vx*=1-2.2*v,t.vy*=1-2.2*v'
   ],
   // ===== Realistic Mumbai trees (Coconut Palms + layered canopy) matching user image 6 =====
   [
