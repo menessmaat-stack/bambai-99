@@ -415,6 +415,53 @@ smeared wall. There is no automatic way to turn a drawn facade into a
 top-down plan. Hand-drawn roof plans like the ones already in
 `sprites/houses/` drop straight in.
 
+### What the editor changes, the car now hits
+
+The engine collides against the baked OSM footprints, which knew nothing
+about the editor. Three things were wrong at once, and they all read as
+"empty space that is not empty":
+
+- a **deleted** building stopped being drawn and stayed solid, so a cleared
+  plot still stopped the car dead in the open;
+- a **moved** one was solid where it used to be and empty where it now
+  stands, which is the invisible wall beside its own art;
+- a **placed** building was never solid at all and could be driven through.
+
+`city-builder.js` publishes two hooks and the bundle asks them inside `fu`,
+the push-out that resolves every car, ped and the player:
+
+- `__hdSkipSolid(footprint)` — true when the editor has taken that baked
+  footprint away. It re-derives the override key from the polygon's AABB
+  centroid, exactly as `__hdBSpr` files it, rather than trusting `cx`/`cy`,
+  which the map stores as the polygon centroid and is a different point.
+  Deleted and moved return true; a re-skin keeps its own geometry and stays
+  solid.
+- `__hdPushOut(x, y, r)` — circle against oriented box over everything the
+  editor owns: its placed buildings, and the generated ones it has moved
+  (read off `__hdVisible`, the only place their new box exists). Push-out is
+  through the nearest face, so a car slides along a wall instead of being
+  flicked round the corner. Ground, roads, bays, parks, decals and parked
+  vehicle art are surfaces, not obstacles, and are not in it.
+
+A footprint is therefore solid in exactly one place — its baked polygon or
+its drawn box — and never in both. The engine asks about 3,000 times a
+second, so both lists are rebuilt only when an edit lands (`editStamp`, plus
+an identity check that catches load, import, undo and Clear swapping the
+stores out) and the query itself allocates nothing.
+
+### No metro station structures
+
+Two things drew a blue station and neither stood where a station is. The
+canopy (`Y6`) is drawn at the station **point**, which is a dot on the line —
+at BKC that put it in the middle of the carriageway. The slab (inside `T6`)
+is drawn over any transport footprint, offset from its own plot. Both are
+gone.
+
+Everything else about the metro stays: track, trains, tunnels, the transit
+map, the minimap dots and the station labels, and the hand-authored
+`elevated-metro-stn` / `metro-concourse` landmark art. A drawn station sprite
+can now be placed where the station actually is.
+
 ### Where your edits live
 
 They used to live only in `localStorage`, which is keyed by **origin** — and

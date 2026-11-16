@@ -1437,68 +1437,27 @@ const EDITS = [
     'f.fillStyle="#ff2222",f.beginPath(),f.arc(tx,ty,2.5,0,Math.PI*2),f.fill();}' +
     '}else if(k.onFoot&&Q.current==="play")if(s.ride>=0)f.fillStyle="rgba(255,235,170,0.96)"'
   ],
-  // ===== 24. Elevated Metro Station Vaulted Barrel Canopy (// ===== 24. Elevated Metro Station Vaulted Barrel Canopy (Aligned to Track Heading! Sleek 28Gx10G!) =====
+  // ===== 24-25. No metro station structures =============================
+  // Two things used to draw a blue station: a vaulted canopy at the station
+  // point (`Y6`) and a blue slab over any transport footprint (inside `T6`).
+  // Neither sits where a station really is. A station point is a dot on the
+  // line, so at BKC the canopy landed in the middle of the carriageway, and
+  // the footprint slab is drawn offset from its own plot.
+  //
+  // The metro itself is untouched — track, trains, tunnels, the transit map
+  // and the station labels all stay. Only the structures go, so a drawn
+  // station sprite can be placed where the station actually is.
   [
-    'elevated metro station canopy',
+    'no canopy at metro station points',
     'function Y6(e,n,u,r,l,o,i){if(!y(n)||!y(u))return;let E=(l?14:32)*G,Q=(l?14:10)*G;',
-    'function Y6(e,n,u,r,l,o,i){if(!y(n)||!y(u))return;' +
-    'if(l){' +
-    // Compute track heading angle dynamically so station canopy aligns perfectly with the tracks!
-    'let trkAng=0,sx=n,sy=u;' +
-    'let hdM=window.__hdMap;let bestD=T(700)*T(700);' +
-    'if(hdM&&hdM.rail){for(let rl of hdM.rail){if(!rl.pts||rl.pts.length<4)continue;' +
-    'for(let pi=0;pi<rl.pts.length-3;pi+=2){' +
-    'let mx=(rl.pts[pi]+rl.pts[pi+2])/2,my=(rl.pts[pi+1]+rl.pts[pi+3])/2;' +
-    'let dx=mx-n,dy=my-u,d2=dx*dx+dy*dy;' +
-    'if(d2<bestD){bestD=d2,sx=mx,sy=my,' +
-    'trkAng=Math.atan2(rl.pts[pi+3]-rl.pts[pi+1],rl.pts[pi+2]-rl.pts[pi]);}}}}' +
-    'if(trkAng===0&&hdM){let nr=Du(hdM,n,u,T(40));' +
-    'if(nr&&Ce(nr.heading)){trkAng=nr.heading;' +
-    'let push=(nr.width?nr.width*0.5:T(9))+T(11);' +
-    'sx=n+Math.cos(trkAng+Math.PI/2)*push,sy=u+Math.sin(trkAng+Math.PI/2)*push;}}' +
-    // Sleek, compact proportions: length 28G, width 10G (tightly hugging the twin tracks!)
-    'let sL=28*G,sW=10*G;e.save(),e.translate(sx,sy),e.rotate(trkAng);' +
-    // 3D viaduct drop shadow
-    'e.fillStyle="rgba(0,0,0,0.52)",e.fillRect(-sL/2+3*G,-sW/2+5*G,sL,sW);' +
-    // Viaduct support beam
-    'e.fillStyle="#334155",e.fillRect(-sL/2,-sW/2,sL,sW);' +
-    // Trackside platform edge lights
-    'e.fillStyle="#fde047",e.fillRect(-sL/2+1,-sW/2+0.8,sL-2,0.9),e.fillRect(-sL/2+1,sW/2-1.7,sL-2,0.9);' +
-    // BLUE METALLIC VAULTED ROOF CANOPY (Exact Reference Image #2)
-    'let gr=e.createLinearGradient(0,-sW/2,0,sW/2);gr.addColorStop(0,"#0284c7"),gr.addColorStop(0.5,"#38bdf8"),gr.addColorStop(1,"#0369a1");' +
-    'e.fillStyle=gr,e.beginPath(),e.roundRect(-sL/2-1*G,-sW/2-1*G,sL+2*G,sW+2*G,3*G),e.fill();' +
-    'e.strokeStyle="#0f172a",e.lineWidth=Math.max(0.4*G,o),e.stroke();' +
-    // Transverse arched curved roof ribs
-    'e.strokeStyle="rgba(255,255,255,0.45)",e.lineWidth=Math.max(0.3*G,0.6*o);' +
-    'for(let rx=-sL/2+3*G;rx<sL/2;rx+=5*G){e.beginPath(),e.moveTo(rx,-sW/2-1*G),e.lineTo(rx,sW/2+1*G),e.stroke();}' +
-    // Central translucent cyan glass skylight (Exact Reference Image #2)
-    'let skyL=sL*0.56,skyW=sW*0.42;e.fillStyle="#e0f2fe",e.beginPath(),e.roundRect(-skyL/2,-skyW/2,skyL,skyW,1.5*G),e.fill();' +
-    'e.strokeStyle="rgba(255,255,255,0.9)",e.lineWidth=Math.max(0.35*G,0.6*o),e.stroke();' +
-    // Station Name Badge (Aligned cleanly outside the canopy)
-    'if(i>=tn.stationLabels*0.5&&r){' +
-    'let txt=r.replace(/metro/i,"").trim()+" METRO";e.font=`bold ${Math.max(8*o,7)}px system-ui`;' +
-    'let tw=e.measureText(txt).width;' +
-    'e.fillStyle="rgba(10,15,26,0.92)",e.fillRect(-tw/2-3,sW/2+2*G,tw+6,12);' +
-    'e.strokeStyle="#38bdf8",e.lineWidth=0.7,e.strokeRect(-tw/2-3,sW/2+2*G,tw+6,12);' +
-    'e.fillStyle="#f8fafc",e.textAlign="center",e.textBaseline="middle",e.fillText(txt,0,sW/2+2.5*G+6);}' +
-    'e.restore();return;}' +
+    // `l` is "this is a metro station"; suburban rail keeps its canopy.
+    'function Y6(e,n,u,r,l,o,i){if(!y(n)||!y(u))return;if(l)return;' +
     'let E=(l?14:32)*G,Q=(l?14:10)*G;'
   ],
-  // ===== 25. Elevated Metro Station Blue Canopy in T6 (Saki Naka Image #2) =====
   [
-    'metro station blue canopy in t6',
+    'no slab over transport footprints',
     'if(q.kind==="transport"||!!(q.name&&/metro|monorail|skywalk|flyover/i.test(q.name))||y(q.r)&&q.r>18*G&&cu(e,q.cx,q.cy)){let Ge=14*G,_e=Ge*0.28,Xe=Ge*0.42;if(o.fillStyle="rgba(0,0,0,0.28)",Pn(o,q.pts,_e*0.15,Xe*0.15))o.fill();if(o.fillStyle=n.night?"#3a3f46":"#5a6168",Pn(o,q.pts,_e,Xe))o.fill();o.strokeStyle="rgba(20,22,26,0.55)",o.lineWidth=Math.max(0.2*G,Q),o.stroke();continue}',
-    'if(q.kind==="transport"||!!(q.name&&/metro|monorail|station|saki/i.test(q.name))||y(q.r)&&q.r>18*G&&cu(e,q.cx,q.cy)){let Ge=16*G,_e=Ge*0.28,Xe=Ge*0.42;' +
-    'if(o.fillStyle="rgba(0,0,0,0.5)",Pn(o,q.pts,_e*0.6,Xe*0.6))o.fill();' +
-    'if(o.fillStyle="#334155",Pn(o,q.pts,_e*0.85,Xe*0.85))o.fill();' +
-    // BLUE METALLIC VAULTED CANOPY (Reference Image #2)
-    'if(o.fillStyle="#0284c7",Pn(o,q.pts,_e,Xe))o.fill();' +
-    // Central translucent cyan glass skylight (Reference Image #2)
-    'if(o.fillStyle="#38bdf8",Pn(o,q.pts,_e+1.8*G,Xe+2.6*G))o.fill();' +
-    'o.strokeStyle="rgba(255,255,255,0.75)",o.lineWidth=Math.max(0.4*G,Q),o.stroke();' +
-    'let stN=(q.name||"METRO").toUpperCase();' +
-    'o.font=`bold ${Math.max(10*Q,9*G)}px system-ui`,o.fillStyle="#f8fafc",o.textAlign="center",o.textBaseline="middle",o.fillText(stN,q.cx+_e,q.cy+Xe);' +
-    'continue}'
+    'if(q.kind==="transport"||!!(q.name&&/metro|monorail|station|saki/i.test(q.name))||y(q.r)&&q.r>18*G&&cu(e,q.cx,q.cy))continue;'
   ],
 
   // ===== 26. Bazooka One-Hit Kill for VIP Assassination Targets =====
@@ -1616,6 +1575,40 @@ const EDITS = [
     // would make a second run wrap the wrapper.
     '(window.__hdFreeCam?(s.cam.x=window.__hdFreeCam.x,s.cam.y=window.__hdFreeCam.y):' +
       '(s.cam.y+=(ee-s.cam.y)*Math.min(1,4.2*t),s.cam.x+=(k-s.cam.x)*Math.min(1,4.2*t)))'
+  ],
+
+  // ===== the editor's city is the city you drive through ==================
+  // Deleting or moving a generated building only ever changed what was
+  // drawn. The footprint the engine collides against comes straight off the
+  // baked map, so a deleted block stayed solid — open tarmac that stopped
+  // the car dead — and a moved one was solid in two places at once: its old
+  // spot invisibly, its new spot not at all. Placed buildings had the
+  // opposite problem and could be driven straight through.
+  //
+  // `__hdSkipSolid` answers "has the editor taken this footprint away" and
+  // `__hdPushOut` resolves against what the editor actually drew, both in
+  // city-builder.js where the overrides live.
+  [
+    'deleted and moved footprints stop colliding',
+    'let te=k[fe];if(te.kind==="transport")continue;',
+    'let te=k[fe];if(window.__hdSkipSolid&&window.__hdSkipSolid(te))continue;' +
+      'if(te.kind==="transport")continue;'
+  ],
+  [
+    'placed and moved buildings are solid',
+    '}let M=Ki(D,J-g-20,Z-g-20,J+g+20,Z+g+20);',
+    // The rect is written with brackets so the replacement never contains
+    // the search string; otherwise a second run inserts a second push-out.
+    '}let ho=window.__hdPushOut&&window.__hdPushOut(J,Z,g);' +
+      'if(ho)J=ho.x,Z=ho.y,P=!0,K=!0;' +
+      'let M=Ki(D,J-(g+20),Z-(g+20),J+(g+20),Z+(g+20));'
+  ],
+  [
+    'nothing spawns inside a footprint the editor deleted',
+    'let Q=l.items[E],V=e.buildings[Q],_=n-V.cx,H=u-V.cy;',
+    'let Q=l.items[E],V=e.buildings[Q];' +
+      'if(window.__hdSkipSolid&&window.__hdSkipSolid(V))continue;' +
+      'let _=n-V.cx,H=u-V.cy;'
   ],
 ];
 

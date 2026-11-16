@@ -141,8 +141,12 @@
       }
     }
   }
-  function saveItems() { writeKey(K_ITEMS, state.items); push(); }
-  function saveOver() { writeKey(K_OVER, window.__hdOverrides); push(); }
+  // Every edit that changes WHICH things exist bumps this. `__hdPushOut`
+  // rebuilds its solid lists off it rather than scanning both stores on each
+  // of the ~3,000 collision queries a second the engine makes.
+  var editStamp = 0;
+  function saveItems() { editStamp++; writeKey(K_ITEMS, state.items); push(); }
+  function saveOver() { editStamp++; writeKey(K_OVER, window.__hdOverrides); push(); }
 
   // The server copy. `rev` only ever counts up, and the server refuses a
   // write that is behind what it holds, so a tab left open overnight cannot
@@ -1088,6 +1092,132 @@
                   mix(b.x, b.y))) n++;
     }
     return true;
+  };
+
+  // ------------------------------------------------- what the engine hits
+  // The engine collides against the baked footprints, which know nothing
+  // about this editor: a deleted building stayed solid (open ground that
+  // stopped the car), a moved one was solid where it used to be and empty
+  // where it now stands, and anything placed here could be driven through.
+  // These two hooks are what the bundle asks before resolving a collision.
+
+  // Ground, roads, bays, parks and decals are surfaces, not obstacles, and
+  // a parked-vehicle sprite is already handled by the car it stands for.
+  var NOT_SOLID_DIR = { vehicles: 1, parks: 1, roads: 1, ground: 1 };
+
+  function itemSolid(it) {
+    if (!it || it.kind) return false;          // park / road / ground / decal
+    return !NOT_SOLID_DIR[dirOf(it.slug)];
+  }
+
+  // The override key is the footprint's AABB centroid, exactly as
+  // `__hdBSpr` files it — recomputed here rather than trusting `cx`/`cy`,
+  // which the map stores as the polygon centroid and is not the same point.
+  function keyForPts(pts) {
+    if (!pts || pts.length < 6) return null;
+    var minx = pts[0], maxx = pts[0], miny = pts[1], maxy = pts[1];
+    for (var i = 2; i < pts.length; i += 2) {
+      if (pts[i] < minx) minx = pts[i]; else if (pts[i] > maxx) maxx = pts[i];
+      if (pts[i + 1] < miny) miny = pts[i + 1];
+      else if (pts[i + 1] > maxy) maxy = pts[i + 1];
+    }
+    return (((minx + maxx) / 2) | 0) + ':' + (((miny + maxy) / 2) | 0);
+  }
+
+  // True when this baked footprint must not block anything: it was deleted,
+  // or it was moved/resized/rotated and `__hdPushOut` owns it at its drawn
+  // position instead. A re-skin keeps its own geometry and stays solid here.
+  window.__hdSkipSolid = function (b) {
+    var ov = window.__hdOverrides;
+    if (!ov || !b) return false;
+    var o = ov[keyForPts(b.pts)];
+    if (!o) return false;
+    return !!(o.hidden || o.dx || o.dy || o.scale ||
+              (o.rot !== undefined && o.rot !== null));
+  };
+
+  // Circle-against-oriented-box push-out, over everything the editor owns:
+  // its own placed buildings, and the generated ones it has moved. Returns
+  // the corrected centre, or null when nothing was touched.
+  var pushOut = { x: 0, y: 0 };
+
+  function hitBox(x, y, r, bx, by, bw, bh, rot) {
+    var dx = x - bx, dy = y - by;
+    var c = Math.cos(-(rot || 0)), s = Math.sin(-(rot || 0));
+    var lx = dx * c - dy * s, ly = dx * s + dy * c;   // into the box's frame
+    var hw = bw / 2 + r, hh = bh / 2 + r;
+    if (lx > -hw && lx < hw && ly > -hh && ly < hh) {
+      // Out through the nearest face, which keeps a car sliding along a
+      // wall instead of being flicked around the corner.
+      var px = (lx > 0 ? hw - lx : -hw - lx);
+      var py = (ly > 0 ? hh - ly : -hh - ly);
+      if (Math.abs(px) < Math.abs(py)) lx += px; else ly += py;
+      var cc = Math.cos(rot || 0), ss = Math.sin(rot || 0);
+      pushOut.x = bx + lx * cc - ly * ss;
+      pushOut.y = by + lx * ss + ly * cc;
+      return true;
+    }
+    return false;
+  }
+
+  // The engine asks about every car, ped and the player on every physics
+  // step — roughly 3,000 calls a second — so nothing here may allocate.
+  // Both lists are rebuilt only when an edit lands.
+  var solidItems = [], movedKeys = {}, movedAny = false, solidStamp = -1;
+  var solidItemsRef = null, solidOverRef = null;
+
+  function refreshSolids() {
+    // The stamp catches an edit; the two identities catch a wholesale
+    // replacement — load, import, undo and Clear all swap the stores out.
+    if (solidStamp === editStamp && solidItemsRef === state.items &&
+        solidOverRef === window.__hdOverrides) return;
+    solidStamp = editStamp;
+    solidItemsRef = state.items;
+    solidOverRef = window.__hdOverrides;
+    solidItems.length = 0;
+    for (var i = 0; i < state.items.length; i++) {
+      if (itemSolid(state.items[i])) solidItems.push(state.items[i]);
+    }
+    movedKeys = {}; movedAny = false;
+    var ov = window.__hdOverrides || {};
+    for (var k in ov) {
+      if (!Object.prototype.hasOwnProperty.call(ov, k)) continue;
+      var o = ov[k];
+      if (o && (o.dx || o.dy || o.scale ||
+                (o.rot !== undefined && o.rot !== null))) {
+        movedKeys[k] = 1; movedAny = true;
+      }
+    }
+  }
+
+  window.__hdPushOut = function (x, y, r) {
+    refreshSolids();
+    if (!solidItems.length && !movedAny) return null;
+    var out = null, i, b;
+    var reach = r + 400;                       // far side of the biggest sprite
+    for (i = 0; i < solidItems.length; i++) {
+      var it = solidItems[i];
+      if (Math.abs(it.x - x) > reach + it.w || Math.abs(it.y - y) > reach + it.h) continue;
+      if (hitBox(x, y, r, it.x, it.y, it.w, it.h, it.rot)) {
+        x = pushOut.x; y = pushOut.y; out = pushOut;
+      }
+    }
+    if (!movedAny) return out;
+    // Moved footprints: `__hdVisible` carries what the renderer just drew,
+    // which is the only place their new box exists. The test matches
+    // `__hdSkipSolid` exactly, so a footprint is solid in one place or the
+    // other and never in both — a re-skin keeps its baked polygon and is
+    // not here, a landmark was never solid and does not start now.
+    var vis = window.__hdVisible || [];
+    for (i = 0; i < vis.length; i++) {
+      b = vis[i];
+      if (!b.key || movedKeys[b.key] !== 1) continue;
+      if (Math.abs(b.x - x) > reach + b.w || Math.abs(b.y - y) > reach + b.h) continue;
+      if (hitBox(x, y, r, b.x, b.y, b.w, b.h, b.rot)) {
+        x = pushOut.x; y = pushOut.y; out = pushOut;
+      }
+    }
+    return out;
   };
 
   function exportJson() {
